@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Nexus Terminal | Marvic Studios UG</title>
 
-  <!-- Content Security Policy – makes the app resilient to XSS -->
+  <!-- Content Security Policy – strict but allows needed APIs -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
     script-src 'self' 'unsafe-inline';
@@ -20,104 +20,214 @@
   ">
 
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
+    /* Full‑page reset – no external scrolling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    * {
+      box-sizing: border-box;
+    }
     :root {
-      --bg-deep:#080c14; --surface:rgba(10,18,30,0.9); --glass-border:rgba(0,255,200,0.15);
-      --neon-cyan:#00ffcc; --neon-blue:#0088ff; --text:#e0e8ff; --dim:#6b7f99;
-      --error:#ff5370; --success:#4cff8f; --scroll-thumb:#00ffcc;
-      font-family:'JetBrains Mono','Fira Code','Courier New',monospace;
+      --bg-deep: #080c14;
+      --surface: rgba(10, 18, 30, 0.95);
+      --glass-border: rgba(0, 255, 200, 0.18);
+      --neon-cyan: #00ffcc;
+      --neon-blue: #0088ff;
+      --text: #e0e8ff;
+      --dim: #6b7f99;
+      --error: #ff5370;
+      --success: #4cff8f;
+      --scroll-thumb: #00ffcc;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     }
     body {
-      background:radial-gradient(ellipse at 30% 20%, #0a1424, #050810);
-      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem;
+      background: var(--bg-deep);
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
     }
     .terminal {
-      width:100%; max-width:960px; height:90vh; max-height:860px;
-      background:var(--surface); backdrop-filter:blur(24px); border:1px solid var(--glass-border);
-      border-radius:1.8rem; box-shadow:0 25px 50px rgba(0,0,0,0.7), 0 0 30px rgba(0,255,200,0.25);
-      display:flex; flex-direction:column; overflow:hidden;
+      width: 100vw;
+      height: 100vh;
+      background: var(--surface);
+      backdrop-filter: blur(24px);
+      border: none;  /* full screen, no border */
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 30px rgba(0, 255, 200, 0.15);
     }
     .header {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:0.7rem 1.5rem; background:rgba(0,10,20,0.7);
-      border-bottom:1px solid var(--glass-border); backdrop-filter:blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.7rem 1.5rem;
+      background: rgba(0, 10, 20, 0.85);
+      border-bottom: 1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+      flex-shrink: 0;
     }
-    .dots { display:flex; gap:0.6rem; }
-    .dot { width:12px; height:12px; border-radius:50%; box-shadow:0 0 6px currentColor; }
-    .dot.red { background:#ff5f57; color:#ff5f57; }
-    .dot.yellow { background:#febc2e; color:#febc2e; }
-    .dot.green { background:#28c840; color:#28c840; }
-    .status { display:flex; gap:1.2rem; font-size:0.75rem; color:var(--dim); align-items:center; }
-    .led { width:8px; height:8px; background:var(--success); border-radius:50%; display:inline-block; margin-right:5px; animation:pulse 2s infinite; }
+    .dots { display: flex; gap: 0.6rem; }
+    .dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      box-shadow: 0 0 6px currentColor;
+    }
+    .dot.red { background: #ff5f57; color: #ff5f57; }
+    .dot.yellow { background: #febc2e; color: #febc2e; }
+    .dot.green { background: #28c840; color: #28c840; }
+    .status {
+      display: flex; gap: 1.2rem; font-size: 0.75rem; color: var(--dim);
+      align-items: center;
+    }
+    .led {
+      width: 8px; height: 8px; background: var(--success);
+      border-radius: 50%; display: inline-block; margin-right: 5px;
+      animation: pulse 2s infinite;
+    }
     @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-    .body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-    .output {
-      flex:1; overflow-y:auto; padding:1rem 1.4rem; font-size:0.85rem;
-      line-height:1.6; color:var(--text); background:rgba(0,0,0,0.15);
+    .body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;  /* internal scroll only in output */
     }
-    .output::-webkit-scrollbar { width:5px; }
-    .output::-webkit-scrollbar-thumb { background:var(--scroll-thumb); border-radius:10px; }
-    .line { margin-bottom:0.2rem; animation:fade 0.2s; }
-    @keyframes fade { from{opacity:0;transform:translateY(-4px);} }
-    .cmd { color:var(--neon-cyan); }
-    .cmd::before { content:"> "; }
-    .err { color:var(--error); }
-    .ok { color:var(--success); }
-    .info { color:var(--dim); }
-    .highlight { color:var(--neon-cyan); font-weight:bold; }
+    .output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.4rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .output::-webkit-scrollbar { width: 5px; }
+    .output::-webkit-scrollbar-thumb {
+      background: var(--scroll-thumb);
+      border-radius: 10px;
+    }
+    .line {
+      margin-bottom: 0.2rem;
+      animation: fade 0.2s;
+    }
+    @keyframes fade { from { opacity: 0; transform: translateY(-4px); } }
+    .cmd { color: var(--neon-cyan); }
+    .cmd::before { content: "> "; }
+    .err { color: var(--error); }
+    .ok { color: var(--success); }
+    .info { color: var(--dim); }
+    .highlight { color: var(--neon-cyan); font-weight: bold; }
     .block {
-      background:rgba(0,255,200,0.04); border-left:3px solid var(--neon-cyan);
-      padding:0.5rem 1rem; margin:0.3rem 0; border-radius:0 6px 6px 0;
+      background: rgba(0, 255, 200, 0.04);
+      border-left: 3px solid var(--neon-cyan);
+      padding: 0.5rem 1rem;
+      margin: 0.3rem 0;
+      border-radius: 0 6px 6px 0;
     }
     .quickbar {
-      display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.4rem 1.4rem;
-      border-top:1px solid var(--glass-border); background:rgba(0,0,0,0.1);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.4rem 1.4rem;
+      border-top: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
     }
     .qbtn {
-      background:rgba(0,255,200,0.05); border:1px solid var(--glass-border);
-      color:var(--neon-cyan); padding:0.3rem 0.9rem; border-radius:2rem;
-      font-size:0.7rem; cursor:pointer; transition:0.2s; white-space:nowrap;
+      background: rgba(0, 255, 200, 0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--neon-cyan);
+      padding: 0.3rem 0.9rem;
+      border-radius: 2rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: 0.2s;
+      white-space: nowrap;
     }
-    .qbtn:hover { background:rgba(0,255,200,0.18); box-shadow:0 0 12px rgba(0,255,200,0.4); }
+    .qbtn:hover {
+      background: rgba(0, 255, 200, 0.18);
+      box-shadow: 0 0 12px rgba(0, 255, 200, 0.4);
+    }
     .inputline {
-      display:flex; padding:0.6rem 1.4rem; border-top:1px solid var(--glass-border);
-      background:rgba(5,12,22,0.8); backdrop-filter:blur(10px);
+      display: flex;
+      padding: 0.6rem 1.4rem;
+      border-top: 1px solid var(--glass-border);
+      background: rgba(5, 12, 22, 0.9);
+      backdrop-filter: blur(10px);
+      flex-shrink: 0;
     }
     #cmdInput {
-      flex:1; background:none; border:none; color:var(--text); font-family:inherit;
-      font-size:0.9rem; outline:none; caret-color:var(--neon-cyan);
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      caret-color: var(--neon-cyan);
     }
-    #cmdInput::placeholder { color:rgba(255,255,255,0.25); }
+    #cmdInput::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
     #execBtn {
-      background:linear-gradient(135deg, #00ffcc, #0088ff); border:none;
-      color:#050810; font-weight:bold; padding:0.5rem 1.4rem; border-radius:2rem;
-      margin-left:0.7rem; cursor:pointer; box-shadow:0 0 18px rgba(0,255,200,0.5); transition:0.2s;
+      background: linear-gradient(135deg, #00ffcc, #0088ff);
+      border: none;
+      color: #050810;
+      font-weight: bold;
+      padding: 0.5rem 1.4rem;
+      border-radius: 2rem;
+      margin-left: 0.7rem;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 255, 200, 0.5);
+      transition: 0.2s;
     }
     .settings-panel {
-      display:none; position:absolute; top:60px; right:20px;
-      background:var(--surface); border:1px solid var(--glass-border);
-      border-radius:1rem; padding:1rem; width:260px; z-index:10;
-      backdrop-filter:blur(20px);
+      display: none;
+      position: absolute;
+      top: 55px;
+      right: 15px;
+      background: var(--surface);
+      border: 1px solid var(--glass-border);
+      border-radius: 1rem;
+      padding: 1rem;
+      width: 260px;
+      z-index: 10;
+      backdrop-filter: blur(20px);
     }
-    .settings-panel.active { display:block; }
+    .settings-panel.active { display: block; }
     .settings-btn {
-      background:none; border:1px solid var(--glass-border); color:var(--dim);
-      padding:0.2rem 0.8rem; border-radius:1rem; cursor:pointer; font-size:0.8rem;
+      background: none;
+      border: 1px solid var(--glass-border);
+      color: var(--dim);
+      padding: 0.2rem 0.8rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      font-size: 0.8rem;
     }
     .vault-btn {
-      width:100%; margin-top:0.4rem; background:rgba(0,255,200,0.1);
-      border:1px solid var(--neon-cyan); color:var(--neon-cyan);
-      padding:0.3rem; border-radius:0.5rem; cursor:pointer; font-size:0.8rem;
+      width: 100%;
+      margin-top: 0.4rem;
+      background: rgba(0, 255, 200, 0.1);
+      border: 1px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      padding: 0.3rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.8rem;
     }
     .vault-btn.lock {
-      background:rgba(255,83,112,0.2); border-color:var(--error); color:var(--error);
+      background: rgba(255, 83, 112, 0.2);
+      border-color: var(--error);
+      color: var(--error);
     }
     .vault-warning {
-      color:#ffb86c; font-size:0.7rem; margin-top:0.5rem;
-      padding:0.4rem; background:rgba(255,184,108,0.1); border-radius:0.4rem;
-    }
-    @media (max-width:600px) {
-      .terminal { height:100vh; max-height:none; border-radius:0; }
+      color: #ffb86c;
+      font-size: 0.7rem;
+      margin-top: 0.5rem;
+      padding: 0.4rem;
+      background: rgba(255, 184, 108, 0.1);
+      border-radius: 0.4rem;
     }
   </style>
 </head>
@@ -147,7 +257,7 @@
     <button class="vault-btn" id="setPassBtn">Set Vault Password</button>
     <button class="vault-btn lock" id="lockVaultBtn">Lock Vault</button>
     <div id="vaultSecureWarning" class="vault-warning" style="display:none;">
-      Vault requires HTTPS. You are on an insecure origin.
+      Vault uses basic obfuscation (not encrypted). Host on HTTPS for AES‑256 security.
     </div>
     <div style="margin-top:1rem; font-size:0.7rem; color:var(--dim);">Nexus Terminal by Marvic Studios UG</div>
   </div>
@@ -184,12 +294,16 @@
     const vaultWarning = document.getElementById('vaultSecureWarning');
 
     let history = [], histIdx = -1;
-    let vaultKey = null; // CryptoKey for AES-GCM
+    let vaultKey = null;   // in secure mode: CryptoKey, else: password string
+    let useRealCrypto = false;  // true if Web Crypto is available
 
-    // Check secure context for Web Crypto (required by GitHub Pages)
-    const isSecure = window.isSecureContext && window.crypto && window.crypto.subtle;
-    if (!isSecure) {
+    // ---- CHECK SECURE CONTEXT & CRYPTO ----
+    const hasCrypto = window.crypto && window.crypto.subtle;
+    if (!hasCrypto) {
       vaultWarning.style.display = 'block';
+      useRealCrypto = false;
+    } else {
+      useRealCrypto = true;
     }
 
     // ========== SECURE HELPERS ==========
@@ -202,8 +316,7 @@
     function add(html, cls='') {
       const d = document.createElement('div');
       d.className = `line ${cls}`;
-      // safe: html is already escaped by the caller, or generated by us
-      d.innerHTML = html;
+      d.innerHTML = html;  // caller sanitizes
       output.appendChild(d);
       output.scrollTop = output.scrollHeight;
     }
@@ -214,7 +327,7 @@
     function tick() { clockEl.textContent = new Date().toLocaleTimeString('en-GB',{hour12:false}); }
     setInterval(tick,1000); tick();
 
-    // ========== API LAYER (all real, all secure) ==========
+    // ========== API LAYER ==========
     async function weather(city) {
       const lid=loader(`Loading weather for ${city}...`);
       try {
@@ -303,7 +416,7 @@
       zones.forEach(z=> add(`${z.n}: ${now.toLocaleTimeString('en-US',{timeZone:z.tz,hour12:true})}`, 'ok'));
     }
 
-    // ========== VIRTUAL FILE SYSTEM (localStorage) ==========
+    // ========== VIRTUAL FILE SYSTEM ==========
     function fsList() {
       const files = JSON.parse(localStorage.getItem('nexus_fs')||'{}');
       const names = Object.keys(files);
@@ -330,11 +443,12 @@
       add(`Deleted "${esc(name)}".`,'ok');
     }
 
-    // ========== ENCRYPTED VAULT (AES-256-GCM) ==========
+    // ========== DUAL-MODE VAULT ==========
+    // Secure crypto helper functions
     function bufToHex(buf) { return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join(''); }
     function hexToBuf(hex) { return new Uint8Array(hex.match(/.{1,2}/g).map(b=>parseInt(b,16))); }
 
-    async function deriveKey(password) {
+    async function secureDeriveKey(password) {
       const enc = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
       return crypto.subtle.deriveKey(
@@ -346,44 +460,77 @@
       );
     }
 
+    // Fallback: simple obfuscation (NOT SECURE)
+    function fallbackEncrypt(text, password) {
+      return btoa(password + '::' + text);
+    }
+    function fallbackDecrypt(cipher, password) {
+      const decoded = atob(cipher);
+      const sep = decoded.indexOf('::');
+      if (sep === -1) throw new Error('Invalid');
+      const pwPart = decoded.substring(0, sep);
+      if (pwPart !== password) throw new Error('Wrong password');
+      return decoded.substring(sep + 2);
+    }
+
     async function vaultSetPassword(password) {
-      if (!isSecure) { add('Vault requires a secure context (HTTPS).', 'err'); return; }
       if (!password) { add('Password cannot be empty.', 'err'); return; }
-      try {
-        const key = await deriveKey(password);
-        const enc = new TextEncoder();
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const testData = enc.encode('nexus-vault-test');
-        const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, testData);
-        const testEntry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
-        localStorage.setItem('nexus_vault_test', JSON.stringify(testEntry));
-        localStorage.removeItem('nexus_vault'); // clear old entries on new password
-        vaultKey = key;
-        add('Vault password set and vault unlocked (AES-256).', 'ok');
-      } catch (e) {
-        console.error(e);
-        add('Failed to set vault password.', 'err');
+      if (useRealCrypto) {
+        try {
+          const key = await secureDeriveKey(password);
+          const enc = new TextEncoder();
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const testData = enc.encode('nexus-vault-test');
+          const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, testData);
+          const testEntry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
+          localStorage.setItem('nexus_vault_test', JSON.stringify(testEntry));
+          localStorage.removeItem('nexus_vault');  // clear old entries
+          vaultKey = key;
+          add('Vault password set and vault unlocked (AES‑256).', 'ok');
+        } catch (e) {
+          add(`Vault error: ${esc(e.message || 'Unknown encryption error')}.`, 'err');
+        }
+      } else {
+        // Fallback – just store a test token
+        const testToken = fallbackEncrypt('vault-ok', password);
+        localStorage.setItem('nexus_vault_test_fallback', testToken);
+        localStorage.removeItem('nexus_vault');
+        vaultKey = password;  // store password as key
+        add('Vault password set (basic obfuscation – not encrypted).', 'ok');
       }
     }
 
     async function vaultUnlock(password) {
-      if (!isSecure) { add('Vault requires a secure context (HTTPS).', 'err'); return; }
-      const testStr = localStorage.getItem('nexus_vault_test');
-      if (!testStr) {
-        add('No vault password set. Use "vault setpass <password>".', 'err');
-        return;
-      }
-      try {
-        const key = await deriveKey(password);
-        const testEntry = JSON.parse(testStr);
-        const iv = hexToBuf(testEntry.iv);
-        const data = hexToBuf(testEntry.data);
-        await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
-        vaultKey = key;
-        add('Vault unlocked (AES-256).', 'ok');
-      } catch {
-        add('Invalid password.', 'err');
-        vaultKey = null;
+      if (useRealCrypto) {
+        const testStr = localStorage.getItem('nexus_vault_test');
+        if (!testStr) { add('No vault password set. Use "vault setpass <password>".', 'err'); return; }
+        try {
+          const key = await secureDeriveKey(password);
+          const testEntry = JSON.parse(testStr);
+          const iv = hexToBuf(testEntry.iv);
+          const data = hexToBuf(testEntry.data);
+          await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
+          vaultKey = key;
+          add('Vault unlocked (AES‑256).', 'ok');
+        } catch {
+          add('Invalid password.', 'err');
+          vaultKey = null;
+        }
+      } else {
+        const testToken = localStorage.getItem('nexus_vault_test_fallback');
+        if (!testToken) { add('No vault password set. Use "vault setpass <password>".', 'err'); return; }
+        try {
+          const decoded = fallbackDecrypt(testToken, password);
+          if (decoded === 'vault-ok') {
+            vaultKey = password;
+            add('Vault unlocked (basic obfuscation).', 'ok');
+          } else {
+            throw new Error('Invalid');
+          }
+        } catch {
+          add('Invalid password.', 'err');
+          vaultKey = null;
+        }
       }
     }
 
@@ -393,31 +540,44 @@
     }
 
     async function vaultAdd(text) {
-      if (!isSecure) { add('Vault requires a secure context.', 'err'); return; }
-      if(!vaultKey) { add('Vault is locked. Unlock first with "vault unlock <password>".', 'err'); return; }
-      const enc = new TextEncoder();
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, vaultKey, enc.encode(text));
-      const entry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
-      const vault = JSON.parse(localStorage.getItem('nexus_vault')||'[]');
-      vault.push(entry);
-      localStorage.setItem('nexus_vault', JSON.stringify(vault));
-      add('Added to encrypted vault.', 'ok');
+      if (!vaultKey) { add('Vault is locked. Unlock first.', 'err'); return; }
+      if (useRealCrypto) {
+        const enc = new TextEncoder();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, vaultKey, enc.encode(text));
+        const entry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
+        const vault = JSON.parse(localStorage.getItem('nexus_vault')||'[]');
+        vault.push(entry);
+        localStorage.setItem('nexus_vault', JSON.stringify(vault));
+        add('Added to encrypted vault.', 'ok');
+      } else {
+        const cipher = fallbackEncrypt(text, vaultKey);
+        const vault = JSON.parse(localStorage.getItem('nexus_vault')||'[]');
+        vault.push({ fallback: cipher });
+        localStorage.setItem('nexus_vault', JSON.stringify(vault));
+        add('Added to vault (obfuscated).', 'ok');
+      }
     }
 
     async function vaultList() {
-      if (!isSecure) { add('Vault requires a secure context.', 'err'); return; }
-      if(!vaultKey) { add('Vault is locked.', 'err'); return; }
+      if (!vaultKey) { add('Vault is locked.', 'err'); return; }
       const vault = JSON.parse(localStorage.getItem('nexus_vault')||'[]');
-      if(vault.length===0) { add('Vault empty.', 'info'); return; }
+      if (vault.length === 0) { add('Vault empty.', 'info'); return; }
       add('<strong>Vault entries:</strong>','highlight');
-      for(let i=0;i<vault.length;i++) {
+      for (let i = 0; i < vault.length; i++) {
         try {
-          const iv = hexToBuf(vault[i].iv);
-          const data = hexToBuf(vault[i].data);
-          const decrypted = await crypto.subtle.decrypt({name:'AES-GCM', iv}, vaultKey, data);
-          add(`#${i+1}: ${esc(new TextDecoder().decode(decrypted))}`,'ok');
-        } catch { add(`#${i+1}: (decryption failed)`,'err'); }
+          if (useRealCrypto) {
+            const iv = hexToBuf(vault[i].iv);
+            const data = hexToBuf(vault[i].data);
+            const decrypted = await crypto.subtle.decrypt({name:'AES-GCM', iv}, vaultKey, data);
+            add(`#${i+1}: ${esc(new TextDecoder().decode(decrypted))}`,'ok');
+          } else {
+            const decrypted = fallbackDecrypt(vault[i].fallback, vaultKey);
+            add(`#${i+1}: ${esc(decrypted)}`,'ok');
+          }
+        } catch {
+          add(`#${i+1}: (decryption failed)`,'err');
+        }
       }
     }
 
@@ -501,8 +661,7 @@
           else add('Usage: fs <ls|create|read|delete> [name] [content]','err');
           break;
         case 'vault':
-          if (!isSecure) { add('Vault requires HTTPS.', 'err'); }
-          else if(args[0]==='setpass' && args[1]) await vaultSetPassword(args[1]);
+          if(args[0]==='setpass' && args[1]) await vaultSetPassword(args[1]);
           else if(args[0]==='unlock' && args[1]) await vaultUnlock(args[1]);
           else if(args[0]==='add' && args.slice(1).join(' ')) await vaultAdd(args.slice(1).join(' '));
           else if(args[0]==='list') await vaultList();
@@ -535,8 +694,8 @@
 
     // Start
     add('<strong>Nexus Terminal</strong> by Marvic Studios UG ready.','ok');
-    if (!isSecure) {
-      add('Warning: Secure context required for vault. This origin is insecure.', 'err');
+    if (!useRealCrypto) {
+      add('Notice: Vault is using basic obfuscation (not encrypted). Host on HTTPS for AES‑256.', 'err');
     }
     add('Type <span class="cmd">help</span> to see available commands.','info');
     input.focus();
