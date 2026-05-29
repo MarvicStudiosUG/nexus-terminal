@@ -6,8 +6,6 @@
   <meta name="theme-color" content="#080c14">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Nexus Terminal | Marvic Studios UG</title>
-
-  <!-- Content Security Policy – strict but allows needed APIs -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
     script-src 'self' 'unsafe-inline';
@@ -18,216 +16,101 @@
     base-uri 'self';
     form-action 'none';
   ">
-
   <style>
-    /* Full‑page reset – no external scrolling */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-    * {
-      box-sizing: border-box;
-    }
+    * { margin:0; padding:0; box-sizing:border-box; }
     :root {
-      --bg-deep: #080c14;
-      --surface: rgba(10, 18, 30, 0.95);
-      --glass-border: rgba(0, 255, 200, 0.18);
-      --neon-cyan: #00ffcc;
-      --neon-blue: #0088ff;
-      --text: #e0e8ff;
-      --dim: #6b7f99;
-      --error: #ff5370;
-      --success: #4cff8f;
-      --scroll-thumb: #00ffcc;
-      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      --bg-deep:#080c14; --surface:rgba(10,18,30,0.95); --glass-border:rgba(0,255,200,0.18);
+      --neon-cyan:#00ffcc; --neon-blue:#0088ff; --text:#e0e8ff; --dim:#6b7f99;
+      --error:#ff5370; --success:#4cff8f; --scroll-thumb:#00ffcc;
+      font-family:'JetBrains Mono','Fira Code','Courier New',monospace;
     }
-    body {
-      background: var(--bg-deep);
-      display: flex;
-      align-items: stretch;
-      justify-content: stretch;
-    }
+    html, body { height:100%; overflow:hidden; }
+    body { background:var(--bg-deep); display:flex; align-items:stretch; justify-content:stretch; }
     .terminal {
-      width: 100vw;
-      height: 100vh;
-      background: var(--surface);
-      backdrop-filter: blur(24px);
-      border: none;  /* full screen, no border */
-      display: flex;
-      flex-direction: column;
-      box-shadow: inset 0 0 30px rgba(0, 255, 200, 0.15);
+      width:100vw; height:100vh; background:var(--surface); backdrop-filter:blur(24px);
+      display:flex; flex-direction:column; box-shadow:inset 0 0 30px rgba(0,255,200,0.15);
     }
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.7rem 1.5rem;
-      background: rgba(0, 10, 20, 0.85);
-      border-bottom: 1px solid var(--glass-border);
-      backdrop-filter: blur(10px);
-      flex-shrink: 0;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:0.7rem 1.5rem; background:rgba(0,10,20,0.85);
+      border-bottom:1px solid var(--glass-border); backdrop-filter:blur(10px);
+      flex-shrink:0;
     }
-    .dots { display: flex; gap: 0.6rem; }
-    .dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      box-shadow: 0 0 6px currentColor;
-    }
-    .dot.red { background: #ff5f57; color: #ff5f57; }
-    .dot.yellow { background: #febc2e; color: #febc2e; }
-    .dot.green { background: #28c840; color: #28c840; }
-    .status {
-      display: flex; gap: 1.2rem; font-size: 0.75rem; color: var(--dim);
-      align-items: center;
-    }
-    .led {
-      width: 8px; height: 8px; background: var(--success);
-      border-radius: 50%; display: inline-block; margin-right: 5px;
-      animation: pulse 2s infinite;
-    }
+    .dots { display:flex; gap:0.6rem; }
+    .dot { width:12px; height:12px; border-radius:50%; box-shadow:0 0 6px currentColor; }
+    .dot.red { background:#ff5f57; color:#ff5f57; }
+    .dot.yellow { background:#febc2e; color:#febc2e; }
+    .dot.green { background:#28c840; color:#28c840; }
+    .status { display:flex; gap:1.2rem; font-size:0.75rem; color:var(--dim); align-items:center; }
+    .led { width:8px; height:8px; background:var(--success); border-radius:50%; display:inline-block; margin-right:5px; animation:pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-    .body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;  /* internal scroll only in output */
-    }
+    .body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
     .output {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem 1.4rem;
-      font-size: 0.85rem;
-      line-height: 1.6;
-      color: var(--text);
-      background: rgba(0, 0, 0, 0.2);
+      flex:1; overflow-y:auto; padding:1rem 1.4rem; font-size:0.85rem;
+      line-height:1.6; color:var(--text); background:rgba(0,0,0,0.2);
     }
-    .output::-webkit-scrollbar { width: 5px; }
-    .output::-webkit-scrollbar-thumb {
-      background: var(--scroll-thumb);
-      border-radius: 10px;
-    }
-    .line {
-      margin-bottom: 0.2rem;
-      animation: fade 0.2s;
-    }
-    @keyframes fade { from { opacity: 0; transform: translateY(-4px); } }
-    .cmd { color: var(--neon-cyan); }
-    .cmd::before { content: "> "; }
-    .err { color: var(--error); }
-    .ok { color: var(--success); }
-    .info { color: var(--dim); }
-    .highlight { color: var(--neon-cyan); font-weight: bold; }
+    .output::-webkit-scrollbar { width:5px; }
+    .output::-webkit-scrollbar-thumb { background:var(--scroll-thumb); border-radius:10px; }
+    .line { margin-bottom:0.2rem; animation:fade 0.2s; }
+    @keyframes fade { from{opacity:0;transform:translateY(-4px);} }
+    .cmd { color:var(--neon-cyan); }
+    .cmd::before { content:"> "; }
+    .err { color:var(--error); }
+    .ok { color:var(--success); }
+    .info { color:var(--dim); }
+    .highlight { color:var(--neon-cyan); font-weight:bold; }
     .block {
-      background: rgba(0, 255, 200, 0.04);
-      border-left: 3px solid var(--neon-cyan);
-      padding: 0.5rem 1rem;
-      margin: 0.3rem 0;
-      border-radius: 0 6px 6px 0;
+      background:rgba(0,255,200,0.04); border-left:3px solid var(--neon-cyan);
+      padding:0.5rem 1rem; margin:0.3rem 0; border-radius:0 6px 6px 0;
     }
     .quickbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      padding: 0.4rem 1.4rem;
-      border-top: 1px solid var(--glass-border);
-      background: rgba(0, 0, 0, 0.15);
-      flex-shrink: 0;
+      display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.4rem 1.4rem;
+      border-top:1px solid var(--glass-border); background:rgba(0,0,0,0.15);
+      flex-shrink:0;
     }
     .qbtn {
-      background: rgba(0, 255, 200, 0.05);
-      border: 1px solid var(--glass-border);
-      color: var(--neon-cyan);
-      padding: 0.3rem 0.9rem;
-      border-radius: 2rem;
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: 0.2s;
-      white-space: nowrap;
+      background:rgba(0,255,200,0.05); border:1px solid var(--glass-border);
+      color:var(--neon-cyan); padding:0.3rem 0.9rem; border-radius:2rem;
+      font-size:0.7rem; cursor:pointer; transition:0.2s; white-space:nowrap;
     }
-    .qbtn:hover {
-      background: rgba(0, 255, 200, 0.18);
-      box-shadow: 0 0 12px rgba(0, 255, 200, 0.4);
-    }
+    .qbtn:hover { background:rgba(0,255,200,0.18); box-shadow:0 0 12px rgba(0,255,200,0.4); }
     .inputline {
-      display: flex;
-      padding: 0.6rem 1.4rem;
-      border-top: 1px solid var(--glass-border);
-      background: rgba(5, 12, 22, 0.9);
-      backdrop-filter: blur(10px);
-      flex-shrink: 0;
+      display:flex; padding:0.6rem 1.4rem; border-top:1px solid var(--glass-border);
+      background:rgba(5,12,22,0.9); backdrop-filter:blur(10px);
+      flex-shrink:0;
     }
     #cmdInput {
-      flex: 1;
-      background: none;
-      border: none;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.9rem;
-      outline: none;
-      caret-color: var(--neon-cyan);
+      flex:1; background:none; border:none; color:var(--text); font-family:inherit;
+      font-size:0.9rem; outline:none; caret-color:var(--neon-cyan);
     }
-    #cmdInput::placeholder {
-      color: rgba(255, 255, 255, 0.25);
-    }
+    #cmdInput::placeholder { color:rgba(255,255,255,0.25); }
     #execBtn {
-      background: linear-gradient(135deg, #00ffcc, #0088ff);
-      border: none;
-      color: #050810;
-      font-weight: bold;
-      padding: 0.5rem 1.4rem;
-      border-radius: 2rem;
-      margin-left: 0.7rem;
-      cursor: pointer;
-      box-shadow: 0 0 18px rgba(0, 255, 200, 0.5);
-      transition: 0.2s;
+      background:linear-gradient(135deg, #00ffcc, #0088ff); border:none;
+      color:#050810; font-weight:bold; padding:0.5rem 1.4rem; border-radius:2rem;
+      margin-left:0.7rem; cursor:pointer; box-shadow:0 0 18px rgba(0,255,200,0.5); transition:0.2s;
     }
     .settings-panel {
-      display: none;
-      position: absolute;
-      top: 55px;
-      right: 15px;
-      background: var(--surface);
-      border: 1px solid var(--glass-border);
-      border-radius: 1rem;
-      padding: 1rem;
-      width: 260px;
-      z-index: 10;
-      backdrop-filter: blur(20px);
+      display:none; position:absolute; top:55px; right:15px;
+      background:var(--surface); border:1px solid var(--glass-border);
+      border-radius:1rem; padding:1rem; width:260px; z-index:10;
+      backdrop-filter:blur(20px);
     }
-    .settings-panel.active { display: block; }
+    .settings-panel.active { display:block; }
     .settings-btn {
-      background: none;
-      border: 1px solid var(--glass-border);
-      color: var(--dim);
-      padding: 0.2rem 0.8rem;
-      border-radius: 1rem;
-      cursor: pointer;
-      font-size: 0.8rem;
+      background:none; border:1px solid var(--glass-border); color:var(--dim);
+      padding:0.2rem 0.8rem; border-radius:1rem; cursor:pointer; font-size:0.8rem;
     }
     .vault-btn {
-      width: 100%;
-      margin-top: 0.4rem;
-      background: rgba(0, 255, 200, 0.1);
-      border: 1px solid var(--neon-cyan);
-      color: var(--neon-cyan);
-      padding: 0.3rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-size: 0.8rem;
+      width:100%; margin-top:0.4rem; background:rgba(0,255,200,0.1);
+      border:1px solid var(--neon-cyan); color:var(--neon-cyan);
+      padding:0.3rem; border-radius:0.5rem; cursor:pointer; font-size:0.8rem;
     }
     .vault-btn.lock {
-      background: rgba(255, 83, 112, 0.2);
-      border-color: var(--error);
-      color: var(--error);
+      background:rgba(255,83,112,0.2); border-color:var(--error); color:var(--error);
     }
     .vault-warning {
-      color: #ffb86c;
-      font-size: 0.7rem;
-      margin-top: 0.5rem;
-      padding: 0.4rem;
-      background: rgba(255, 184, 108, 0.1);
-      border-radius: 0.4rem;
+      color:#ffb86c; font-size:0.7rem; margin-top:0.5rem;
+      padding:0.4rem; background:rgba(255,184,108,0.1); border-radius:0.4rem;
     }
   </style>
 </head>
@@ -257,7 +140,7 @@
     <button class="vault-btn" id="setPassBtn">Set Vault Password</button>
     <button class="vault-btn lock" id="lockVaultBtn">Lock Vault</button>
     <div id="vaultSecureWarning" class="vault-warning" style="display:none;">
-      Vault uses basic obfuscation (not encrypted). Host on HTTPS for AES‑256 security.
+      Vault uses basic obfuscation (not encrypted). Host on HTTPS for real security.
     </div>
     <div style="margin-top:1rem; font-size:0.7rem; color:var(--dim);">Nexus Terminal by Marvic Studios UG</div>
   </div>
@@ -294,19 +177,17 @@
     const vaultWarning = document.getElementById('vaultSecureWarning');
 
     let history = [], histIdx = -1;
-    let vaultKey = null;   // in secure mode: CryptoKey, else: password string
-    let useRealCrypto = false;  // true if Web Crypto is available
+    let vaultKey = null;      // CryptoKey (secure) or password string (fallback)
+    let useRealCrypto = false; // true if crypto.subtle is available
 
-    // ---- CHECK SECURE CONTEXT & CRYPTO ----
-    const hasCrypto = window.crypto && window.crypto.subtle;
-    if (!hasCrypto) {
-      vaultWarning.style.display = 'block';
-      useRealCrypto = false;
-    } else {
+    // ----- Check crypto availability (SAFE, no crash) -----
+    if (typeof window.crypto !== 'undefined' && typeof window.crypto.subtle !== 'undefined') {
       useRealCrypto = true;
+    } else {
+      vaultWarning.style.display = 'block';
     }
 
-    // ========== SECURE HELPERS ==========
+    // ========== HELPERS ==========
     function esc(s) {
       return String(s).replace(/[&<>"]/g, m => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
@@ -316,7 +197,7 @@
     function add(html, cls='') {
       const d = document.createElement('div');
       d.className = `line ${cls}`;
-      d.innerHTML = html;  // caller sanitizes
+      d.innerHTML = html;
       output.appendChild(d);
       output.scrollTop = output.scrollHeight;
     }
@@ -327,7 +208,7 @@
     function tick() { clockEl.textContent = new Date().toLocaleTimeString('en-GB',{hour12:false}); }
     setInterval(tick,1000); tick();
 
-    // ========== API LAYER ==========
+    // ========== API LAYER (real, unchanged) ==========
     async function weather(city) {
       const lid=loader(`Loading weather for ${city}...`);
       try {
@@ -443,8 +324,8 @@
       add(`Deleted "${esc(name)}".`,'ok');
     }
 
-    // ========== DUAL-MODE VAULT ==========
-    // Secure crypto helper functions
+    // ========== DUAL-MODE VAULT (always works) ==========
+    // ----- Secure helpers (only called when useRealCrypto is true) -----
     function bufToHex(buf) { return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join(''); }
     function hexToBuf(hex) { return new Uint8Array(hex.match(/.{1,2}/g).map(b=>parseInt(b,16))); }
 
@@ -460,7 +341,7 @@
       );
     }
 
-    // Fallback: simple obfuscation (NOT SECURE)
+    // ----- Fallback (insecure, but always works) -----
     function fallbackEncrypt(text, password) {
       return btoa(password + '::' + text);
     }
@@ -468,8 +349,7 @@
       const decoded = atob(cipher);
       const sep = decoded.indexOf('::');
       if (sep === -1) throw new Error('Invalid');
-      const pwPart = decoded.substring(0, sep);
-      if (pwPart !== password) throw new Error('Wrong password');
+      if (decoded.substring(0, sep) !== password) throw new Error('Wrong password');
       return decoded.substring(sep + 2);
     }
 
@@ -484,18 +364,18 @@
           const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, testData);
           const testEntry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
           localStorage.setItem('nexus_vault_test', JSON.stringify(testEntry));
-          localStorage.removeItem('nexus_vault');  // clear old entries
+          localStorage.removeItem('nexus_vault'); // clear old entries
           vaultKey = key;
-          add('Vault password set and vault unlocked (AES‑256).', 'ok');
+          add('Vault password set and vault unlocked (AES-256).', 'ok');
         } catch (e) {
           add(`Vault error: ${esc(e.message || 'Unknown encryption error')}.`, 'err');
         }
       } else {
-        // Fallback – just store a test token
+        // Fallback – no crypto.subtle needed
         const testToken = fallbackEncrypt('vault-ok', password);
         localStorage.setItem('nexus_vault_test_fallback', testToken);
         localStorage.removeItem('nexus_vault');
-        vaultKey = password;  // store password as key
+        vaultKey = password;   // store password string as key
         add('Vault password set (basic obfuscation – not encrypted).', 'ok');
       }
     }
@@ -511,7 +391,7 @@
           const data = hexToBuf(testEntry.data);
           await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
           vaultKey = key;
-          add('Vault unlocked (AES‑256).', 'ok');
+          add('Vault unlocked (AES-256).', 'ok');
         } catch {
           add('Invalid password.', 'err');
           vaultKey = null;
@@ -586,9 +466,7 @@
       const pw = prompt('Enter a new vault password:');
       if (pw !== null) vaultSetPassword(pw);
     });
-    document.getElementById('lockVaultBtn').addEventListener('click', ()=>{
-      vaultLock();
-    });
+    document.getElementById('lockVaultBtn').addEventListener('click', ()=>{ vaultLock(); });
 
     // ========== THEME ==========
     function applyTheme(name) {
@@ -684,6 +562,25 @@
     input.addEventListener('keypress', e=>{ if(e.key==='Enter'){ execute(input.value); input.value=''; } });
     input.addEventListener('keydown', e=>{
       if(e.key==='ArrowUp'){ e.preventDefault(); if(histIdx>0){ histIdx--; input.value=history[histIdx]; } }
+      else if(e.key==='ArrowDown'){ e.preventDefault(); if(histIdx<history.length-1){ histIdx++; input.value=history[histIdx]; } else { histIdx=history.length; input.value=''; } }
+    });
+    document.querySelectorAll('.qbtn').forEach(b=> b.addEventListener('click', ()=>{
+      const c = b.dataset.cmd; input.value=c; execute(c); input.value=''; input.focus();
+    }));
+    document.getElementById('settingsToggle').addEventListener('click', ()=> settingsPanel.classList.toggle('active'));
+    document.querySelector('.terminal').addEventListener('click', e=>{ if(e.target.tagName!=='INPUT'&&e.target.tagName!=='BUTTON') input.focus(); });
+
+    // Start
+    add('<strong>Nexus Terminal</strong> by Marvic Studios UG ready.','ok');
+    if (!useRealCrypto) {
+      add('Notice: Vault is using basic obfuscation (not encrypted). Host on HTTPS for real AES-256.', 'err');
+    }
+    add('Type <span class="cmd">help</span> to see available commands.','info');
+    input.focus();
+  })();
+</script>
+</body>
+</html>ult(); if(histIdx>0){ histIdx--; input.value=history[histIdx]; } }
       else if(e.key==='ArrowDown'){ e.preventDefault(); if(histIdx<history.length-1){ histIdx++; input.value=history[histIdx]; } else { histIdx=history.length; input.value=''; } }
     });
     document.querySelectorAll('.qbtn').forEach(b=> b.addEventListener('click', ()=>{
