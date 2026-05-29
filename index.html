@@ -68,7 +68,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Terminal Container */
         .terminal {
             display: flex;
             flex-direction: column;
@@ -86,7 +85,6 @@
             padding-right: var(--safe-right);
         }
 
-        /* Subtle background grid texture */
         .terminal::before {
             content: '';
             position: absolute;
@@ -100,7 +98,6 @@
             background-size: 32px 32px;
         }
 
-        /* HEADER */
         .header {
             display: flex;
             justify-content: space-between;
@@ -173,6 +170,7 @@
             align-items: center;
             flex-shrink: 0;
             flex-wrap: nowrap;
+            max-width: 40%;
         }
         .led {
             display: inline-block;
@@ -194,6 +192,33 @@
                 opacity: 0.4;
                 transform: scale(0.7);
             }
+        }
+        .room-badge {
+            background: rgba(0, 240, 208, 0.1);
+            border: 1px solid var(--border-accent);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.62rem;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .room-badge:hover {
+            background: rgba(0, 240, 208, 0.2);
+        }
+        .room-badge.locked::after {
+            content: ' LOCKED';
+            font-size: 0.6rem;
+            margin-left: 4px;
+            color: #ffb86c;
+            font-weight: bold;
         }
         .settings-btn {
             background: rgba(0, 240, 208, 0.06);
@@ -220,7 +245,6 @@
             box-shadow: 0 0 20px var(--accent-glow);
         }
 
-        /* SETTINGS PANEL */
         .settings-overlay {
             display: none;
             position: fixed;
@@ -303,7 +327,9 @@
         }
         .settings-section select,
         .settings-section input[type="range"],
-        .settings-section #aliasInput {
+        .settings-section #aliasInput,
+        .settings-section input[type="text"],
+        .settings-section input[type="password"] {
             width: 100%;
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -320,7 +346,8 @@
             user-select: auto;
         }
         .settings-section select:focus,
-        .settings-section #aliasInput:focus {
+        .settings-section #aliasInput:focus,
+        .settings-section input:focus {
             border-color: var(--accent);
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 240, 208, 0.08);
@@ -356,12 +383,8 @@
         .settings-section input[type="range"]::-webkit-slider-thumb:active {
             transform: scale(1.2);
         }
-        #aliasInput {
-            height: 44px;
-            -webkit-user-select: auto;
-            user-select: auto;
-        }
-        #aliasAddBtn {
+        #aliasAddBtn,
+        button {
             width: 100%;
             background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
             border: none;
@@ -379,7 +402,7 @@
             transition: all var(--transition-smooth);
             box-shadow: 0 4px 20px rgba(0, 240, 208, 0.2);
         }
-        #aliasAddBtn:active {
+        button:active {
             transform: scale(0.95);
             opacity: 0.85;
             box-shadow: 0 2px 10px rgba(0, 240, 208, 0.3);
@@ -404,7 +427,6 @@
             transform: scale(0.9);
         }
 
-        /* BODY */
         .body {
             display: flex;
             flex-direction: column;
@@ -415,7 +437,6 @@
             z-index: 1;
         }
 
-        /* OUTPUT */
         .output {
             flex: 1;
             overflow-y: auto;
@@ -440,10 +461,6 @@
             border-radius: 20px;
             box-shadow: 0 0 10px var(--accent-glow);
         }
-        .output::-webkit-scrollbar-thumb:hover {
-            background: #00ffd8;
-        }
-        /* Fade at bottom when scrollable */
         .output::after {
             content: '';
             position: sticky;
@@ -482,9 +499,31 @@
             text-shadow: 0 0 16px var(--accent-glow);
         }
         .cmd::before {
-            content: "❯ ";
+            content: "> ";
             opacity: 0.5;
             font-size: 0.9em;
+        }
+        .remote-cmd {
+            color: #ffb86c;
+            font-weight: 700;
+        }
+        .remote-cmd::before {
+            content: "[REMOTE] ";
+            opacity: 0.7;
+        }
+        .chat-msg {
+            color: #a5b4fc;
+        }
+        .chat-msg::before {
+            content: "[CHAT] ";
+            opacity: 0.8;
+        }
+        .system-msg {
+            color: var(--text-dim);
+            font-style: italic;
+        }
+        .system-msg::before {
+            content: "[SYS] ";
         }
         .err {
             color: var(--error);
@@ -534,8 +573,17 @@
             transform: translateX(5px);
             text-shadow: 0 0 20px var(--accent-glow);
         }
+        .room-user {
+            display: inline-block;
+            background: rgba(0, 240, 208, 0.08);
+            padding: 2px 8px;
+            border-radius: var(--radius-xs);
+            margin-right: 4px;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
 
-        /* INPUT LINE */
         .inputline {
             display: flex;
             padding: 10px 14px;
@@ -633,7 +681,6 @@
             transform: scale(0.9);
         }
 
-        /* DROP OVERLAY */
         .drop-overlay {
             display: none;
             position: absolute;
@@ -658,7 +705,6 @@
             animation: fadeIn 0.25s ease;
         }
 
-        /* RESPONSIVE BREAKPOINTS */
         @media (max-width: 520px) {
             .header {
                 padding: 8px 10px;
@@ -666,24 +712,20 @@
             }
             .title {
                 font-size: 0.7rem;
-                letter-spacing: 1.2px;
             }
             .status {
                 font-size: 0.62rem;
                 gap: 6px;
             }
-            .status span:not(:first-child) {
-                display: none;
-            }
-            .status .led {
-                display: inline-block;
+            .room-badge {
+                font-size: 0.58rem;
+                padding: 3px 8px;
+                max-width: 90px;
             }
             .settings-btn {
                 padding: 5px 10px;
                 min-height: 32px;
-                min-width: 52px;
                 font-size: 0.62rem;
-                letter-spacing: 0;
             }
             .settings-panel {
                 width: 280px;
@@ -691,9 +733,6 @@
                 right: 4px;
                 top: 50px;
                 padding: 16px;
-                border-radius: var(--radius-md);
-                max-height: 70vh;
-                max-height: 70dvh;
             }
             .output {
                 padding: 10px 12px;
@@ -704,41 +743,19 @@
                 gap: 6px;
                 min-height: 50px;
             }
-            #cmdInput {
-                font-size: 16px;
-                min-height: 36px;
-            }
             #execBtn {
                 padding: 8px 14px;
                 min-height: 38px;
-                min-width: 54px;
-                font-size: 0.7rem;
             }
             .icon-btn {
                 width: 38px;
                 height: 38px;
-                font-size: 1rem;
             }
             .dots .dot {
                 width: 10px;
                 height: 10px;
             }
-            .dots {
-                gap: 6px;
-            }
-            .block {
-                padding: 8px 10px;
-            }
-            .clickable-cmd {
-                font-size: 0.78rem;
-                padding: 5px 0;
-                margin-right: 8px;
-            }
-            .prompt {
-                font-size: 1rem;
-            }
         }
-
         @media (max-width: 380px) {
             .header {
                 padding: 6px 8px;
@@ -746,26 +763,21 @@
             }
             .title {
                 font-size: 0.62rem;
-                letter-spacing: 0.8px;
             }
-            .status {
-                font-size: 0.58rem;
-                gap: 4px;
+            .room-badge {
+                font-size: 0.52rem;
+                max-width: 70px;
             }
             .settings-btn {
                 padding: 4px 8px;
                 min-height: 28px;
-                min-width: 44px;
                 font-size: 0.58rem;
             }
             .settings-panel {
                 width: 240px;
-                max-width: calc(100vw - 12px);
                 right: 2px;
                 top: 44px;
                 padding: 12px;
-                border-radius: var(--radius-sm);
-                font-size: 0.75rem;
             }
             .output {
                 padding: 8px 10px;
@@ -776,38 +788,19 @@
                 gap: 4px;
                 min-height: 44px;
             }
-            #cmdInput {
-                font-size: 16px;
-                min-height: 32px;
-            }
             #execBtn {
                 padding: 6px 10px;
                 min-height: 34px;
-                min-width: 46px;
-                font-size: 0.65rem;
             }
             .icon-btn {
                 width: 34px;
                 height: 34px;
-                font-size: 0.9rem;
             }
             .dots .dot {
                 width: 9px;
                 height: 9px;
             }
-            .dots {
-                gap: 5px;
-            }
-            .prompt {
-                font-size: 0.95rem;
-            }
-            .clickable-cmd {
-                font-size: 0.72rem;
-                padding: 4px 0;
-                margin-right: 6px;
-            }
         }
-
         @media (min-width: 768px) {
             .output {
                 padding: 16px 24px;
@@ -817,23 +810,18 @@
                 padding: 12px 20px;
                 gap: 10px;
             }
-            #cmdInput {
-                font-size: 16px;
-            }
             .header {
                 padding: 12px 20px;
                 min-height: 56px;
             }
             .title {
                 font-size: 0.9rem;
-                letter-spacing: 2.5px;
             }
             .settings-panel {
                 width: 320px;
                 right: 12px;
             }
         }
-
         @media (min-width: 1024px) {
             .terminal {
                 max-width: 900px;
@@ -841,26 +829,18 @@
                 border-left: 1px solid var(--border-subtle);
                 border-right: 1px solid var(--border-subtle);
             }
-            .output {
-                padding: 18px 28px;
-                font-size: 0.9rem;
-            }
             .settings-panel {
                 width: 340px;
                 right: calc((100vw - 900px) / 2 + 12px);
-                right: calc((100vw - 900px) / 2 + 12px + var(--safe-right));
             }
         }
 
-        /* UTILITY */
         .hidden {
             display: none !important;
         }
         .text-glow {
             text-shadow: 0 0 30px var(--accent-glow);
         }
-
-        /* Ensure images in output are responsive */
         .output img {
             max-width: 100%;
             height: auto;
@@ -870,8 +850,6 @@
             border-radius: var(--radius-sm);
             box-shadow: var(--shadow-md);
         }
-
-        /* Links in output */
         .output a {
             color: var(--accent);
             text-decoration: none;
@@ -886,7 +864,7 @@
 </head>
 <body>
     <div class="terminal" id="app">
-        <div class="drop-overlay" id="dropOverlay">📂 DROP FILES HERE</div>
+        <div class="drop-overlay" id="dropOverlay">DROP FILES HERE</div>
         <div class="settings-overlay" id="settingsOverlay"></div>
 
         <!-- HEADER -->
@@ -898,9 +876,10 @@
             </div>
             <div class="title text-glow">NEXUS TERMINAL PRO</div>
             <div class="status">
+                <span id="roomBadgeContainer"></span>
                 <span><span class="led"></span> ON</span>
                 <span id="liveClock">--:--:--</span>
-                <button class="settings-btn" id="settingsToggle">⚙ Settings</button>
+                <button class="settings-btn" id="settingsToggle">SETTINGS</button>
             </div>
         </div>
 
@@ -908,7 +887,7 @@
         <div class="settings-panel" id="settingsPanel">
             <button class="settings-close" id="settingsClose">✕</button>
             <div class="settings-section">
-                <h3>🎨 Theme</h3>
+                <h3>THEME</h3>
                 <select id="themeSelect">
                     <option value="default">Cyber Neon</option>
                     <option value="ocean">Deep Ocean</option>
@@ -918,21 +897,45 @@
                 </select>
             </div>
             <div class="settings-section">
-                <h3>🔤 Font Size</h3>
+                <h3>FONT SIZE</h3>
                 <input type="range" id="fontSizeSlider" min="11" max="18" value="14">
                 <span id="fontSizeValue" style="color:var(--text-secondary);font-size:0.78rem;">14px</span>
             </div>
             <div class="settings-section">
-                <h3>🏷 Command Aliases</h3>
+                <h3>COMMAND ALIASES</h3>
                 <input type="text" id="aliasInput" placeholder="alias=command (e.g. gs=git status)" autocomplete="off" spellcheck="false">
                 <button id="aliasAddBtn">+ Add Alias</button>
             </div>
+            <div class="settings-section" id="roomSection">
+                <h3>⚡ COLLABORATION ROOM</h3>
+                <p style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat &amp; share terminal in real-time.</p>
+
+                <div id="roomStatusDisplay" style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:8px;"></div>
+
+                <input type="text" id="roomNameInput" placeholder="Room name (optional)" autocomplete="off" spellcheck="false">
+                <input type="text" id="roomDescInput" placeholder="Room description (optional)" autocomplete="off" spellcheck="false" style="margin-top:4px;">
+                <input type="password" id="roomCreatePassInput" placeholder="Password (4+ chars, optional)" autocomplete="off" style="margin-top:4px;">
+                <button id="roomCreateBtn">🚀 Create Room</button>
+
+                <div style="margin:8px 0;border-top:1px solid var(--border-subtle);"></div>
+
+                <input type="text" id="roomJoinInput" placeholder="Room ID to join" autocomplete="off" spellcheck="false">
+                <input type="password" id="roomJoinPassInput" placeholder="Password (if required)" autocomplete="off" style="margin-top:4px;">
+                <button id="roomJoinBtn">🔗 Join Room</button>
+
+                <div style="margin:8px 0;border-top:1px solid var(--border-subtle);"></div>
+
+                <button id="roomLeaveBtn" style="background:rgba(255,92,108,0.1);border:1px solid rgba(255,92,108,0.3);color:#ff5c6c;margin-top:6px;">🚪 Leave Room</button>
+                <button id="roomDeleteBtn" style="background:rgba(255,92,108,0.15);border:1px solid rgba(255,92,108,0.4);color:#ff5c6c;margin-top:4px;">🗑️ Delete Room (creator only)</button>
+
+                <div id="roomUsersList" style="margin-top:8px;font-size:0.7rem;color:var(--text-secondary);"></div>
+            </div>
             <div class="settings-section">
-                <h3>📊 Session Stats</h3>
+                <h3>SESSION STATS</h3>
                 <div style="font-size:0.72rem;color:var(--text-secondary);" id="sessionStats"></div>
             </div>
             <div style="margin-top:8px;font-size:0.68rem;color:var(--text-dim);text-align:center;border-top:1px solid var(--border-subtle);padding-top:14px;">
-                Nexus Terminal Pro v4.6<br>Marvic Studios UG
+                Nexus Terminal Pro v5.0<br>Marvic Studios UG
             </div>
         </div>
 
@@ -940,7 +943,7 @@
         <div class="body">
             <div class="output" id="outputContainer"></div>
             <div class="inputline">
-                <div class="prompt">❯</div>
+                <div class="prompt">&gt;</div>
                 <input type="text" id="cmdInput" placeholder="type command..." autofocus autocomplete="off" spellcheck="false" enterkeyhint="go">
                 <div class="input-actions">
                     <button class="icon-btn" id="clearBtn" title="Clear (Ctrl+L)">✕</button>
@@ -949,6 +952,9 @@
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js">
+    </script>
 
     <script>
         (function() {
@@ -1003,6 +1009,18 @@
             const fontSizeSlider = document.getElementById('fontSizeSlider');
             const settingsClose = document.getElementById('settingsClose');
             const settingsToggle = document.getElementById('settingsToggle');
+            const roomBadgeContainer = document.getElementById('roomBadgeContainer');
+            const roomNameInput = document.getElementById('roomNameInput');
+            const roomDescInput = document.getElementById('roomDescInput');
+            const roomCreatePassInput = document.getElementById('roomCreatePassInput');
+            const roomCreateBtn = document.getElementById('roomCreateBtn');
+            const roomJoinInput = document.getElementById('roomJoinInput');
+            const roomJoinPassInput = document.getElementById('roomJoinPassInput');
+            const roomJoinBtn = document.getElementById('roomJoinBtn');
+            const roomLeaveBtn = document.getElementById('roomLeaveBtn');
+            const roomDeleteBtn = document.getElementById('roomDeleteBtn');
+            const roomUsersList = document.getElementById('roomUsersList');
+            const roomStatusDisplay = document.getElementById('roomStatusDisplay');
 
             let history = JSON.parse(localStorage.getItem('nexus_history') || '[]');
             let histIdx = history.length;
@@ -1013,6 +1031,648 @@
             let aliases = JSON.parse(localStorage.getItem('nexus_aliases') || '{}');
             let outputLines = [];
             const MAX_OUTPUT_LINES = 400;
+
+            // Created rooms list (persisted)
+            let createdRooms = JSON.parse(localStorage.getItem('nexus_created_rooms') || '[]');
+
+            // ============================================================
+            //  COLLABORATION (Gun.js) – Robust Room System with Password & Chat
+            // ============================================================
+            const gunPeers = ['https://gun-manhattan.herokuapp.com/gun'];
+            let gun = null;
+            let currentRoomId = null;
+            let currentRoomRef = null;
+            let roomMeta = null;
+            let myUserId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            let myAlias = myUserId;
+            let roomPassword = null;
+            const processedLogIds = new Set();
+            const processedChatIds = new Set();
+            let knownUsers = new Set();
+            let roomUsers = {};
+            let roomMemberCount = 0;
+            let roomMembersRef = null;
+            let roomMetaRef = null;
+            let roomLogRef = null;
+            let roomChatRef = null;
+            let roomPresenceRef = null;
+            let isRoomInitialized = false;
+            let roomListCache = [];
+
+            async function sha256(text) {
+                if (crypto && crypto.subtle) {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(text);
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                } else {
+                    let hash = 0;
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text.charCodeAt(i);
+                        hash = ((hash << 5) - hash) + char;
+                        hash |= 0;
+                    }
+                    return 'fallback_' + Math.abs(hash).toString(16);
+                }
+            }
+
+            function initGun() {
+                try {
+                    gun = Gun({ peers: gunPeers, localStorage: false });
+                    setInterval(() => {
+                        if (!currentRoomId || !gun) return;
+                        if (currentRoomRef) {
+                            currentRoomRef.get('presence').get(myUserId).put({
+                                alias: myAlias,
+                                lastSeen: Date.now()
+                            });
+                        }
+                    }, 5000);
+                    return true;
+                } catch (e) {
+                    add('Gun.js could not initialize. Collaboration disabled.', 'err');
+                    return false;
+                }
+            }
+
+            function copyToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        return Promise.resolve();
+                    } catch (err) {
+                        return Promise.reject(err);
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+            }
+
+            // ============================================================
+            //  IMPROVED ROOM SYSTEM
+            // ============================================================
+
+            async function createRoom(name, description, password) {
+                if (!gun) { add('Gun not initialized.', 'err'); return; }
+                if (currentRoomId) { add('Already in a room. Leave first.', 'err'); return; }
+
+                const roomId = 'nexus_' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 12) +
+                    Date.now().toString(36));
+                let meta = {
+                    name: name || 'Unnamed Room',
+                    description: description || '',
+                    creator: myUserId,
+                    creatorAlias: myAlias,
+                    created: Date.now(),
+                    passwordProtected: false,
+                    memberCount: 0,
+                    lastActivity: Date.now()
+                };
+
+                if (password && password.length >= 4) {
+                    meta.passwordHash = await sha256(password);
+                    meta.passwordProtected = true;
+                    roomPassword = password;
+                } else {
+                    roomPassword = null;
+                }
+
+                // Create room meta
+                const roomRoot = gun.get('nexus_rooms').get(roomId);
+                roomRoot.get('meta').put(meta);
+
+                // Initialize members
+                roomRoot.get('members').put({ [myUserId]: { alias: myAlias, joined: Date.now(), role: 'admin' } });
+
+                // Join the room
+                await joinRoomInternal(roomId, meta);
+
+                // Store in created rooms list
+                if (!createdRooms.includes(roomId)) {
+                    createdRooms.push(roomId);
+                    localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
+                }
+
+                add(`<div class="block"><strong>🚀 Room created!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)}${meta.passwordProtected ? ' 🔒 Password protected' : ''}</div>`, 'ok');
+                updateRoomBadge(meta);
+                updateRoomStatusDisplay();
+            }
+
+            async function joinRoom(id, password) {
+                if (!gun) { add('Gun not initialized.', 'err'); return; }
+                if (currentRoomId) { add('Already in a room. Leave first.', 'err'); return; }
+                if (!id) { add('Please enter a room ID.', 'err'); return; }
+
+                id = id.trim();
+                const metaRef = gun.get('nexus_rooms').get(id).get('meta');
+                const meta = await new Promise((resolve) => {
+                    metaRef.once((data) => {
+                        resolve(data);
+                    });
+                });
+
+                if (!meta || !meta.created) {
+                    add('Room not found or meta missing.', 'err');
+                    return;
+                }
+
+                if (meta.passwordProtected) {
+                    if (!password) {
+                        add('This room requires a password.', 'err');
+                        return;
+                    }
+                    const hash = await sha256(password);
+                    if (hash !== meta.passwordHash) {
+                        add('❌ Incorrect password.', 'err');
+                        return;
+                    }
+                    roomPassword = password;
+                } else {
+                    roomPassword = null;
+                }
+
+                // Add user to members
+                const membersRef = gun.get('nexus_rooms').get(id).get('members');
+                membersRef.get(myUserId).put({
+                    alias: myAlias,
+                    joined: Date.now(),
+                    role: 'member'
+                });
+
+                await joinRoomInternal(id, meta);
+                add(`<div class="block"><strong>🔗 Joined room:</strong> ${esc(meta.name)} (${esc(id)})${meta.passwordProtected ? ' 🔒' : ''}</div>`, 'ok');
+                updateRoomBadge(meta);
+                updateRoomStatusDisplay();
+            }
+
+            async function joinRoomInternal(roomId, meta) {
+                if (currentRoomRef) {
+                    currentRoomRef.off();
+                    currentRoomRef = null;
+                }
+
+                currentRoomId = roomId;
+                roomMeta = meta;
+                currentRoomRef = gun.get('nexus_rooms').get(roomId);
+                knownUsers.clear();
+                processedLogIds.clear();
+                processedChatIds.clear();
+                roomUsers = {};
+                isRoomInitialized = true;
+
+                // Set up references
+                roomMetaRef = currentRoomRef.get('meta');
+                roomLogRef = currentRoomRef.get('log');
+                roomChatRef = currentRoomRef.get('chat');
+                roomPresenceRef = currentRoomRef.get('presence');
+                roomMembersRef = currentRoomRef.get('members');
+
+                // Listen for members
+                roomMembersRef.map().on((data, key) => {
+                    if (!key) return;
+                    if (data && data.alias) {
+                        roomUsers[key] = data;
+                        if (!knownUsers.has(key) && key !== myUserId) {
+                            knownUsers.add(key);
+                            addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
+                        }
+                        updateRoomUsersUI();
+                        updateMemberCount();
+                    }
+                });
+
+                // Listen for log (remote commands)
+                roomLogRef.map().on((data, key) => {
+                    if (!data || processedLogIds.has(data.msgId)) return;
+                    if (data.senderId === myUserId) return;
+                    processedLogIds.add(data.msgId);
+                    const line = document.createElement('div');
+                    line.className = 'line';
+                    line.innerHTML =
+                        `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
+                    output.appendChild(line);
+                    const outLine = document.createElement('div');
+                    outLine.className = 'line';
+                    outLine.innerHTML = data.outputHTML;
+                    output.appendChild(outLine);
+                    outputLines.push(line, outLine);
+                    limitOutputLines();
+                    output.scrollTop = output.scrollHeight;
+                });
+
+                // Listen for chat
+                roomChatRef.map().on((data, key) => {
+                    if (!data || processedChatIds.has(data.msgId)) return;
+                    processedChatIds.add(data.msgId);
+                    const line = document.createElement('div');
+                    line.className = 'line chat-msg';
+                    const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
+                    line.innerHTML =
+                        `💬 <strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
+                    output.appendChild(line);
+                    outputLines.push(line);
+                    limitOutputLines();
+                    output.scrollTop = output.scrollHeight;
+                });
+
+                // Listen for presence
+                roomPresenceRef.map().on((data, key) => {
+                    if (!key) return;
+                    if (key === myUserId) return;
+
+                    if (data === null) {
+                        if (knownUsers.has(key)) {
+                            const alias = roomUsers[key]?.alias || key;
+                            knownUsers.delete(key);
+                            delete roomUsers[key];
+                            addSystemMsg(`🚪 ${esc(alias)} left the room.`);
+                            updateRoomUsersUI();
+                            updateMemberCount();
+                        }
+                        return;
+                    }
+
+                    if (data && data.alias) {
+                        const now = Date.now();
+                        if (now - (data.lastSeen || 0) > 15000) return;
+                        if (!knownUsers.has(key)) {
+                            knownUsers.add(key);
+                            roomUsers[key] = { alias: data.alias, lastSeen: data.lastSeen || now, role: 'member' };
+                            addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
+                            updateRoomUsersUI();
+                            updateMemberCount();
+                        } else {
+                            roomUsers[key].lastSeen = data.lastSeen || now;
+                        }
+                    }
+                });
+
+                // Update presence
+                roomPresenceRef.get(myUserId).put({
+                    alias: myAlias,
+                    lastSeen: Date.now()
+                });
+
+                // Clean up stale presence every 15s
+                setInterval(() => {
+                    if (!currentRoomId) return;
+                    const now = Date.now();
+                    let changed = false;
+                    Object.keys(roomUsers).forEach(id => {
+                        if (id === myUserId) return;
+                        if (now - (roomUsers[id]?.lastSeen || 0) > 15000) {
+                            const alias = roomUsers[id]?.alias || id;
+                            delete roomUsers[id];
+                            if (knownUsers.has(id)) {
+                                knownUsers.delete(id);
+                                addSystemMsg(`⏱️ ${esc(alias)} timed out.`);
+                                changed = true;
+                            }
+                        }
+                    });
+                    if (changed) {
+                        updateRoomUsersUI();
+                        updateMemberCount();
+                    }
+                }, 15000);
+
+                // Update meta lastActivity
+                roomMetaRef.get('lastActivity').put(Date.now());
+
+                // Update member count in meta
+                updateMemberCount();
+            }
+
+            function updateMemberCount() {
+                if (!roomMetaRef) return;
+                const count = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
+                roomMemberCount = count;
+                roomMetaRef.get('memberCount').put(count);
+            }
+
+            function leaveRoom() {
+                if (!currentRoomId || !gun) return;
+                if (currentRoomRef) {
+                    // Remove from members
+                    if (roomMembersRef) {
+                        roomMembersRef.get(myUserId).put(null);
+                    }
+                    // Remove presence
+                    if (roomPresenceRef) {
+                        roomPresenceRef.get(myUserId).put(null);
+                    }
+                    // Off all listeners
+                    currentRoomRef.off();
+                }
+                currentRoomRef = null;
+                currentRoomId = null;
+                roomMeta = null;
+                roomPassword = null;
+                knownUsers.clear();
+                processedLogIds.clear();
+                processedChatIds.clear();
+                roomUsers = {};
+                roomMemberCount = 0;
+                isRoomInitialized = false;
+                roomMetaRef = null;
+                roomLogRef = null;
+                roomChatRef = null;
+                roomPresenceRef = null;
+                roomMembersRef = null;
+                updateRoomBadge(null);
+                updateRoomUsersUI();
+                updateRoomStatusDisplay();
+                add('🚪 Left the room.', 'ok');
+            }
+
+            async function deleteRoom() {
+                if (!currentRoomId || !gun) {
+                    add('Not in a room.', 'err');
+                    return;
+                }
+                if (!roomMeta || roomMeta.creator !== myUserId) {
+                    add('Only the room creator can delete this room.', 'err');
+                    return;
+                }
+
+                // Confirm deletion
+                const line = add('<strong>⚠️ Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
+                const confirmHandler = async function(e) {
+                    const cmd = e.target.value.trim().toLowerCase();
+                    if (cmd === 'yes') {
+                        // Delete room
+                        if (currentRoomRef) {
+                            currentRoomRef.off();
+                            currentRoomRef.put(null);
+                        }
+                        // Remove from created rooms
+                        createdRooms = createdRooms.filter(id => id !== currentRoomId);
+                        localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
+                        add('🗑️ Room deleted.', 'ok');
+                        // Clean up state
+                        currentRoomRef = null;
+                        currentRoomId = null;
+                        roomMeta = null;
+                        roomPassword = null;
+                        knownUsers.clear();
+                        processedLogIds.clear();
+                        processedChatIds.clear();
+                        roomUsers = {};
+                        roomMemberCount = 0;
+                        isRoomInitialized = false;
+                        roomMetaRef = null;
+                        roomLogRef = null;
+                        roomChatRef = null;
+                        roomPresenceRef = null;
+                        roomMembersRef = null;
+                        updateRoomBadge(null);
+                        updateRoomUsersUI();
+                        updateRoomStatusDisplay();
+                        input.removeEventListener('keypress', confirmHandler);
+                    } else {
+                        add('Room deletion cancelled.', 'info');
+                        input.removeEventListener('keypress', confirmHandler);
+                    }
+                };
+                input.addEventListener('keypress', confirmHandler);
+            }
+
+            function sendChatMessage(text) {
+                if (!currentRoomId || !gun) {
+                    add('Not in a room.', 'err');
+                    return;
+                }
+                if (!text.trim()) return;
+                const msgId = crypto.randomUUID ? crypto.randomUUID() : 'chat_' + Date.now() + Math.random();
+                const msg = {
+                    msgId,
+                    senderId: myUserId,
+                    senderAlias: myAlias,
+                    text: text.trim(),
+                    timestamp: Date.now()
+                };
+                roomChatRef.set(msg);
+                addSystemMsg(`💬 You: ${esc(text.trim())}`);
+            }
+
+            function sendMessageToRoom(cmd, outputHTML) {
+                if (!currentRoomId || !gun) return;
+                const msgId = crypto.randomUUID ? crypto.randomUUID() : 'log_' + Date.now() + Math.random();
+                const msg = {
+                    msgId,
+                    senderId: myUserId,
+                    senderAlias: myAlias,
+                    cmd,
+                    outputHTML,
+                    timestamp: Date.now()
+                };
+                roomLogRef.set(msg);
+                processedLogIds.add(msgId);
+            }
+
+            function addSystemMsg(text) {
+                const line = document.createElement('div');
+                line.className = 'line system-msg';
+                line.textContent = text;
+                output.appendChild(line);
+                outputLines.push(line);
+                limitOutputLines();
+                output.scrollTop = output.scrollHeight;
+            }
+
+            function updateRoomBadge(meta) {
+                if (!currentRoomId) {
+                    roomBadgeContainer.innerHTML = '';
+                    return;
+                }
+                let lockedClass = meta?.passwordProtected ? ' locked' : '';
+                const displayName = meta?.name || currentRoomId;
+                roomBadgeContainer.innerHTML =
+                    `<span class="room-badge${lockedClass}" title="Click to copy Room ID">${esc(displayName)}</span>`;
+            }
+
+            function updateRoomStatusDisplay() {
+                if (!currentRoomId) {
+                    roomStatusDisplay.textContent = 'Not in a room.';
+                    return;
+                }
+                const displayName = roomMeta?.name || currentRoomId;
+                const members = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
+                roomStatusDisplay.innerHTML =
+                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | 👥 ${members} member${members > 1 ? 's' : ''}${roomMeta?.passwordProtected ? ' 🔒' : ''}`;
+            }
+
+            function updateRoomUsersUI() {
+                const users = Object.values(roomUsers)
+                    .filter(u => u && u.alias)
+                    .map(u => ({ alias: u.alias, role: u.role || 'member', id: Object.keys(roomUsers).find(k => roomUsers[
+                            k] === u) }));
+
+                if (users.length === 0) {
+                    roomUsersList.innerHTML = 'No other users online.';
+                    return;
+                }
+
+                // Sort: admin first, then by alias
+                users.sort((a, b) => {
+                    if (a.role === 'admin' && b.role !== 'admin') return -1;
+                    if (b.role === 'admin' && a.role !== 'admin') return 1;
+                    return a.alias.localeCompare(b.alias);
+                });
+
+                roomUsersList.innerHTML = '<strong>👥 Online:</strong><br>' +
+                    users.map(u =>
+                        `<span class="room-user">${esc(u.alias)}${u.role === 'admin' ? ' 👑' : ''}</span>`
+                    ).join('');
+            }
+
+            // ============================================================
+            //  ROOM LISTING (Discovery)
+            // ============================================================
+
+            async function listAllRooms() {
+                if (!gun) { add('Gun not initialized.', 'err'); return; }
+
+                const lid = loader('Fetching rooms...');
+                try {
+                    const roomsRef = gun.get('nexus_rooms');
+                    const rooms = await new Promise((resolve) => {
+                        const result = {};
+                        roomsRef.map().once((data, key) => {
+                            if (data && data.meta) {
+                                result[key] = data.meta;
+                            }
+                        });
+                        // Give time for data to load
+                        setTimeout(() => resolve(result), 500);
+                    });
+
+                    unloader(lid);
+
+                    const entries = Object.entries(rooms);
+                    if (entries.length === 0) {
+                        add('No rooms found. Create one with <span class="clickable-cmd" data-cmd="room create">room create</span>.', 'info');
+                        return;
+                    }
+
+                    add('<strong>📋 Available Rooms:</strong>', 'highlight');
+                    entries.forEach(([id, meta]) => {
+                        const name = meta.name || id;
+                        const members = meta.memberCount || 0;
+                        const locked = meta.passwordProtected ? '🔒' : '🔓';
+                        const creator = meta.creatorAlias || 'unknown';
+                        add(`<div class="block"><strong>${esc(name)}</strong> ${locked}<br>ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</div>`, 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Error listing rooms: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function searchRooms(query) {
+                if (!gun) { add('Gun not initialized.', 'err'); return; }
+                if (!query) { add('Usage: room search <query>', 'err'); return; }
+
+                const lid = loader('Searching rooms...');
+                try {
+                    const roomsRef = gun.get('nexus_rooms');
+                    const rooms = await new Promise((resolve) => {
+                        const result = {};
+                        roomsRef.map().once((data, key) => {
+                            if (data && data.meta) {
+                                result[key] = data.meta;
+                            }
+                        });
+                        setTimeout(() => resolve(result), 500);
+                    });
+
+                    unloader(lid);
+
+                    const entries = Object.entries(rooms).filter(([id, meta]) => {
+                        const name = (meta.name || '').toLowerCase();
+                        const desc = (meta.description || '').toLowerCase();
+                        const q = query.toLowerCase();
+                        return name.includes(q) || desc.includes(q) || id.toLowerCase().includes(q);
+                    });
+
+                    if (entries.length === 0) {
+                        add(`No rooms found matching "${esc(query)}".`, 'info');
+                        return;
+                    }
+
+                    add(`<strong>🔍 Search results for "${esc(query)}":</strong>`, 'highlight');
+                    entries.forEach(([id, meta]) => {
+                        const name = meta.name || id;
+                        const members = meta.memberCount || 0;
+                        const locked = meta.passwordProtected ? '🔒' : '🔓';
+                        add(`<div class="block"><strong>${esc(name)}</strong> ${locked}<br>ID: ${esc(id)} | 👥 ${members}</div>`, 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Search error: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function getRoomInfo(roomId) {
+                if (!gun) { add('Gun not initialized.', 'err'); return; }
+                if (!roomId) { add('Usage: room info <id>', 'err'); return; }
+
+                roomId = roomId.trim();
+                const metaRef = gun.get('nexus_rooms').get(roomId).get('meta');
+                const meta = await new Promise((resolve) => {
+                    metaRef.once((data) => {
+                        resolve(data);
+                    });
+                });
+
+                if (!meta || !meta.created) {
+                    add('Room not found.', 'err');
+                    return;
+                }
+
+                const name = meta.name || roomId;
+                const created = new Date(meta.created).toLocaleString();
+                const members = meta.memberCount || 0;
+                const locked = meta.passwordProtected ? '🔒 Yes' : '🔓 No';
+                const creator = meta.creatorAlias || meta.creator || 'unknown';
+                const desc = meta.description || 'No description';
+
+                add(`<div class="block"><strong>🏠 Room: ${esc(name)}</strong><br>ID: ${esc(roomId)}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${members}<br>Password Protected: ${locked}</div>`, 'ok');
+            }
+
+            function getRoomInvite() {
+                if (!currentRoomId) {
+                    add('Not in a room.', 'err');
+                    return;
+                }
+                const inviteText =
+                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.passwordProtected ? '🔒 Password protected' : '🔓 Open'}`;
+
+                if (navigator.share) {
+                    navigator.share({ text: inviteText }).then(() => {
+                        add('Room invite shared.', 'ok');
+                    }).catch(() => {
+                        add('Sharing cancelled.', 'info');
+                    });
+                } else {
+                    copyToClipboard(inviteText).then(() => {
+                        add('📋 Invite text copied to clipboard!', 'ok');
+                    }).catch(() => {
+                        add('Failed to copy. Please copy manually.', 'err');
+                    });
+                }
+            }
 
             // ============================================================
             //  UTILITY
@@ -1030,12 +1690,16 @@
                 line.innerHTML = html;
                 output.appendChild(line);
                 outputLines.push(line);
+                limitOutputLines();
+                output.scrollTop = output.scrollHeight;
+                return line;
+            }
+
+            function limitOutputLines() {
                 if (outputLines.length > MAX_OUTPUT_LINES) {
                     const removed = outputLines.shift();
                     if (removed && removed.parentNode) removed.parentNode.removeChild(removed);
                 }
-                output.scrollTop = output.scrollHeight;
-                return line;
             }
 
             function cmdEcho(t) {
@@ -1122,11 +1786,8 @@
                     } else if ('+-*/()%'.includes(ch)) {
                         tokens.push({ type: 'op', value: ch });
                         i++;
-                    } else {
-                        throw new Error('Unexpected character: ' + ch);
-                    }
+                    } else { throw new Error('Unexpected character: ' + ch); }
                 }
-
                 function parseExpr(pos) {
                     let result = parseTerm(pos);
                     let p = result.pos;
@@ -1140,35 +1801,28 @@
                     }
                     return { value: result.value, pos: p };
                 }
-
                 function parseTerm(pos) {
                     let result = parseFactor(pos);
                     let p = result.pos;
-                    while (p < tokens.length && (tokens[p].value === '*' || tokens[p].value === '/' || tokens[p]
-                            .value === '%')) {
+                    while (p < tokens.length && (tokens[p].value === '*' || tokens[p].value === '/' || tokens[p].value === '%')) {
                         const op = tokens[p].value;
                         p++;
                         const right = parseFactor(p);
                         p = right.pos;
                         if (op === '*') result.value *= right.value;
-                        else if (op === '/') {
-                            if (right.value === 0) throw new Error('Division by zero');
-                            result.value /= right.value;
-                        } else if (op === '%') {
-                            if (right.value === 0) throw new Error('Modulo by zero');
-                            result.value %= right.value;
-                        }
+                        else if (op === '/') { if (right.value === 0) throw new Error('Division by zero'); result.value /= right
+                                .value; }
+                        else if (op === '%') { if (right.value === 0) throw new Error('Modulo by zero'); result.value %= right
+                                .value; }
                     }
                     return { value: result.value, pos: p };
                 }
-
                 function parseFactor(pos) {
-                    if (pos >= tokens.length) throw new Error('Unexpected end of expression');
+                    if (pos >= tokens.length) throw new Error('Unexpected end');
                     if (tokens[pos].type === 'num') return { value: tokens[pos].value, pos: pos + 1 };
                     if (tokens[pos].value === '(') {
                         const inner = parseExpr(pos + 1);
-                        if (inner.pos >= tokens.length || tokens[inner.pos].value !== ')') throw new Error(
-                            'Missing closing parenthesis');
+                        if (inner.pos >= tokens.length || tokens[inner.pos].value !== ')') throw new Error('Missing )');
                         return { value: inner.value, pos: inner.pos + 1 };
                     }
                     if (tokens[pos].value === '-') {
@@ -1178,7 +1832,7 @@
                     throw new Error('Unexpected token: ' + tokens[pos].value);
                 }
                 const result = parseExpr(0);
-                if (result.pos !== tokens.length) throw new Error('Unexpected tokens after expression');
+                if (result.pos !== tokens.length) throw new Error('Unexpected tokens');
                 if (!isFinite(result.value) || isNaN(result.value)) throw new Error('Invalid result');
                 return result.value;
             }
@@ -1192,218 +1846,152 @@
 
             function simpleEncrypt(text, password) {
                 let cipher = '';
-                for (let i = 0; i < text.length; i++) {
-                    cipher += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length));
-                }
+                for (let i = 0; i < text.length; i++) cipher += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(
+                    i % password.length));
                 return btoa(cipher);
             }
 
             function simpleDecrypt(cipher, password) {
                 const decoded = atob(cipher);
                 let text = '';
-                for (let i = 0; i < decoded.length; i++) {
-                    text += String.fromCharCode(decoded.charCodeAt(i) ^ password.charCodeAt(i % password.length));
-                }
+                for (let i = 0; i < decoded.length; i++) text += String.fromCharCode(decoded.charCodeAt(i) ^ password
+                    .charCodeAt(i % password.length));
                 return text;
             }
 
-            function vaultSetPassword(password) {
-                if (!password || password.length < 4) { add('Password too short (min 4).', 'err'); return; }
-                vaultPassword = password;
+            function vaultSetPassword(password) { if (!password || password.length < 4) { add('Password too short (min 4).',
+                    'err'); return; } vaultPassword = password;
                 localStorage.setItem('nexus_vault_pass', password);
-                add('Vault password set.', 'ok');
-            }
+                add('Vault password set.', 'ok'); }
 
-            function vaultUnlock(password) {
-                const stored = localStorage.getItem('nexus_vault_pass');
-                if (!stored) { add('No vault password set.', 'err'); return false; }
-                if (password !== stored) { add('Wrong password.', 'err'); return false; }
-                vaultPassword = password;
-                add('Vault unlocked.', 'ok');
-                return true;
-            }
+            function vaultUnlock(password) { const stored = localStorage.getItem('nexus_vault_pass'); if (!stored) { add(
+                    'No vault password set.', 'err'); return false; } if (password !== stored) { add('Wrong password.',
+                    'err'); return false; } vaultPassword = password;
+                add('Vault unlocked.', 'ok'); return true; }
 
-            function vaultAdd(text) {
-                if (!vaultPassword) { add('Vault locked.', 'err'); return; }
-                const entry = simpleEncrypt(text, vaultPassword);
-                const data = getVaultData();
+            function vaultAdd(text) { if (!vaultPassword) { add('Vault locked.', 'err'); return; } const entry = simpleEncrypt(
+                    text, vaultPassword); const data = getVaultData();
                 data.push({ cipher: entry, time: Date.now() });
                 setVaultData(data);
-                add('Added to vault.', 'ok');
-            }
+                add('Added to vault.', 'ok'); }
 
-            function vaultList() {
-                if (!vaultPassword) { add('Vault locked.', 'err'); return; }
-                const data = getVaultData();
-                if (!data.length) { add('Vault empty.', 'info'); return; }
+            function vaultList() { if (!vaultPassword) { add('Vault locked.', 'err'); return; } const data = getVaultData(); if (
+                    !data.length) { add('Vault empty.', 'info'); return; }
                 add('<strong>Vault entries:</strong>', 'highlight');
-                data.forEach(function(entry, i) {
-                    try {
-                        const decrypted = simpleDecrypt(entry.cipher, vaultPassword);
-                        const date = new Date(entry.time).toLocaleString();
-                        add('#' + (i + 1) + ' [' + date + '] ' + esc(decrypted), 'ok');
-                    } catch { add('#' + (i + 1) + ': Decryption failed', 'err'); }
-                });
-            }
+                data.forEach(function(entry, i) { try { const decrypted = simpleDecrypt(entry.cipher, vaultPassword);
+                        add('#' + (i + 1) + ' [' + new Date(entry.time).toLocaleString() + '] ' + esc(decrypted),
+                        'ok'); } catch { add('#' + (i + 1) + ': Decryption failed', 'err'); } }); }
 
-            function vaultDelete(index) {
-                if (!vaultPassword) { add('Vault locked.', 'err'); return; }
-                const data = getVaultData();
-                if (index < 1 || index > data.length) { add('Invalid index.', 'err'); return; }
+            function vaultDelete(index) { if (!vaultPassword) { add('Vault locked.', 'err'); return; } const data =
+                getVaultData(); if (index < 1 || index > data.length) { add('Invalid index.', 'err'); return; }
                 data.splice(index - 1, 1);
                 setVaultData(data);
-                add('Entry deleted.', 'ok');
-            }
+                add('Entry deleted.', 'ok'); }
 
             function vaultLock() { vaultPassword = null;
                 add('Vault locked.', 'ok'); }
-            (function() {
-                const saved = localStorage.getItem('nexus_vault_pass');
-                if (saved) vaultPassword = saved;
-            })();
+            (function() { const saved = localStorage.getItem('nexus_vault_pass'); if (saved) vaultPassword = saved; })();
 
             // ============================================================
             //  FS
             // ============================================================
-            function fsList() {
-                const files = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
-                const names = Object.keys(files);
-                if (!names.length) { add('FS empty.', 'info'); } else { names.forEach(function(n) { add(esc(n) +
-                            ' (' + files[n].length + ' bytes)', 'ok'); }); }
-            }
+            function fsList() { const files = JSON.parse(localStorage.getItem('nexus_fs') || '{}'); const names = Object.keys(
+                    files); if (!names.length) { add('FS empty.', 'info'); } else { names.forEach(function(n) { add(esc(
+                        n) + ' (' + files[n].length + ' bytes)', 'ok'); }); } }
 
-            function fsSanitize(name) {
-                if (!name || typeof name !== 'string') return null;
-                if (name.includes('..') || name.includes('/') || name.includes('\\')) return null;
-                return name.replace(/[^a-zA-Z0-9_\-\.]/g, '');
-            }
+            function fsSanitize(name) { if (!name || typeof name !== 'string') return null; if (name.includes('..') || name
+                    .includes('/') || name.includes('\\')) return null; return name.replace(/[^a-zA-Z0-9_\-\.]/g, ''); }
 
-            function fsCreate(name, content) {
-                const safe = fsSanitize(name);
-                if (!safe) { add('Invalid filename.', 'err'); return; }
-                const f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
-                if (f[safe]) { add('File exists.', 'err'); return; }
-                f[safe] = String(content || '');
+            function fsCreate(name, content) { const safe = fsSanitize(name); if (!safe) { add('Invalid filename.', 'err'); return; } const f = JSON.parse(
+                    localStorage.getItem('nexus_fs') || '{}'); if (f[safe]) { add('File exists.', 'err'); return; } f[
+                    safe] = String(content || '');
                 localStorage.setItem('nexus_fs', JSON.stringify(f));
-                add('Created "' + esc(safe) + '".', 'ok');
-            }
+                add('Created "' + esc(safe) + '".', 'ok'); }
 
-            function fsRead(name) {
-                const safe = fsSanitize(name);
-                if (!safe) { add('Invalid filename.', 'err'); return; }
-                const f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
-                if (!f[safe]) { add('File not found.', 'err'); return; }
-                add('<div class="block"><strong>' + esc(safe) + '</strong><br>' + esc(f[safe]) + '</div>', 'ok');
-            }
+            function fsRead(name) { const safe = fsSanitize(name); if (!safe) { add('Invalid filename.', 'err'); return; } const f =
+                    JSON.parse(localStorage.getItem('nexus_fs') || '{}'); if (!f[safe]) { add('File not found.', 'err'); return; }
+                add('<div class="block"><strong>' + esc(safe) + '</strong><br>' + esc(f[safe]) + '</div>', 'ok'); }
 
-            function fsDelete(name) {
-                const safe = fsSanitize(name);
-                if (!safe) { add('Invalid filename.', 'err'); return; }
-                const f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
-                if (!f[safe]) { add('File not found.', 'err'); return; }
-                delete f[safe];
+            function fsDelete(name) { const safe = fsSanitize(name); if (!safe) { add('Invalid filename.', 'err'); return; } const f =
+                    JSON.parse(localStorage.getItem('nexus_fs') || '{}'); if (!f[safe]) { add('File not found.', 'err'); return; } delete f[
+                    safe];
                 localStorage.setItem('nexus_fs', JSON.stringify(f));
-                add('Deleted "' + esc(safe) + '".', 'ok');
-            }
+                add('Deleted "' + esc(safe) + '".', 'ok'); }
 
-            function fsSearch(query) {
-                if (!query) { add('Usage: fs search <query>', 'err'); return; }
-                const f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
-                const results = [];
-                Object.keys(f).forEach(function(name) {
-                    if (name.includes(query) || f[name].includes(query)) results.push(name);
-                });
-                if (!results.length) { add('No matches.', 'info'); } else { add('<strong>Search results:</strong>',
-                        'highlight');
-                    results.forEach(function(n) { add(esc(n), 'ok'); }); }
-            }
+            function fsSearch(query) { if (!query) { add('Usage: fs search <query>', 'err'); return; } const f = JSON.parse(
+                    localStorage.getItem('nexus_fs') || '{}'); const results = []; Object.keys(f).forEach(function(name) { if (
+                        name.includes(query) || f[name].includes(query)) results.push(name); }); if (!results.length) { add(
+                        'No matches.', 'info'); } else { add('<strong>Search results:</strong>', 'highlight');
+                    results.forEach(function(n) { add(esc(n), 'ok'); }); } }
 
             // ============================================================
             //  ALIAS
             // ============================================================
-            function addAlias(alias, command) {
-                if (!alias || !command) { add('Usage: alias <name> <command>', 'err'); return; }
+            function addAlias(alias, command) { if (!alias || !command) { add('Usage: alias <name> <command>', 'err'); return; }
                 alias = alias.trim();
-                command = command.trim();
-                if (alias.includes(' ') || alias.includes('=')) { add('Alias cannot contain spaces or equals.',
-                    'err'); return; }
+                command = command.trim(); if (alias.includes(' ') || alias.includes('=')) { add(
+                    'Alias cannot contain spaces or equals.', 'err'); return; }
                 aliases[alias] = command;
                 localStorage.setItem('nexus_aliases', JSON.stringify(aliases));
-                add('Alias "' + esc(alias) + '" → "' + esc(command) + '"', 'ok');
-            }
+                add('Alias "' + esc(alias) + '" -> "' + esc(command) + '"', 'ok'); }
 
-            function listAliases() {
-                const keys = Object.keys(aliases);
-                if (!keys.length) { add('No aliases defined.', 'info'); return; }
+            function listAliases() { const keys = Object.keys(aliases); if (!keys.length) { add('No aliases defined.',
+                    'info'); return; }
                 add('<strong>Aliases:</strong>', 'highlight');
-                keys.forEach(function(k) { add(esc(k) + ' = ' + esc(aliases[k]), 'ok'); });
-            }
+                keys.forEach(function(k) { add(esc(k) + ' = ' + esc(aliases[k]), 'ok'); }); }
 
-            function removeAlias(alias) {
-                alias = alias.trim();
-                if (!aliases[alias]) { add('Alias not found.', 'err'); return; }
-                delete aliases[alias];
+            function removeAlias(alias) { alias = alias.trim(); if (!aliases[alias]) { add('Alias not found.', 'err'); return; } delete aliases[
+                    alias];
                 localStorage.setItem('nexus_aliases', JSON.stringify(aliases));
-                add('Alias "' + esc(alias) + '" removed.', 'ok');
-            }
+                add('Alias "' + esc(alias) + '" removed.', 'ok'); }
 
-            function resolveAlias(cmd) {
-                const parts = cmd.trim().split(/\s+/);
-                const first = parts[0];
-                if (aliases[first]) {
-                    const rest = parts.slice(1).join(' ');
-                    return aliases[first] + (rest ? ' ' + rest : '');
-                }
-                return cmd;
-            }
+            function resolveAlias(cmd) { const parts = cmd.trim().split(/\s+/); const first = parts[0]; if (aliases[first]) { const rest =
+                    parts.slice(1).join(' '); return aliases[first] + (rest ? ' ' + rest : ''); } return cmd; }
 
             // ============================================================
             //  API CACHE
             // ============================================================
             const apiCache = new Map();
 
-            function cacheGet(key) {
-                const entry = apiCache.get(key);
-                if (!entry) return null;
-                if (Date.now() > entry.expiry) { apiCache.delete(key); return null; }
-                return entry.data;
-            }
+            function cacheGet(key) { const entry = apiCache.get(key); if (!entry) return null; if (Date.now() > entry.expiry) {
+                    apiCache.delete(key); return null; } return entry.data; }
 
             function cacheSet(key, data, ttl) { apiCache.set(key, { data: data, expiry: Date.now() + (ttl || 300000) }); }
 
             function cacheClear() { apiCache.clear(); }
 
             // ============================================================
-            //  API FUNCTIONS
+            //  API FUNCTIONS (emoji-free)
             // ============================================================
             async function weather(city) {
                 const key = 'weather_' + city.toLowerCase();
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block"><strong>' + esc(cached.name) + ', ' + esc(cached.admin1 || '') + ' ' +
-                        esc(cached.country || '') + '</strong><br>🌡 Temperature: ' + cached.temp +
-                        '°C | 💨 Wind: ' + cached.wind + ' km/h</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(cached.name)}, ${esc(cached.admin1 || '')} ${esc(cached.country || '')}</strong><br>Temperature: ${cached.temp}°C | Wind: ${cached.wind} km/h</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Weather for ' + city + '...');
                 try {
-                    const geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' +
-                        encodeURIComponent(city) + '&count=1');
+                    const geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(
+                        city) + '&count=1');
                     if (!geoRes.ok) throw new Error('City not found');
                     const geo = await geoRes.json();
                     if (!geo.results || !geo.results.length) throw new Error('City not found');
                     const loc = geo.results[0];
-                    const wRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + loc.latitude +
-                        '&longitude=' + loc.longitude + '&current_weather=true');
+                    const wRes = await fetch(
+                        'https://api.open-meteo.com/v1/forecast?latitude=' + loc.latitude + '&longitude=' + loc
+                        .longitude + '&current_weather=true');
                     if (!wRes.ok) throw new Error('Weather error');
                     const w = await wRes.json();
-                    const data = { name: loc.name, admin1: loc.admin1 || '', country: loc.country || '', temp: w
-                            .current_weather.temperature, wind: w.current_weather.windspeed };
+                    const data = { name: loc.name, admin1: loc.admin1 || '', country: loc.country || '',
+                        temp: w.current_weather.temperature, wind: w.current_weather.windspeed };
                     cacheSet(key, data, 600000);
                     unloader(lid);
-                    add('<div class="block"><strong>' + esc(data.name) + ', ' + esc(data.admin1 || '') + ' ' + esc(
-                        data.country || '') + '</strong><br>🌡 Temperature: ' + data.temp + '°C | 💨 Wind: ' +
-                        data.wind + ' km/h</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(data.name)}, ${esc(data.admin1 || '')} ${esc(data.country || '')}</strong><br>Temperature: ${data.temp}°C | Wind: ${data.wind} km/h</div>`,
+                        'ok');
                 } catch (e) { unloader(lid);
                     add('Error: ' + esc(e.message), 'err'); }
             }
@@ -1420,8 +2008,7 @@
                     }
                     unloader(lid);
                     results.forEach(function(j, idx) {
-                        add('<div class="block"><strong>#' + (idx + 1) + '</strong><br>😄 ' + esc(j) + '</div>',
-                            'ok');
+                        add(`<div class="block"><strong>#${idx + 1}</strong><br>${esc(j)}</div>`, 'ok');
                     });
                 } catch { unloader(lid);
                     add('Joke service unavailable.', 'err'); }
@@ -1436,14 +2023,15 @@
                     Object.entries(cached).forEach(function(entry) {
                         const coin = entry[0],
                             val = entry[1];
-                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !==
-                            undefined ? val.usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
+                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !== undefined ? val
+                            .usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
                     });
                     return;
                 }
                 const lid = loader('Crypto prices...');
                 try {
-                    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + coins +
+                    const r = await fetch(
+                        'https://api.coingecko.com/api/v3/simple/price?ids=' + coins +
                         '&vs_currencies=usd&include_24hr_change=true');
                     if (!r.ok) throw new Error('API error');
                     const d = await r.json();
@@ -1453,8 +2041,8 @@
                     Object.entries(d).forEach(function(entry) {
                         const coin = entry[0],
                             val = entry[1];
-                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !==
-                            undefined ? val.usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
+                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !== undefined ? val
+                            .usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
                     });
                 } catch { unloader(lid);
                     add('Crypto unavailable.', 'err'); }
@@ -1466,27 +2054,24 @@
                 if (cached) {
                     add('<strong>Tech Headlines (cached):</strong>', 'highlight');
                     cached.forEach(function(it, i) {
-                        add('<div class="block">' + (i + 1) + '. <a href="' + esc(it.url || '#') +
-                            '" target="_blank" rel="noopener">' + esc(it.title) + '</a> (' + it.score +
-                            ' pts)</div>', 'ok');
+                        add(
+                            `<div class="block">${i + 1}. <a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(it.title)}</a> (${it.score} pts)</div>`,
+                            'ok');
                     });
                     return;
                 }
                 const lid = loader('News...');
                 try {
-                    const ids = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(function(r) {
-                        return r.json(); });
-                    const items = await Promise.all(ids.slice(0, 5).map(function(id) {
-                        return fetch('https://hacker-news.firebaseio.com/v0/item/' + id + '.json').then(
-                            function(r) { return r.json(); });
-                    }));
+                    const ids = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(r => r.json());
+                    const items = await Promise.all(ids.slice(0, 5).map(id => fetch(
+                        'https://hacker-news.firebaseio.com/v0/item/' + id + '.json').then(r => r.json())));
                     cacheSet(key, items, 600000);
                     unloader(lid);
                     add('<strong>Tech Headlines:</strong>', 'highlight');
                     items.forEach(function(it, i) {
-                        add('<div class="block">' + (i + 1) + '. <a href="' + esc(it.url || '#') +
-                            '" target="_blank" rel="noopener">' + esc(it.title) + '</a> (' + it.score +
-                            ' pts)</div>', 'ok');
+                        add(
+                            `<div class="block">${i + 1}. <a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(it.title)}</a> (${it.score} pts)</div>`,
+                            'ok');
                     });
                 } catch { unloader(lid);
                     add('News unavailable.', 'err'); }
@@ -1496,18 +2081,19 @@
                 const key = 'ipinfo';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block">IP: ' + esc(cached.ip) + ' | Location: ' + esc(cached.city) + ', ' + esc(
-                        cached.region) + ' ' + esc(cached.country_name) + ' | ISP: ' + esc(cached.org) + '</div>',
+                    add(
+                        `<div class="block">IP: ${esc(cached.ip)} | Location: ${esc(cached.city)}, ${esc(cached.region)} ${esc(cached.country_name)} | ISP: ${esc(cached.org)}</div>`,
                         'ok');
                     return;
                 }
                 const lid = loader('IP lookup...');
                 try {
-                    const d = await fetch('https://ipapi.co/json/').then(function(r) { return r.json(); });
+                    const d = await fetch('https://ipapi.co/json/').then(r => r.json());
                     cacheSet(key, d, 3600000);
                     unloader(lid);
-                    add('<div class="block">IP: ' + esc(d.ip) + ' | Location: ' + esc(d.city) + ', ' + esc(d.region) +
-                        ' ' + esc(d.country_name) + ' | ISP: ' + esc(d.org) + '</div>', 'ok');
+                    add(
+                        `<div class="block">IP: ${esc(d.ip)} | Location: ${esc(d.city)}, ${esc(d.region)} ${esc(d.country_name)} | ISP: ${esc(d.org)}</div>`,
+                        'ok');
                 } catch { unloader(lid);
                     add('IP lookup failed.', 'err'); }
             }
@@ -1519,7 +2105,7 @@
                 const lid = loader('DNS for ' + domain + '...');
                 try {
                     const d = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) +
-                        '&type=A').then(function(r) { return r.json(); });
+                        '&type=A').then(r => r.json());
                     unloader(lid);
                     if (d.Answer) { cacheSet(key, d.Answer, 600000);
                         d.Answer.forEach(function(r) { add(r.type + ': ' + esc(r.data), 'ok'); }); } else { add(
@@ -1535,20 +2121,21 @@
                 const key = 'currency_' + from + '_' + to;
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block">' + amount + ' ' + from + ' = <strong>' + (amount * cached).toFixed(2) +
-                        ' ' + to + '</strong> (rate: ' + cached + ')</div>', 'ok');
+                    add(
+                        `<div class="block">${amount} ${from} = <strong>${(amount * cached).toFixed(2)} ${to}</strong> (rate: ${cached})</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Currency...');
                 try {
-                    const d = await fetch('https://api.exchangerate-api.com/v4/latest/' + from).then(function(r) {
-                        return r.json(); });
+                    const d = await fetch('https://api.exchangerate-api.com/v4/latest/' + from).then(r => r.json());
                     const rate = d.rates[to];
                     if (!rate) throw new Error('Invalid currency');
                     cacheSet(key, rate, 3600000);
                     unloader(lid);
-                    add('<div class="block">' + amount + ' ' + from + ' = <strong>' + (amount * rate).toFixed(2) +
-                        ' ' + to + '</strong> (rate: ' + rate + ')</div>', 'ok');
+                    add(
+                        `<div class="block">${amount} ${from} = <strong>${(amount * rate).toFixed(2)} ${to}</strong> (rate: ${rate})</div>`,
+                        'ok');
                 } catch (e) { unloader(lid);
                     add('Currency error: ' + esc(e.message), 'err'); }
             }
@@ -1559,13 +2146,12 @@
                 if (cached) {
                     const u = cached.user,
                         repos = cached.repos;
-                    add('<div class="block"><strong>' + esc(u.name || u.login) + '</strong> | Followers: ' + u
-                        .followers + ' | Repos: ' + u.public_repos + '<br>Bio: ' + esc(u.bio || 'N/A') + '</div>',
+                    add(
+                        `<div class="block"><strong>${esc(u.name || u.login)}</strong> | Followers: ${u.followers} | Repos: ${u.public_repos}<br>Bio: ${esc(u.bio || 'N/A')}</div>`,
                         'ok');
                     if (repos.length) { add('<strong>Top Repos:</strong>', 'highlight');
-                        repos.forEach(function(r) { add(r.stargazers_count + '★ <a href="' + esc(r.html_url) +
-                                '" target="_blank">' + esc(r.name) + '</a>: ' + esc(r.description || ''),
-                            'ok'); }); }
+                        repos.forEach(function(r) { add(r.stargazers_count + ' stars <a href="' + esc(r.html_url) +
+                                '" target="_blank">' + esc(r.name) + '</a>: ' + esc(r.description || ''), 'ok'); }); }
                     return;
                 }
                 const lid = loader('GitHub...');
@@ -1578,13 +2164,12 @@
                     const repos = await reposRes.json();
                     cacheSet(key, { user: user, repos: repos }, 600000);
                     unloader(lid);
-                    add('<div class="block"><strong>' + esc(user.name || user.login) + '</strong> | Followers: ' + user
-                        .followers + ' | Repos: ' + user.public_repos + '<br>Bio: ' + esc(user.bio || 'N/A') +
-                        '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(user.name || user.login)}</strong> | Followers: ${user.followers} | Repos: ${user.public_repos}<br>Bio: ${esc(user.bio || 'N/A')}</div>`,
+                        'ok');
                     if (repos.length) { add('<strong>Top Repos:</strong>', 'highlight');
-                        repos.forEach(function(r) { add(r.stargazers_count + '★ <a href="' + esc(r.html_url) +
-                                '" target="_blank">' + esc(r.name) + '</a>: ' + esc(r.description || ''),
-                            'ok'); }); }
+                        repos.forEach(function(r) { add(r.stargazers_count + ' stars <a href="' + esc(r.html_url) +
+                                '" target="_blank">' + esc(r.name) + '</a>: ' + esc(r.description || ''), 'ok'); }); }
                 } catch { unloader(lid);
                     add('GitHub error.', 'err'); }
             }
@@ -1593,9 +2178,9 @@
                 const key = 'spacex';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block"><strong>🚀 SpaceX</strong><br>Next: ' + esc(cached.next.name) + ' (' +
-                        new Date(cached.next.date_utc).toLocaleString() + ')<br>Latest: ' + esc(cached.latest.name) +
-                        ' - ' + (cached.latest.success ? '✅ Success' : '❌ Failed') + '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>SpaceX</strong><br>Next: ${esc(cached.next.name)} (${new Date(cached.next.date_utc).toLocaleString()})<br>Latest: ${esc(cached.latest.name)} - ${cached.latest.success ? 'Success' : 'Failed'}</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('SpaceX...');
@@ -1607,9 +2192,9 @@
                     const latest = await latestRes.json();
                     cacheSet(key, { next: next, latest: latest }, 3600000);
                     unloader(lid);
-                    add('<div class="block"><strong>🚀 SpaceX</strong><br>Next: ' + esc(next.name) + ' (' + new Date(
-                        next.date_utc).toLocaleString() + ')<br>Latest: ' + esc(latest.name) + ' - ' + (latest
-                        .success ? '✅ Success' : '❌ Failed') + '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>SpaceX</strong><br>Next: ${esc(next.name)} (${new Date(next.date_utc).toLocaleString()})<br>Latest: ${esc(latest.name)} - ${latest.success ? 'Success' : 'Failed'}</div>`,
+                        'ok');
                 } catch { unloader(lid);
                     add('SpaceX error.', 'err'); }
             }
@@ -1618,17 +2203,19 @@
                 const key = 'quote';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block">💬 "' + esc(cached.content) +
-                        '"<br><span style="color:var(--text-dim);">— ' + esc(cached.author) + '</span></div>', 'ok');
+                    add(
+                        `<div class="block">"${esc(cached.content)}"<br><span style="color:var(--text-dim);">-- ${esc(cached.author)}</span></div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Quote...');
                 try {
-                    const d = await fetch('https://api.quotable.io/random').then(function(r) { return r.json(); });
+                    const d = await fetch('https://api.quotable.io/random').then(r => r.json());
                     cacheSet(key, d, 600000);
                     unloader(lid);
-                    add('<div class="block">💬 "' + esc(d.content) +
-                        '"<br><span style="color:var(--text-dim);">— ' + esc(d.author) + '</span></div>', 'ok');
+                    add(
+                        `<div class="block">"${esc(d.content)}"<br><span style="color:var(--text-dim);">-- ${esc(d.author)}</span></div>`,
+                        'ok');
                 } catch { unloader(lid);
                     add('Quote error.', 'err'); }
             }
@@ -1639,12 +2226,12 @@
                 if (!leagueId) { unloader(lid);
                     add('League not found (try EPL, La Liga).', 'err'); return; }
                 try {
-                    const res = await fetch(
-                        'https://www.thesportsdb.com/api/v1/json/1/eventsnextleague.php?id=' + leagueId);
+                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/eventsnextleague.php?id=' +
+                        leagueId);
                     const data = await res.json();
                     unloader(lid);
                     if (!data.events || !data.events.length) { add('No upcoming events.', 'info'); return; }
-                    add('<strong>📅 Upcoming matches:</strong>', 'highlight');
+                    add('<strong>Upcoming matches:</strong>', 'highlight');
                     data.events.slice(0, 10).forEach(function(e) {
                         add(esc(e.strEvent) + ': ' + esc(e.strHomeTeam) + ' vs ' + esc(e.strAwayTeam) + ' (' + e
                             .dateEvent + ')', 'ok');
@@ -1659,12 +2246,12 @@
                 if (!leagueId) { unloader(lid);
                     add('League not found.', 'err'); return; }
                 try {
-                    const res = await fetch(
-                        'https://www.thesportsdb.com/api/v1/json/1/eventspastleague.php?id=' + leagueId);
+                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/eventspastleague.php?id=' +
+                        leagueId);
                     const data = await res.json();
                     unloader(lid);
                     if (!data.events || !data.events.length) { add('No recent results.', 'info'); return; }
-                    add('<strong>📊 Recent results:</strong>', 'highlight');
+                    add('<strong>Recent results:</strong>', 'highlight');
                     data.events.slice(0, 10).forEach(function(e) {
                         const score = (e.intHomeScore != null) ? e.intHomeScore + '-' + e.intAwayScore : '?';
                         add(esc(e.strHomeTeam) + ' ' + score + ' ' + esc(e.strAwayTeam) + ' (' + e.dateEvent +
@@ -1680,13 +2267,12 @@
                 if (!leagueId) { unloader(lid);
                     add('League not found.', 'err'); return; }
                 try {
-                    const res = await fetch(
-                        'https://www.thesportsdb.com/api/v1/json/1/lookuptable.php?id=' + leagueId +
+                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/lookuptable.php?id=' + leagueId +
                         '&s=2024-2025');
                     const data = await res.json();
                     unloader(lid);
                     if (!data.table || !data.table.length) { add('No standings available.', 'info'); return; }
-                    add('<strong>🏆 League Table:</strong>', 'highlight');
+                    add('<strong>League Table:</strong>', 'highlight');
                     data.table.slice(0, 10).forEach(function(t) {
                         add(t.intRank + '. ' + esc(t.strTeam) + ' - P:' + t.intPlayed + ' W:' + t.intWin +
                             ' D:' + t.intDraw + ' L:' + t.intLoss + ' Pts:' + t.intPoints, 'ok');
@@ -1698,15 +2284,15 @@
             async function sportsTeam(name) {
                 const lid = loader('Team info: ' + name + '...');
                 try {
-                    const res = await fetch(
-                        'https://www.thesportsdb.com/api/v1/json/1/searchteams.php?t=' + encodeURIComponent(name));
+                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/searchteams.php?t=' +
+                        encodeURIComponent(name));
                     const data = await res.json();
                     unloader(lid);
                     if (!data.teams || !data.teams.length) { add('Team not found.', 'err'); return; }
                     const t = data.teams[0];
-                    add('<div class="block"><strong>' + esc(t.strTeam) + '</strong> (' + esc(t.strLeague || 'Unknown') +
-                        ')<br>🏟 Stadium: ' + esc(t.strStadium || 'N/A') + '<br>' + esc((t.strDescriptionEN || '')
-                            .substring(0, 150)) + '...</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(t.strTeam)}</strong> (${esc(t.strLeague || 'Unknown')})<br>Stadium: ${esc(t.strStadium || 'N/A')}<br>${esc((t.strDescriptionEN || '').substring(0, 150))}...</div>`,
+                        'ok');
                 } catch { unloader(lid);
                     add('Team error.', 'err'); }
             }
@@ -1715,10 +2301,10 @@
                 const key = 'gamedeals';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<strong>🎮 Game Deals (<$15):</strong>', 'highlight');
+                    add('<strong>Game Deals (<$15):</strong>', 'highlight');
                     cached.slice(0, 8).forEach(function(d) {
-                        add('<div class="block"><strong>' + esc(d.title) + '</strong><br>$' + d.salePrice +
-                            ' (was $' + d.normalPrice + ') | Rating: ' + d.steamRatingPercent + '%</div>',
+                        add(
+                            `<div class="block"><strong>${esc(d.title)}</strong><br>$${d.salePrice} (was $${d.normalPrice}) | Rating: ${d.steamRatingPercent}%</div>`,
                             'ok');
                     });
                     return;
@@ -1729,10 +2315,10 @@
                     const data = await res.json();
                     cacheSet(key, data, 3600000);
                     unloader(lid);
-                    add('<strong>🎮 Game Deals (<$15):</strong>', 'highlight');
+                    add('<strong>Game Deals (<$15):</strong>', 'highlight');
                     data.slice(0, 8).forEach(function(d) {
-                        add('<div class="block"><strong>' + esc(d.title) + '</strong><br>$' + d.salePrice +
-                            ' (was $' + d.normalPrice + ') | Rating: ' + d.steamRatingPercent + '%</div>',
+                        add(
+                            `<div class="block"><strong>${esc(d.title)}</strong><br>$${d.salePrice} (was $${d.normalPrice}) | Rating: ${d.steamRatingPercent}%</div>`,
                             'ok');
                     });
                 } catch { unloader(lid);
@@ -1759,7 +2345,7 @@
                         '/hot.json?limit=' + limit + '&t=week');
                     if (!res.ok) throw new Error('Reddit error');
                     const data = await res.json();
-                    const posts = data.data.children.map(function(c) { return c.data; });
+                    const posts = data.data.children.map(c => c.data);
                     cacheSet(key, posts, 300000);
                     unloader(lid);
                     add('<strong>r/' + esc(subreddit) + ':</strong>', 'highlight');
@@ -1777,15 +2363,16 @@
                 const key = 'stocks_' + symbol;
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block"><strong>📈 ' + esc(symbol) + '</strong><br>Price: $' + cached.price +
-                        ' | Change: ' + cached.change + '%</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${cached.price} | Change: ${cached.change}%</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Stock: ' + symbol + '...');
                 try {
                     const res = await fetch(
-                        'https://api.alpha-vantage.co/query?function=GLOBAL_QUOTE&symbol=' +
-                        encodeURIComponent(symbol) + '&apikey=demo');
+                        'https://api.alpha-vantage.co/query?function=GLOBAL_QUOTE&symbol=' + encodeURIComponent(
+                            symbol) + '&apikey=demo');
                     const data = await res.json();
                     if (!data['Global Quote'] || !data['Global Quote']['05. price']) throw new Error(
                         'Stock not found or API limit');
@@ -1793,11 +2380,12 @@
                     const result = { price: parseFloat(q['05. price']), change: parseFloat(q['10. change percent']) };
                     cacheSet(key, result, 300000);
                     unloader(lid);
-                    add('<div class="block"><strong>📈 ' + esc(symbol) + '</strong><br>Price: $' + result.price +
-                        ' | Change: ' + result.change + '%</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${result.price} | Change: ${result.change}%</div>`,
+                        'ok');
                 } catch (e) { unloader(lid);
-                    add('Stocks error: ' + esc(e.message) + ' (use demo symbols like AAPL, MSFT, GOOGL)',
-                    'err'); }
+                    add('Stocks error: ' + esc(e.message) +
+                        ' (use demo symbols like AAPL, MSFT, GOOGL)', 'err'); }
             }
 
             async function translate(text, target) {
@@ -1805,7 +2393,7 @@
                 const key = 'translate_' + text + '_' + target;
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block"><strong>🌐 Translation:</strong><br>' + esc(cached) + '</div>', 'ok');
+                    add(`<div class="block"><strong>Translation:</strong><br>${esc(cached)}</div>`, 'ok');
                     return;
                 }
                 const lid = loader('Translating...');
@@ -1820,8 +2408,8 @@
                     const translated = data.translatedText;
                     cacheSet(key, translated, 3600000);
                     unloader(lid);
-                    add('<div class="block"><strong>🌐 Translation (' + target + '):</strong><br>' + esc(translated) +
-                        '</div>', 'ok');
+                    add(`<div class="block"><strong>Translation (${target}):</strong><br>${esc(translated)}</div>`,
+                    'ok');
                 } catch (e) { unloader(lid);
                     add('Translation error: ' + esc(e.message), 'err'); }
             }
@@ -1829,14 +2417,14 @@
             async function randomFact() {
                 const key = 'fact';
                 const cached = cacheGet(key);
-                if (cached) { add('<div class="block">📚 ' + esc(cached) + '</div>', 'ok'); return; }
+                if (cached) { add(`<div class="block">${esc(cached)}</div>`, 'ok'); return; }
                 const lid = loader('Fact...');
                 try {
                     const res = await fetch('https://numbersapi.com/random/trivia');
                     const fact = await res.text();
                     cacheSet(key, fact, 600000);
                     unloader(lid);
-                    add('<div class="block">📚 ' + esc(fact) + '</div>', 'ok');
+                    add(`<div class="block">${esc(fact)}</div>`, 'ok');
                 } catch { unloader(lid);
                     add('Fact unavailable.', 'err'); }
             }
@@ -1845,22 +2433,24 @@
                 const key = 'wiki_' + term;
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block"><strong>📖 ' + esc(cached.title) + '</strong><br>' + esc(cached.extract
-                        .substring(0, 400)) + '...</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(cached.title)}</strong><br>${esc(cached.extract.substring(0, 400))}...</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Wikipedia: ' + term + '...');
                 try {
-                    const res = await fetch(
-                        'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(term));
+                    const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(
+                        term));
                     const data = await res.json();
                     if (data.type === 'disambiguation') { unloader(lid);
                         add('Disambiguation page.', 'warning'); return; }
                     const result = { title: data.title, extract: data.extract || '' };
                     cacheSet(key, result, 3600000);
                     unloader(lid);
-                    add('<div class="block"><strong>📖 ' + esc(data.title) + '</strong><br>' + esc((data.extract || '')
-                            .substring(0, 400)) + '...</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(data.title)}</strong><br>${esc((data.extract || '').substring(0, 400))}...</div>`,
+                        'ok');
                 } catch { unloader(lid);
                     add('Wikipedia error.', 'err'); }
             }
@@ -1869,8 +2459,7 @@
                 const key = 'define_' + word;
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<strong>📕 ' + esc(cached.word) + '</strong> (' + esc(cached.phonetic || '') + ')',
-                        'highlight');
+                    add(`<strong>${esc(cached.word)}</strong> (${esc(cached.phonetic || '')})`, 'highlight');
                     cached.meanings.forEach(function(meaning) {
                         add('<em>' + esc(meaning.partOfSpeech) + '</em>', 'info');
                         meaning.definitions.slice(0, 3).forEach(function(def) {
@@ -1889,8 +2478,7 @@
                     const entry = data[0];
                     cacheSet(key, entry, 3600000);
                     unloader(lid);
-                    add('<strong>📕 ' + esc(entry.word) + '</strong> (' + esc(entry.phonetic || '') + ')',
-                        'highlight');
+                    add(`<strong>${esc(entry.word)}</strong> (${esc(entry.phonetic || '')})`, 'highlight');
                     entry.meanings.forEach(function(meaning) {
                         add('<em>' + esc(meaning.partOfSpeech) + '</em>', 'info');
                         meaning.definitions.slice(0, 3).forEach(function(def) {
@@ -1904,7 +2492,8 @@
             function qrCode(text) {
                 if (!text) { add('Usage: qr <text>', 'err'); return; }
                 const url = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(text);
-                add('<img src="' + url +
+                add(
+                    '<img src="' + url +
                     '" alt="QR Code" style="display:block;margin:8px 0;border:2px solid var(--accent);border-radius:var(--radius-sm);">',
                     'ok');
             }
@@ -1913,22 +2502,21 @@
                 const key = 'randomuser';
                 const cached = cacheGet(key);
                 if (cached) {
-                    const u = cached;
-                    add('<div class="block"><strong>👤 ' + esc(u.name.first) + ' ' + esc(u.name.last) +
-                        '</strong><br>📧 Email: ' + esc(u.email) + '<br>📍 Location: ' + esc(u.location.city) +
-                        ', ' + esc(u.location.country) + '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(cached.name.first)} ${esc(cached.name.last)}</strong><br>Email: ${esc(cached.email)}<br>Location: ${esc(cached.location.city)}, ${esc(cached.location.country)}</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Random user...');
                 try {
                     const res = await fetch('https://randomuser.me/api/');
                     const data = await res.json();
-                    const u2 = data.results[0];
-                    cacheSet(key, u2, 600000);
+                    const u = data.results[0];
+                    cacheSet(key, u, 600000);
                     unloader(lid);
-                    add('<div class="block"><strong>👤 ' + esc(u2.name.first) + ' ' + esc(u2.name.last) +
-                        '</strong><br>📧 Email: ' + esc(u2.email) + '<br>📍 Location: ' + esc(u2.location.city) +
-                        ', ' + esc(u2.location.country) + '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>${esc(u.name.first)} ${esc(u.name.last)}</strong><br>Email: ${esc(u.email)}<br>Location: ${esc(u.location.city)}, ${esc(u.location.country)}</div>`,
+                        'ok');
                 } catch { unloader(lid);
                     add('Random user error.', 'err'); }
             }
@@ -1937,8 +2525,9 @@
                 const key = 'bored';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<div class="block"><strong>🎯 Activity:</strong> ' + esc(cached.activity) + '<br>Type: ' +
-                        esc(cached.type) + ' | Participants: ' + cached.participants + '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>Activity:</strong> ${esc(cached.activity)}<br>Type: ${esc(cached.type)} | Participants: ${cached.participants}</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Activity...');
@@ -1948,8 +2537,9 @@
                     const data = await res.json();
                     cacheSet(key, data, 600000);
                     unloader(lid);
-                    add('<div class="block"><strong>🎯 Activity:</strong> ' + esc(data.activity) + '<br>Type: ' +
-                        esc(data.type) + ' | Participants: ' + data.participants + '</div>', 'ok');
+                    add(
+                        `<div class="block"><strong>Activity:</strong> ${esc(data.activity)}<br>Type: ${esc(data.type)} | Participants: ${data.participants}</div>`,
+                        'ok');
                 } catch (e) { unloader(lid);
                     add('Activity error: ' + esc(e.message), 'err'); }
             }
@@ -1957,14 +2547,14 @@
             async function catFact() {
                 const key = 'catfact';
                 const cached = cacheGet(key);
-                if (cached) { add('<div class="block">🐱 ' + esc(cached) + '</div>', 'ok'); return; }
+                if (cached) { add(`<div class="block">${esc(cached)}</div>`, 'ok'); return; }
                 const lid = loader('Cat fact...');
                 try {
                     const res = await fetch('https://catfact.ninja/fact');
                     const data = await res.json();
                     cacheSet(key, data.fact, 600000);
                     unloader(lid);
-                    add('<div class="block">🐱 ' + esc(data.fact) + '</div>', 'ok');
+                    add(`<div class="block">${esc(data.fact)}</div>`, 'ok');
                 } catch { unloader(lid);
                     add('Cat fact error.', 'err'); }
             }
@@ -1973,7 +2563,8 @@
                 const key = 'dog';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<img src="' + cached +
+                    add(
+                        '<img src="' + cached +
                         '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:8px;">',
                         'ok');
                     return;
@@ -1984,7 +2575,8 @@
                     const data = await res.json();
                     cacheSet(key, data.message, 600000);
                     unloader(lid);
-                    add('<img src="' + data.message +
+                    add(
+                        '<img src="' + data.message +
                         '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:8px;">',
                         'ok');
                 } catch { unloader(lid);
@@ -1992,13 +2584,12 @@
             }
 
             function worldClock() {
-                const zones = [{ n: 'New York', tz: 'America/New_York' }, { n: 'London', tz: 'Europe/London' },
-                { n: 'Tokyo', tz: 'Asia/Tokyo' }, { n: 'Dubai', tz: 'Asia/Dubai' }, { n: 'Sydney',
-                    tz: 'Australia/Sydney' }];
-                add('<strong>🕐 World Clock:</strong>', 'highlight');
+                const zones = [{ n: 'New York', tz: 'America/New_York' }, { n: 'London', tz: 'Europe/London' }, { n: 'Tokyo',
+                        tz: 'Asia/Tokyo' }, { n: 'Dubai', tz: 'Asia/Dubai' }, { n: 'Sydney', tz: 'Australia/Sydney' }];
+                add('<strong>World Clock:</strong>', 'highlight');
                 zones.forEach(function(z) {
                     add(z.n + ': ' + new Date().toLocaleTimeString('en-US', { timeZone: z.tz, hour12: true }),
-                        'ok');
+                    'ok');
                 });
             }
 
@@ -2007,7 +2598,7 @@
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
                 let pass = '';
                 for (let i = 0; i < length; i++) pass += chars[Math.floor(Math.random() * chars.length)];
-                add('🔑 Generated password: ' + esc(pass), 'ok');
+                add('Generated password: ' + esc(pass), 'ok');
             }
 
             function reverseText(text) { add('Reversed: ' + esc(text.split('').reverse().join('')), 'ok'); }
@@ -2021,17 +2612,13 @@
             function echoText(text) { add(esc(text), 'ok'); }
 
             // ============================================================
-            //  OPEN/CLOSE SETTINGS
+            //  SETTINGS PANEL
             // ============================================================
-            function openSettings() {
-                settingsPanel.classList.add('active');
-                settingsOverlay.classList.add('active');
-            }
+            function openSettings() { settingsPanel.classList.add('active');
+                settingsOverlay.classList.add('active'); }
 
-            function closeSettings() {
-                settingsPanel.classList.remove('active');
-                settingsOverlay.classList.remove('active');
-            }
+            function closeSettings() { settingsPanel.classList.remove('active');
+                settingsOverlay.classList.remove('active'); }
 
             // ============================================================
             //  EXECUTE
@@ -2043,6 +2630,15 @@
                 const parts = resolved.trim().split(/\s+/);
                 const main = parts[0].toLowerCase();
                 const args = parts.slice(1);
+
+                const originalAdd = add;
+                let capturedHTML = '';
+                window._captureAdd = function(html, cls) {
+                    const line = originalAdd(html, cls);
+                    capturedHTML += line.outerHTML;
+                    return line;
+                };
+                add = window._captureAdd;
 
                 cmdEcho(resolved);
                 history.push(resolved);
@@ -2056,49 +2652,42 @@
                     case 'help':
                         add('<strong>=== All Commands (click to load) ===</strong>', 'highlight');
                         const cmds = [
-                            ['WEATHER <city>', 'weather'],
-                            ['JOKE [count]', 'joke'],
-                            ['CRYPTO [coins]', 'crypto'],
-                            ['NEWS', 'news'],
-                            ['IP', 'ip'],
-                            ['DNS <domain>', 'dns'],
+                            ['WEATHER <city>', 'weather'], ['JOKE [count]', 'joke'], ['CRYPTO [coins]', 'crypto'],
+                            ['NEWS', 'news'], ['IP', 'ip'], ['DNS <domain>', 'dns'],
                             ['CURRENCY <from> <to> [amount]', 'currency'],
-                            ['GITHUB <user>', 'github'],
-                            ['SPACEX', 'spacex'],
-                            ['QUOTE', 'quote'],
+                            ['GITHUB <user>', 'github'], ['SPACEX', 'spacex'], ['QUOTE', 'quote'],
                             ['SPORTS schedule <league>', 'sports schedule'],
                             ['SPORTS scores <league>', 'sports scores'],
                             ['SPORTS table <league>', 'sports table'],
                             ['SPORTS team <name>', 'sports team'],
-                            ['GAMES deals', 'games deals'],
-                            ['TIME', 'time'],
-                            ['DATE', 'date'],
+                            ['GAMES deals', 'games deals'], ['TIME', 'time'], ['DATE', 'date'],
                             ['CALC <expression>', 'calc'],
-                            ['GENPASS [length]', 'genpass'],
-                            ['REVERSE <text>', 'reverse'],
+                            ['GENPASS [length]', 'genpass'], ['REVERSE <text>', 'reverse'],
                             ['UPPER <text>', 'upper'],
-                            ['LOWER <text>', 'lower'],
-                            ['LEN <text>', 'len'],
-                            ['ECHO <text>', 'echo'],
+                            ['LOWER <text>', 'lower'], ['LEN <text>', 'len'], ['ECHO <text>', 'echo'],
                             ['FACT', 'fact'],
-                            ['WIKI <term>', 'wiki'],
-                            ['DEFINE <word>', 'define'],
-                            ['QR <text>', 'qr'],
-                            ['RANDOMUSER', 'randomuser'],
-                            ['BORED', 'bored'],
-                            ['CATFACT', 'catfact'],
+                            ['WIKI <term>', 'wiki'], ['DEFINE <word>', 'define'], ['QR <text>', 'qr'],
+                            ['RANDOMUSER', 'randomuser'], ['BORED', 'bored'], ['CATFACT', 'catfact'],
                             ['DOG', 'dog'],
-                            ['REDDIT <subreddit> [limit]', 'reddit'],
-                            ['STOCKS <symbol>', 'stocks'],
+                            ['REDDIT <subreddit> [limit]', 'reddit'], ['STOCKS <symbol>', 'stocks'],
                             ['TRANSLATE <text> <target>', 'translate'],
                             ['FS ls|create|read|delete|search', 'fs'],
                             ['VAULT setpass|unlock|add|list|delete|lock', 'vault'],
                             ['ALIAS <name> <command>', 'alias'],
-                            ['ALIAS list', 'alias list'],
-                            ['ALIAS remove <name>', 'alias remove'],
+                            ['ALIAS list', 'alias list'], ['ALIAS remove <name>', 'alias remove'],
                             ['THEME <name>', 'theme'],
-                            ['CACHE clear', 'cache clear'],
-                            ['CLEAR', 'clear'],
+                            ['CACHE clear', 'cache clear'], ['CLEAR', 'clear'],
+                            ['NICK <name>', 'nick'],
+                            ['ROOM create [name] [description] [password]', 'room create'],
+                            ['ROOM join <id> [password]', 'room join'],
+                            ['ROOM leave', 'room leave'],
+                            ['ROOM list', 'room list'],
+                            ['ROOM search <query>', 'room search'],
+                            ['ROOM info <id>', 'room info'],
+                            ['ROOM users', 'room users'],
+                            ['ROOM invite', 'room invite'],
+                            ['ROOM delete', 'room delete'],
+                            ['CHAT <message>', 'chat'],
                             ['ABOUT', 'about']
                         ];
                         cmds.forEach(function(item) {
@@ -2155,14 +2744,13 @@
                         break;
                     case 'date':
                         add(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long',
-                                day: 'numeric' }), 'ok');
+                            day: 'numeric' }), 'ok');
                         break;
                     case 'calc':
                     case 'math':
                         if (!args.length) { add('Usage: calc <expression>', 'err'); break; }
                         try { const res = safeCalc(args.join(''));
-                            add(args.join('') + ' = ' + res, 'ok'); } catch { add(
-                                'Invalid expression. Use numbers and + - * / ( ).', 'err'); }
+                            add(args.join('') + ' = ' + res, 'ok'); } catch { add('Invalid expression.', 'err'); }
                         break;
                     case 'genpass':
                         genPass(args[0] ? parseInt(args[0]) : 12);
@@ -2250,12 +2838,61 @@
                         break;
                     case 'theme':
                         if (args[0] && themes[args[0]]) { applyTheme(args[0]);
-                            add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(
-                                themes).join(', '), 'info');
+                            add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(themes)
+                            .join(', '), 'info');
                         break;
                     case 'cache':
                         if (args[0] === 'clear') { cacheClear();
                             add('Cache cleared.', 'ok'); } else add('Usage: cache clear', 'err');
+                        break;
+                    case 'nick':
+                        if (args.length === 0) { add('Usage: nick <name>', 'err'); break; }
+                        myAlias = args.join(' ').trim();
+                        if (currentRoomRef) {
+                            currentRoomRef.get('presence').get(myUserId).put({ alias: myAlias, lastSeen: Date
+                                    .now() });
+                        }
+                        add(`Nickname set to ${esc(myAlias)}.`, 'ok');
+                        break;
+                    case 'room':
+                        if (args[0] === 'create') {
+                            const name = args[1] || null;
+                            const description = args[2] || null;
+                            const password = args[3] || null;
+                            await createRoom(name, description, password);
+                        } else if (args[0] === 'join') {
+                            const id = args[1];
+                            const password = args[2] || null;
+                            if (!id) { add('Usage: room join <id> [password]', 'err'); break; }
+                            await joinRoom(id, password);
+                        } else if (args[0] === 'leave') {
+                            leaveRoom();
+                        } else if (args[0] === 'list') {
+                            await listAllRooms();
+                        } else if (args[0] === 'search') {
+                            await searchRooms(args.slice(1).join(' '));
+                        } else if (args[0] === 'info') {
+                            await getRoomInfo(args[1] || currentRoomId);
+                        } else if (args[0] === 'users') {
+                            if (!currentRoomId) { add('Not in a room.', 'err'); break; }
+                            const users = Object.values(roomUsers).filter(u => u && u.alias);
+                            if (users.length === 0) { add('No other users online.', 'info'); } else {
+                                add('<strong>👥 Online users:</strong>', 'highlight');
+                                users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' 👑' : ''}`, 'ok'));
+                            }
+                        } else if (args[0] === 'invite') {
+                            getRoomInvite();
+                        } else if (args[0] === 'delete') {
+                            await deleteRoom();
+                        } else {
+                            add(
+                                'Usage: room <create|join|leave|list|search|info|users|invite|delete> [args]',
+                                'err');
+                        }
+                        break;
+                    case 'chat':
+                        if (args.length === 0) { add('Usage: chat <message>', 'err'); break; }
+                        sendChatMessage(args.join(' '));
                         break;
                     case 'clear':
                         output.innerHTML = '';
@@ -2264,13 +2901,19 @@
                         break;
                     case 'about':
                         add(
-                            '<div class="block"><strong>⚡ Nexus Terminal Pro v4.6</strong><br>Professional command hub with real-time APIs, vault, tools, and more.<br>🏢 Marvic Studios UG</div>',
+                            '<div class="block"><strong>Nexus Terminal Pro v5.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
                             'ok');
                         break;
                     default:
-                        add('Unknown command: ' + esc(main) + '. Type <span class="clickable-cmd" data-cmd="help">help</span>.',
-                            'err');
+                        add('Unknown command: ' + esc(main) +
+                            '. Type <span class="clickable-cmd" data-cmd="help">help</span>.', 'err');
                 }
+
+                add = originalAdd;
+                if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room') {
+                    sendMessageToRoom(raw, capturedHTML);
+                }
+                updateRoomStatusDisplay();
             }
 
             // ============================================================
@@ -2299,10 +2942,9 @@
             document.getElementById('clearBtn').addEventListener('click', function() { output.innerHTML = '';
                 outputLines = [];
                 add('Terminal cleared.', 'info'); });
-            settingsToggle.addEventListener('click', function() {
-                if (settingsPanel.classList.contains('active')) closeSettings();
-                else openSettings();
-            });
+            settingsToggle.addEventListener('click', function() { if (settingsPanel.classList.contains('active'))
+                    closeSettings();
+                else openSettings(); });
             settingsClose.addEventListener('click', closeSettings);
             settingsOverlay.addEventListener('click', closeSettings);
             document.querySelector('.terminal').addEventListener('click', function(e) {
@@ -2317,11 +2959,10 @@
                 if (e.key === 'Escape') closeSettings();
             });
             themeSelect.addEventListener('change', function(e) { applyTheme(e.target.value); });
-            fontSizeSlider.addEventListener('input', function(e) {
-                document.documentElement.style.fontSize = e.target.value + 'px';
+            fontSizeSlider.addEventListener('input', function(e) { document.documentElement.style.fontSize = e.target
+                    .value + 'px';
                 document.getElementById('fontSizeValue').textContent = e.target.value + 'px';
-                localStorage.setItem('nexus_fontSize', e.target.value);
-            });
+                localStorage.setItem('nexus_fontSize', e.target.value); });
             aliasAddBtn.addEventListener('click', function() {
                 const val = aliasInput.value.trim();
                 if (!val) { add('Usage: alias <name> <command>', 'err'); return; }
@@ -2331,6 +2972,36 @@
                 aliasInput.value = '';
             });
             aliasInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') aliasAddBtn.click(); });
+
+            roomCreateBtn.addEventListener('click', function() {
+                const name = roomNameInput.value.trim() || null;
+                const desc = roomDescInput.value.trim() || null;
+                const pass = roomCreatePassInput.value.trim() || null;
+                createRoom(name, desc, pass);
+            });
+            roomJoinBtn.addEventListener('click', function() {
+                const id = roomJoinInput.value.trim();
+                const pass = roomJoinPassInput.value.trim();
+                if (id) joinRoom(id, pass || null);
+                else add('Enter a room ID.', 'err');
+            });
+            roomLeaveBtn.addEventListener('click', leaveRoom);
+            roomDeleteBtn.addEventListener('click', deleteRoom);
+
+            // Copy Room ID on badge click
+            roomBadgeContainer.addEventListener('click', function() {
+                if (!currentRoomId) return;
+                copyToClipboard(currentRoomId).then(() => {
+                    const tempSpan = document.createElement('span');
+                    tempSpan.className = 'room-badge';
+                    tempSpan.textContent = '✅ Copied!';
+                    roomBadgeContainer.innerHTML = '';
+                    roomBadgeContainer.appendChild(tempSpan);
+                    setTimeout(() => updateRoomBadge(roomMeta), 1500);
+                }).catch(() => {
+                    add('Failed to copy room ID. Please copy manually: ' + esc(currentRoomId), 'err');
+                });
+            });
 
             // ============================================================
             //  DRAG & DROP
@@ -2342,8 +3013,7 @@
                 dropOverlay.classList.add('active'); });
             terminalEl.addEventListener('dragover', function(e) { e.preventDefault(); });
             terminalEl.addEventListener('dragleave', function(e) { e.preventDefault();
-                dragCounter--;
-                if (dragCounter === 0) dropOverlay.classList.remove('active'); });
+                dragCounter--; if (dragCounter === 0) dropOverlay.classList.remove('active'); });
             terminalEl.addEventListener('drop', function(e) {
                 e.preventDefault();
                 dragCounter = 0;
@@ -2357,12 +3027,10 @@
                         const name = fsSanitize(file.name);
                         if (!name) { add('Invalid filename: ' + esc(file.name), 'err'); return; }
                         const f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
-                        if (f[name]) { add('File "' + esc(name) +
-                                '" already exists. Use fs delete first.', 'err'); return; }
+                        if (f[name]) { add('File "' + esc(name) + '" already exists.', 'err'); return; }
                         f[name] = ev.target.result;
                         localStorage.setItem('nexus_fs', JSON.stringify(f));
-                        add('📎 Uploaded "' + esc(name) + '" (' + ev.target.result.length + ' bytes).',
-                        'ok');
+                        add('Uploaded "' + esc(name) + '" (' + ev.target.result.length + ' bytes).', 'ok');
                     };
                     reader.readAsText(file);
                 }
@@ -2378,14 +3046,21 @@
             fontSizeSlider.value = savedFont;
             document.documentElement.style.fontSize = savedFont + 'px';
             document.getElementById('fontSizeValue').textContent = savedFont + 'px';
+
+            const gunReady = initGun();
+            if (gunReady) {
+                add(
+                    '⚡ Collaboration engine ready. Type <span class="clickable-cmd" data-cmd="help">help</span> to see room and chat commands.',
+                    'info');
+            }
+
             add(
-                '<div class="block"><strong>⚡ Nexus Terminal Pro v4.6</strong><br>Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands.</div>',
+                '<div class="block"><strong>🚀 Nexus Terminal Pro v5.0</strong><br>Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands. Room system improved!</div>',
                 'ok');
             add('Ready.', 'info');
             input.focus();
-
-            // Close settings on Escape key is already handled above
+            updateRoomStatusDisplay();
         })();
     </script>
 </body>
-  </html>
+    </html>
