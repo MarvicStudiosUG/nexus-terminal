@@ -1,6 +1,4 @@
-// ============================================================
-//  config.js - Themes, constants, and global configuration
-// ============================================================
+// config.js - Themes, constants, and global configuration
 
 export const MAX_OUTPUT_LINES = 500;
 export const DEFAULT_FONT_SIZE = 14;
