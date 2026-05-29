@@ -1,6 +1,4 @@
-// ============================================================
-//  ui.js - Terminal output, quickbar, settings UI, helpers
-// ============================================================
+// ui.js - Terminal output, quickbar, settings UI, helpers
 
 import { MAX_OUTPUT_LINES, themes } from './config.js';
 import { cmdFrequency } from './main.js';
@@ -44,29 +42,33 @@ export function unloader(id) {
   if (el) el.remove();
 }
 
+let updateTimer = null;
 export function updateQuickbar() {
-  const sorted = Object.entries(cmdFrequency).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  quickbar.innerHTML = '';
-  sorted.forEach(([cmd]) => {
-    const btn = document.createElement('button');
-    btn.className = 'qbtn';
-    btn.dataset.cmd = cmd;
-    btn.textContent = cmd;
-    btn.addEventListener('click', () => {
-      import('./main.js').then(mod => {
-        mod.execute(cmd);
-        document.getElementById('cmdInput').focus();
+  if (updateTimer) return;
+  updateTimer = setTimeout(() => {
+    updateTimer = null;
+    const sorted = Object.entries(cmdFrequency).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    quickbar.innerHTML = '';
+    sorted.forEach(([cmd]) => {
+      const btn = document.createElement('button');
+      btn.className = 'qbtn';
+      btn.dataset.cmd = cmd;
+      btn.textContent = cmd;
+      btn.addEventListener('click', () => {
+        import('./main.js').then(mod => {
+          mod.execute(cmd);
+          document.getElementById('cmdInput').focus();
+        });
       });
+      quickbar.appendChild(btn);
     });
-    quickbar.appendChild(btn);
-  });
+  }, 300);
 }
 
 export function recordCmd(cmd) {
   if (!cmdFrequency[cmd]) cmdFrequency[cmd] = 0;
   cmdFrequency[cmd]++;
   localStorage.setItem('nexus_cmdfreq', JSON.stringify(cmdFrequency));
-  // quickbar updates every 5 commands via main.js counter
 }
 
 export function applyTheme(name) {
