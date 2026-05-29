@@ -102,14 +102,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 16px;
+            padding: 8px 14px;
             background: linear-gradient(180deg, var(--bg-elevated), var(--bg-surface));
             border-bottom: 1px solid var(--border-accent);
             flex-shrink: 0;
-            min-height: 52px;
+            min-height: 48px;
             z-index: 10;
             position: relative;
             box-shadow: 0 1px 30px rgba(0, 0, 0, 0.4);
+            gap: 4px;
         }
         .header::after {
             content: '';
@@ -124,12 +125,12 @@
         }
         .dots {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
         }
         .dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
             transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -153,29 +154,31 @@
         .title {
             color: var(--accent);
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             letter-spacing: 2px;
             text-shadow: 0 0 30px var(--accent-glow);
             text-align: center;
             flex: 1;
+            min-width: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            padding: 0 8px;
+            padding: 0 6px;
         }
         .status {
             display: flex;
-            gap: 10px;
-            font-size: 0.68rem;
+            gap: 6px;
+            font-size: 0.62rem;
             align-items: center;
             flex-shrink: 0;
             flex-wrap: nowrap;
-            max-width: 40%;
+            max-width: 50%;
+            justify-content: flex-end;
         }
         .led {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #4cff8f;
             border-radius: 50%;
             animation: pulse 2.5s infinite ease-in-out;
@@ -197,16 +200,16 @@
             background: rgba(0, 240, 208, 0.1);
             border: 1px solid var(--border-accent);
             color: var(--accent);
-            padding: 4px 10px;
+            padding: 2px 8px;
             border-radius: var(--radius-full);
-            font-size: 0.62rem;
+            font-size: 0.58rem;
             white-space: nowrap;
             display: inline-flex;
             align-items: center;
             gap: 4px;
             cursor: pointer;
             transition: background 0.2s;
-            max-width: 120px;
+            max-width: 90px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -215,7 +218,7 @@
         }
         .room-badge.locked::after {
             content: ' LOCKED';
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             margin-left: 4px;
             color: #ffb86c;
             font-weight: bold;
@@ -224,19 +227,20 @@
             background: rgba(0, 240, 208, 0.06);
             border: 1px solid var(--border-accent);
             color: var(--accent);
-            padding: 7px 14px;
+            padding: 4px 10px;
             border-radius: var(--radius-full);
-            font-size: 0.68rem;
+            font-size: 0.6rem;
             cursor: pointer;
             font-family: inherit;
             touch-action: manipulation;
-            min-height: 38px;
-            min-width: 64px;
+            min-height: 28px;
+            min-width: 54px;
             transition: all var(--transition-smooth);
             letter-spacing: 0.5px;
             white-space: nowrap;
             -webkit-user-select: none;
             user-select: none;
+            flex-shrink: 0;
         }
         .settings-btn:active {
             background: rgba(0, 240, 208, 0.2);
@@ -268,22 +272,22 @@
         }
         .settings-panel {
             position: fixed;
-            top: 56px;
-            top: calc(56px + var(--safe-top));
+            top: 52px;
+            top: calc(52px + var(--safe-top));
             right: 8px;
             right: calc(8px + var(--safe-right));
             background: var(--bg-elevated);
             border: 1px solid var(--border-accent);
             border-radius: var(--radius-lg);
-            padding: 20px;
-            width: 300px;
+            padding: 18px;
+            width: 320px;
             max-width: calc(100vw - 24px);
             z-index: 30;
             box-shadow: var(--shadow-lg), 0 0 60px rgba(0, 240, 208, 0.04);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            max-height: 75vh;
-            max-height: 75dvh;
+            max-height: 78vh;
+            max-height: 78dvh;
             overflow-y: auto;
             display: none;
             animation: slideUp 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -313,17 +317,37 @@
             border-radius: 20px;
             opacity: 0.5;
         }
+
         .settings-section {
-            margin-bottom: 18px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
         .settings-section h3 {
             color: var(--accent);
-            font-size: 0.7rem;
-            margin-bottom: 7px;
+            font-size: 0.68rem;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 1.8px;
-            opacity: 0.85;
+            letter-spacing: 1.6px;
+            opacity: 0.9;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .settings-section h3 .badge {
+            font-size: 0.55rem;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 1px 6px;
+            border-radius: var(--radius-xs);
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            text-transform: none;
         }
         .settings-section select,
         .settings-section input[type="range"],
@@ -334,10 +358,10 @@
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-primary);
-            padding: 10px 12px;
+            padding: 8px 10px;
             border-radius: var(--radius-sm);
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             touch-action: manipulation;
             transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
             -webkit-appearance: none;
@@ -353,15 +377,15 @@
             box-shadow: 0 0 0 3px rgba(0, 240, 208, 0.08);
         }
         .settings-section select {
-            height: 44px;
+            height: 38px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300f0d0' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 36px;
+            background-position: right 10px center;
+            padding-right: 32px;
         }
         .settings-section input[type="range"] {
             padding: 0;
-            height: 6px;
+            height: 5px;
             -webkit-appearance: none;
             appearance: none;
             background: rgba(255, 255, 255, 0.1);
@@ -371,8 +395,8 @@
         .settings-section input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background: var(--accent);
             cursor: pointer;
@@ -383,41 +407,127 @@
         .settings-section input[type="range"]::-webkit-slider-thumb:active {
             transform: scale(1.2);
         }
-        #aliasAddBtn,
-        button {
+        .settings-section .range-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .settings-section .range-row input {
+            flex: 1;
+        }
+        .settings-section .range-row span {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        .settings-section .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+        .settings-section .checkbox-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .settings-section .checkbox-row label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .settings-section .checkbox-row .hint {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-left: 4px;
+        }
+
+        .settings-section .ttl-select {
+            display: none;
+            margin-top: 4px;
+        }
+        .settings-section .ttl-select.active {
+            display: block;
+        }
+        .settings-section .ttl-select select {
+            height: 34px;
+            font-size: 0.75rem;
+        }
+
+        .settings-section .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .settings-section .btn-group button {
+            flex: 1;
+            min-width: 60px;
+            padding: 8px 10px;
+            font-size: 0.7rem;
+            min-height: 34px;
+            margin-top: 0;
+        }
+        .settings-section .btn-group button.danger {
+            background: rgba(255, 92, 108, 0.12);
+            border: 1px solid rgba(255, 92, 108, 0.25);
+            color: #ff5c6c;
+            box-shadow: none;
+        }
+        .settings-section .btn-group button.danger:active {
+            background: rgba(255, 92, 108, 0.25);
+            transform: scale(0.95);
+        }
+        .settings-section .btn-group button.secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+        .settings-section .btn-group button.secondary:active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.95);
+        }
+
+        button.primary {
             width: 100%;
             background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
             border: none;
             color: #050810;
             font-weight: 700;
-            padding: 12px;
+            padding: 10px;
             border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 0.82rem;
-            margin-top: 8px;
+            font-size: 0.78rem;
+            margin-top: 6px;
             touch-action: manipulation;
-            min-height: 44px;
+            min-height: 38px;
             font-family: inherit;
             letter-spacing: 0.5px;
             transition: all var(--transition-smooth);
             box-shadow: 0 4px 20px rgba(0, 240, 208, 0.2);
         }
-        button:active {
+        button.primary:active {
             transform: scale(0.95);
             opacity: 0.85;
             box-shadow: 0 2px 10px rgba(0, 240, 208, 0.3);
         }
+
         .settings-close {
             position: absolute;
-            top: 10px;
-            right: 12px;
+            top: 8px;
+            right: 10px;
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             cursor: pointer;
             touch-action: manipulation;
-            padding: 8px;
+            padding: 4px 8px;
             transition: color var(--transition-fast);
             line-height: 1;
             z-index: 2;
@@ -425,6 +535,15 @@
         .settings-close:active {
             color: var(--accent);
             transform: scale(0.9);
+        }
+
+        .settings-footer {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-align: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 4px;
         }
 
         .body {
@@ -440,10 +559,10 @@
         .output {
             flex: 1;
             overflow-y: auto;
-            padding: 12px 16px;
+            padding: 10px 14px;
             background: rgba(7, 13, 25, 0.7);
-            line-height: 1.75;
-            font-size: 0.85rem;
+            line-height: 1.7;
+            font-size: 0.82rem;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             position: relative;
@@ -451,7 +570,7 @@
             user-select: text;
         }
         .output::-webkit-scrollbar {
-            width: 4px;
+            width: 3px;
         }
         .output::-webkit-scrollbar-track {
             background: transparent;
@@ -468,15 +587,15 @@
             left: 0;
             right: 0;
             display: block;
-            height: 30px;
+            height: 24px;
             background: linear-gradient(transparent, rgba(7, 13, 25, 0.9));
             pointer-events: none;
             z-index: 2;
-            margin-top: -30px;
+            margin-top: -24px;
             flex-shrink: 0;
         }
         .line {
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             animation: lineIn 0.25s ease;
             word-break: break-word;
             position: relative;
@@ -528,7 +647,7 @@
         .err {
             color: var(--error);
             background: var(--error-bg);
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: var(--radius-xs);
             border-left: 2px solid var(--error);
             display: inline-block;
@@ -547,8 +666,8 @@
         .block {
             background: rgba(0, 240, 208, 0.03);
             border-left: 3px solid var(--accent);
-            padding: 10px 14px;
-            margin: 8px 0;
+            padding: 8px 12px;
+            margin: 6px 0;
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
             box-shadow: var(--shadow-sm);
             line-height: 1.7;
@@ -559,10 +678,10 @@
             color: var(--accent);
             text-decoration: underline dotted;
             text-underline-offset: 4px;
-            padding: 7px 0;
-            margin-right: 12px;
+            padding: 5px 0;
+            margin-right: 10px;
             touch-action: manipulation;
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             transition: all var(--transition-fast);
             -webkit-user-select: none;
             user-select: none;
@@ -576,32 +695,32 @@
         .room-user {
             display: inline-block;
             background: rgba(0, 240, 208, 0.08);
-            padding: 2px 8px;
+            padding: 1px 6px;
             border-radius: var(--radius-xs);
             margin-right: 4px;
             margin-bottom: 4px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--accent);
         }
 
         .inputline {
             display: flex;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
             background: var(--bg-surface);
             flex-shrink: 0;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             flex-wrap: nowrap;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             z-index: 5;
-            min-height: 56px;
+            min-height: 48px;
         }
         .prompt {
             color: var(--accent);
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             flex-shrink: 0;
             text-shadow: 0 0 18px var(--accent-glow);
             line-height: 1;
@@ -612,9 +731,9 @@
             border: none;
             color: var(--text-primary);
             font-family: inherit;
-            font-size: 16px;
+            font-size: 15px;
             outline: none;
-            min-height: 40px;
+            min-height: 36px;
             padding: 4px 0;
             width: 0;
             -webkit-user-select: text;
@@ -628,7 +747,7 @@
         }
         .input-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             flex-shrink: 0;
         }
@@ -637,13 +756,13 @@
             border: none;
             color: #050810;
             font-weight: 700;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: var(--radius-full);
             cursor: pointer;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             touch-action: manipulation;
-            min-height: 42px;
-            min-width: 66px;
+            min-height: 36px;
+            min-width: 56px;
             font-family: inherit;
             letter-spacing: 0.8px;
             transition: all var(--transition-smooth);
@@ -659,14 +778,14 @@
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-secondary);
-            width: 42px;
-            height: 42px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1rem;
             touch-action: manipulation;
             flex-shrink: 0;
             transition: all var(--transition-fast);
@@ -690,7 +809,7 @@
             align-items: center;
             justify-content: center;
             color: var(--accent);
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 700;
             z-index: 35;
             pointer-events: none;
@@ -705,133 +824,186 @@
             animation: fadeIn 0.25s ease;
         }
 
-        @media (max-width: 520px) {
-            .header {
-                padding: 8px 10px;
-                min-height: 46px;
-            }
-            .title {
-                font-size: 0.7rem;
-            }
-            .status {
-                font-size: 0.62rem;
-                gap: 6px;
-            }
-            .room-badge {
-                font-size: 0.58rem;
-                padding: 3px 8px;
-                max-width: 90px;
-            }
-            .settings-btn {
-                padding: 5px 10px;
-                min-height: 32px;
-                font-size: 0.62rem;
-            }
-            .settings-panel {
-                width: 280px;
-                max-width: calc(100vw - 16px);
-                right: 4px;
-                top: 50px;
-                padding: 16px;
-            }
-            .output {
-                padding: 10px 12px;
-                font-size: 0.8rem;
-            }
-            .inputline {
-                padding: 8px 10px;
-                gap: 6px;
-                min-height: 50px;
-            }
-            #execBtn {
-                padding: 8px 14px;
-                min-height: 38px;
-            }
-            .icon-btn {
-                width: 38px;
-                height: 38px;
-            }
-            .dots .dot {
-                width: 10px;
-                height: 10px;
-            }
+        .room-users-container {
+            max-height: 80px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 4px 0;
         }
-        @media (max-width: 380px) {
+        .room-users-container::-webkit-scrollbar {
+            width: 2px;
+        }
+        .room-users-container::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 20px;
+        }
+
+        .room-status-display {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-xs);
+        }
+
+        @media (max-width: 600px) {
             .header {
                 padding: 6px 8px;
                 min-height: 42px;
             }
             .title {
-                font-size: 0.62rem;
+                font-size: 0.6rem;
+                letter-spacing: 1px;
+            }
+            .status {
+                font-size: 0.55rem;
+                gap: 4px;
+                max-width: 55%;
             }
             .room-badge {
                 font-size: 0.52rem;
+                padding: 1px 6px;
                 max-width: 70px;
             }
             .settings-btn {
-                padding: 4px 8px;
-                min-height: 28px;
-                font-size: 0.58rem;
+                padding: 3px 8px;
+                min-height: 24px;
+                font-size: 0.55rem;
+                min-width: 44px;
             }
             .settings-panel {
-                width: 240px;
-                right: 2px;
-                top: 44px;
-                padding: 12px;
+                width: 280px;
+                max-width: calc(100vw - 16px);
+                right: 4px;
+                top: 46px;
+                padding: 14px;
             }
             .output {
                 padding: 8px 10px;
-                font-size: 0.75rem;
+                font-size: 0.76rem;
             }
             .inputline {
                 padding: 6px 8px;
                 gap: 4px;
-                min-height: 44px;
+                min-height: 42px;
             }
             #execBtn {
-                padding: 6px 10px;
-                min-height: 34px;
+                padding: 6px 12px;
+                min-height: 32px;
+                font-size: 0.68rem;
+                min-width: 48px;
             }
             .icon-btn {
-                width: 34px;
-                height: 34px;
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
             }
             .dots .dot {
-                width: 9px;
-                height: 9px;
+                width: 8px;
+                height: 8px;
+            }
+            .dots {
+                gap: 4px;
+            }
+            .led {
+                width: 5px;
+                height: 5px;
+            }
+            #liveClock {
+                display: none;
+            }
+        }
+        @media (max-width: 400px) {
+            .header {
+                padding: 4px 6px;
+                min-height: 38px;
+            }
+            .title {
+                font-size: 0.52rem;
+            }
+            .room-badge {
+                font-size: 0.48rem;
+                max-width: 60px;
+                padding: 1px 4px;
+            }
+            .settings-btn {
+                padding: 2px 6px;
+                min-height: 20px;
+                font-size: 0.5rem;
+                min-width: 36px;
+            }
+            .settings-panel {
+                width: 240px;
+                right: 2px;
+                top: 40px;
+                padding: 10px;
+            }
+            .output {
+                padding: 6px 8px;
+                font-size: 0.72rem;
+            }
+            .inputline {
+                padding: 4px 6px;
+                gap: 4px;
+                min-height: 38px;
+            }
+            #execBtn {
+                padding: 4px 8px;
+                min-height: 28px;
+                font-size: 0.62rem;
+                min-width: 40px;
+            }
+            .icon-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+            .dots .dot {
+                width: 7px;
+                height: 7px;
+            }
+            .status {
+                max-width: 60%;
+                font-size: 0.5rem;
             }
         }
         @media (min-width: 768px) {
             .output {
-                padding: 16px 24px;
-                font-size: 0.88rem;
+                padding: 14px 20px;
+                font-size: 0.85rem;
             }
             .inputline {
-                padding: 12px 20px;
-                gap: 10px;
+                padding: 10px 18px;
+                gap: 8px;
             }
             .header {
-                padding: 12px 20px;
-                min-height: 56px;
+                padding: 10px 18px;
+                min-height: 52px;
             }
             .title {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
             }
             .settings-panel {
-                width: 320px;
+                width: 340px;
                 right: 12px;
+                top: 56px;
+            }
+            .room-badge {
+                max-width: 140px;
+                font-size: 0.65rem;
             }
         }
         @media (min-width: 1024px) {
             .terminal {
-                max-width: 900px;
+                max-width: 920px;
                 margin: 0 auto;
                 border-left: 1px solid var(--border-subtle);
                 border-right: 1px solid var(--border-subtle);
             }
             .settings-panel {
-                width: 340px;
-                right: calc((100vw - 900px) / 2 + 12px);
+                right: calc((100vw - 920px) / 2 + 12px);
             }
         }
 
@@ -845,7 +1017,7 @@
             max-width: 100%;
             height: auto;
             display: block;
-            margin: 8px 0;
+            margin: 6px 0;
             border: 2px solid var(--border-accent);
             border-radius: var(--radius-sm);
             box-shadow: var(--shadow-md);
@@ -859,6 +1031,23 @@
         }
         .output a:active {
             color: #fff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 4px;
+            margin: 2px 0;
+        }
+        .input-group input {
+            flex: 1;
+        }
+        .input-group button {
+            width: auto;
+            margin-top: 0;
+            padding: 8px 14px;
+            min-height: 34px;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -877,17 +1066,19 @@
             <div class="title text-glow">NEXUS TERMINAL PRO</div>
             <div class="status">
                 <span id="roomBadgeContainer"></span>
-                <span><span class="led"></span> ON</span>
+                <span><span class="led"></span></span>
                 <span id="liveClock">--:--:--</span>
-                <button class="settings-btn" id="settingsToggle">SETTINGS</button>
+                <button class="settings-btn" id="settingsToggle">⚙</button>
             </div>
         </div>
 
         <!-- SETTINGS PANEL -->
         <div class="settings-panel" id="settingsPanel">
             <button class="settings-close" id="settingsClose">✕</button>
+
+            <!-- THEME -->
             <div class="settings-section">
-                <h3>THEME</h3>
+                <h3>🎨 THEME</h3>
                 <select id="themeSelect">
                     <option value="default">Cyber Neon</option>
                     <option value="ocean">Deep Ocean</option>
@@ -896,46 +1087,82 @@
                     <option value="sunset">Sunset</option>
                 </select>
             </div>
+
+            <!-- FONT SIZE -->
             <div class="settings-section">
-                <h3>FONT SIZE</h3>
-                <input type="range" id="fontSizeSlider" min="11" max="18" value="14">
-                <span id="fontSizeValue" style="color:var(--text-secondary);font-size:0.78rem;">14px</span>
+                <h3>🔤 FONT SIZE</h3>
+                <div class="range-row">
+                    <input type="range" id="fontSizeSlider" min="11" max="18" value="14">
+                    <span id="fontSizeValue">14px</span>
+                </div>
             </div>
+
+            <!-- ALIASES -->
             <div class="settings-section">
-                <h3>COMMAND ALIASES</h3>
-                <input type="text" id="aliasInput" placeholder="alias=command (e.g. gs=git status)" autocomplete="off" spellcheck="false">
-                <button id="aliasAddBtn">+ Add Alias</button>
+                <h3>⚡ COMMAND ALIASES</h3>
+                <div class="input-group">
+                    <input type="text" id="aliasInput" placeholder="alias=command (e.g. gs=git status)" autocomplete="off" spellcheck="false">
+                    <button id="aliasAddBtn" class="primary" style="width:auto;margin:0;padding:8px 12px;min-height:34px;font-size:0.7rem;">+</button>
+                </div>
             </div>
+
+            <!-- COLLABORATION ROOM -->
             <div class="settings-section" id="roomSection">
-                <h3>⚡ COLLABORATION ROOM</h3>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat &amp; share terminal in real-time.</p>
+                <h3>⚡ COLLABORATION ROOM <span class="badge">v2</span></h3>
+                <p style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat &amp; share terminal in real-time.</p>
 
-                <div id="roomStatusDisplay" style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:8px;"></div>
+                <div class="room-status-display" id="roomStatusDisplay">Not in a room.</div>
 
-                <input type="text" id="roomNameInput" placeholder="Room name (optional)" autocomplete="off" spellcheck="false">
-                <input type="text" id="roomDescInput" placeholder="Room description (optional)" autocomplete="off" spellcheck="false" style="margin-top:4px;">
-                <input type="password" id="roomCreatePassInput" placeholder="Password (4+ chars, optional)" autocomplete="off" style="margin-top:4px;">
-                <button id="roomCreateBtn">🚀 Create Room</button>
+                <!-- CREATE ROOM -->
+                <div style="margin-bottom:8px;">
+                    <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">🚀 Create Room</div>
+                    <input type="text" id="roomNameInput" placeholder="Room name (optional)" autocomplete="off" spellcheck="false">
+                    <input type="text" id="roomDescInput" placeholder="Description (optional)" autocomplete="off" spellcheck="false" style="margin-top:4px;">
+                    <input type="password" id="roomCreatePassInput" placeholder="Password (4+ chars, optional)" autocomplete="off" style="margin-top:4px;">
 
-                <div style="margin:8px 0;border-top:1px solid var(--border-subtle);"></div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="roomTemporaryCheck">
+                        <label for="roomTemporaryCheck">Temporary room <span class="hint">(auto-deletes after expiration)</span></label>
+                    </div>
+                    <div class="ttl-select" id="ttlSelect">
+                        <select id="ttlSelect">
+                            <option value="86400000">24 hours</option>
+                            <option value="604800000" selected>7 days</option>
+                            <option value="2592000000">30 days</option>
+                        </select>
+                    </div>
 
-                <input type="text" id="roomJoinInput" placeholder="Room ID to join" autocomplete="off" spellcheck="false">
-                <input type="password" id="roomJoinPassInput" placeholder="Password (if required)" autocomplete="off" style="margin-top:4px;">
-                <button id="roomJoinBtn">🔗 Join Room</button>
+                    <button class="primary" id="roomCreateBtn">Create Room</button>
+                </div>
 
-                <div style="margin:8px 0;border-top:1px solid var(--border-subtle);"></div>
+                <!-- JOIN ROOM -->
+                <div style="margin-bottom:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                    <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">🔗 Join Room</div>
+                    <div class="input-group">
+                        <input type="text" id="roomJoinInput" placeholder="Room ID" autocomplete="off" spellcheck="false">
+                        <input type="password" id="roomJoinPassInput" placeholder="Password (if required)" autocomplete="off" style="flex:0.7;">
+                    </div>
+                    <button class="primary" id="roomJoinBtn" style="margin-top:4px;">Join Room</button>
+                </div>
 
-                <button id="roomLeaveBtn" style="background:rgba(255,92,108,0.1);border:1px solid rgba(255,92,108,0.3);color:#ff5c6c;margin-top:6px;">🚪 Leave Room</button>
-                <button id="roomDeleteBtn" style="background:rgba(255,92,108,0.15);border:1px solid rgba(255,92,108,0.4);color:#ff5c6c;margin-top:4px;">🗑️ Delete Room (creator only)</button>
-
-                <div id="roomUsersList" style="margin-top:8px;font-size:0.7rem;color:var(--text-secondary);"></div>
+                <!-- ROOM ACTIONS -->
+                <div style="border-top:1px solid var(--border-subtle);padding-top:8px;">
+                    <div class="btn-group">
+                        <button class="secondary" id="roomLeaveBtn">🚪 Leave</button>
+                        <button class="danger" id="roomDeleteBtn">🗑️ Delete</button>
+                    </div>
+                    <div class="room-users-container" id="roomUsersList">No other users online.</div>
+                </div>
             </div>
+
+            <!-- SESSION STATS -->
             <div class="settings-section">
-                <h3>SESSION STATS</h3>
-                <div style="font-size:0.72rem;color:var(--text-secondary);" id="sessionStats"></div>
+                <h3>📊 SESSION STATS</h3>
+                <div style="font-size:0.7rem;color:var(--text-secondary);" id="sessionStats"></div>
             </div>
-            <div style="margin-top:8px;font-size:0.68rem;color:var(--text-dim);text-align:center;border-top:1px solid var(--border-subtle);padding-top:14px;">
-                Nexus Terminal Pro v5.0<br>Marvic Studios UG
+
+            <div class="settings-footer">
+                Nexus Terminal Pro v5.2 &bull; Marvic Studios UG
             </div>
         </div>
 
@@ -1021,6 +1248,9 @@
             const roomDeleteBtn = document.getElementById('roomDeleteBtn');
             const roomUsersList = document.getElementById('roomUsersList');
             const roomStatusDisplay = document.getElementById('roomStatusDisplay');
+            const roomTemporaryCheck = document.getElementById('roomTemporaryCheck');
+            const ttlSelect = document.getElementById('ttlSelect');
+            const ttlSelectContainer = document.getElementById('ttlSelect');
 
             let history = JSON.parse(localStorage.getItem('nexus_history') || '[]');
             let histIdx = history.length;
@@ -1057,7 +1287,10 @@
             let roomChatRef = null;
             let roomPresenceRef = null;
             let isRoomInitialized = false;
-            let roomListCache = [];
+
+            // Cleanup intervals
+            let presenceInterval = null;
+            let cleanupInterval = null;
 
             async function sha256(text) {
                 if (crypto && crypto.subtle) {
@@ -1079,19 +1312,23 @@
 
             function initGun() {
                 try {
+                    if (typeof Gun === 'undefined') {
+                        add('Gun.js library not loaded. Collaboration disabled.', 'err');
+                        return false;
+                    }
                     gun = Gun({ peers: gunPeers, localStorage: false });
-                    setInterval(() => {
-                        if (!currentRoomId || !gun) return;
-                        if (currentRoomRef) {
+                    presenceInterval = setInterval(() => {
+                        if (!currentRoomId || !gun || !currentRoomRef) return;
+                        try {
                             currentRoomRef.get('presence').get(myUserId).put({
                                 alias: myAlias,
                                 lastSeen: Date.now()
                             });
-                        }
+                        } catch (e) { /* ignore */ }
                     }, 5000);
                     return true;
                 } catch (e) {
-                    add('Gun.js could not initialize. Collaboration disabled.', 'err');
+                    add('Gun.js could not initialize: ' + esc(e.message), 'err');
                     return false;
                 }
             }
@@ -1120,12 +1357,45 @@
             }
 
             // ============================================================
-            //  IMPROVED ROOM SYSTEM
+            //  IMPROVED ROOM SYSTEM with Temporary/Permanent
             // ============================================================
 
-            async function createRoom(name, description, password) {
-                if (!gun) { add('Gun not initialized.', 'err'); return; }
-                if (currentRoomId) { add('Already in a room. Leave first.', 'err'); return; }
+            function cleanupRoomListeners() {
+                if (currentRoomRef) {
+                    try { currentRoomRef.off(); } catch (e) { /* ignore */ }
+                    currentRoomRef = null;
+                }
+                roomMetaRef = null;
+                roomLogRef = null;
+                roomChatRef = null;
+                roomPresenceRef = null;
+                roomMembersRef = null;
+                processedLogIds.clear();
+                processedChatIds.clear();
+                knownUsers.clear();
+                roomUsers = {};
+                roomMemberCount = 0;
+                isRoomInitialized = false;
+                roomMeta = null;
+                currentRoomId = null;
+                roomPassword = null;
+            }
+
+            async function isRoomExpired(meta) {
+                if (!meta || !meta.temporary || !meta.expiresAt) return false;
+                return Date.now() > meta.expiresAt;
+            }
+
+            async function createRoom(name, description, password, temporary, ttl) {
+                if (!gun) {
+                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    return;
+                }
+                if (currentRoomId) {
+                    add('Already in a room. Leave first using <span class="clickable-cmd" data-cmd="room leave">room leave</span>.',
+                        'err');
+                    return;
+                }
 
                 const roomId = 'nexus_' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 12) +
                     Date.now().toString(36));
@@ -1137,8 +1407,13 @@
                     created: Date.now(),
                     passwordProtected: false,
                     memberCount: 0,
-                    lastActivity: Date.now()
+                    lastActivity: Date.now(),
+                    temporary: !!temporary,
                 };
+
+                if (temporary && ttl) {
+                    meta.expiresAt = Date.now() + parseInt(ttl);
+                }
 
                 if (password && password.length >= 4) {
                     meta.passwordHash = await sha256(password);
@@ -1148,248 +1423,302 @@
                     roomPassword = null;
                 }
 
-                // Create room meta
-                const roomRoot = gun.get('nexus_rooms').get(roomId);
-                roomRoot.get('meta').put(meta);
+                try {
+                    const roomRoot = gun.get('nexus_rooms').get(roomId);
+                    roomRoot.get('meta').put(meta);
 
-                // Initialize members
-                roomRoot.get('members').put({ [myUserId]: { alias: myAlias, joined: Date.now(), role: 'admin' } });
+                    const membersObj = {};
+                    membersObj[myUserId] = { alias: myAlias, joined: Date.now(), role: 'admin' };
+                    roomRoot.get('members').put(membersObj);
 
-                // Join the room
-                await joinRoomInternal(roomId, meta);
+                    const joinSuccess = await joinRoomInternal(roomId, meta);
+                    if (!joinSuccess) {
+                        add('Failed to join the newly created room.', 'err');
+                        return;
+                    }
 
-                // Store in created rooms list
-                if (!createdRooms.includes(roomId)) {
-                    createdRooms.push(roomId);
-                    localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
+                    if (!createdRooms.includes(roomId)) {
+                        createdRooms.push(roomId);
+                        localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
+                    }
+
+                    const tempLabel = meta.temporary ? '⏳ Temporary (expires ' + new Date(meta.expiresAt)
+                        .toLocaleString() + ')' : '♾️ Permanent';
+                    add(
+                        `<div class="block"><strong>🚀 Room created!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)} | ${tempLabel}${meta.passwordProtected ? ' 🔒 Password protected' : ''}</div>`,
+                        'ok');
+                    updateRoomBadge(meta);
+                    updateRoomStatusDisplay();
+                } catch (e) {
+                    add('Error creating room: ' + esc(e.message), 'err');
                 }
-
-                add(`<div class="block"><strong>🚀 Room created!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)}${meta.passwordProtected ? ' 🔒 Password protected' : ''}</div>`, 'ok');
-                updateRoomBadge(meta);
-                updateRoomStatusDisplay();
             }
 
             async function joinRoom(id, password) {
-                if (!gun) { add('Gun not initialized.', 'err'); return; }
-                if (currentRoomId) { add('Already in a room. Leave first.', 'err'); return; }
-                if (!id) { add('Please enter a room ID.', 'err'); return; }
-
-                id = id.trim();
-                const metaRef = gun.get('nexus_rooms').get(id).get('meta');
-                const meta = await new Promise((resolve) => {
-                    metaRef.once((data) => {
-                        resolve(data);
-                    });
-                });
-
-                if (!meta || !meta.created) {
-                    add('Room not found or meta missing.', 'err');
+                if (!gun) {
+                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    return;
+                }
+                if (currentRoomId) {
+                    add('Already in a room. Leave first using <span class="clickable-cmd" data-cmd="room leave">room leave</span>.',
+                        'err');
+                    return;
+                }
+                if (!id) {
+                    add('Please enter a room ID.', 'err');
                     return;
                 }
 
-                if (meta.passwordProtected) {
-                    if (!password) {
-                        add('This room requires a password.', 'err');
+                id = id.trim();
+                try {
+                    const metaRef = gun.get('nexus_rooms').get(id).get('meta');
+                    const meta = await new Promise((resolve) => {
+                        let resolved = false;
+                        metaRef.once((data) => {
+                            if (!resolved) {
+                                resolved = true;
+                                resolve(data);
+                            }
+                        });
+                        setTimeout(() => {
+                            if (!resolved) {
+                                resolved = true;
+                                resolve(null);
+                            }
+                        }, 5000);
+                    });
+
+                    if (!meta || !meta.created) {
+                        add('Room not found or meta missing.', 'err');
                         return;
                     }
-                    const hash = await sha256(password);
-                    if (hash !== meta.passwordHash) {
-                        add('❌ Incorrect password.', 'err');
+
+                    // Check if expired
+                    if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
+                        add('❌ This room has expired and is no longer available.', 'err');
                         return;
                     }
-                    roomPassword = password;
-                } else {
-                    roomPassword = null;
+
+                    if (meta.passwordProtected) {
+                        if (!password) {
+                            add('This room requires a password.', 'err');
+                            return;
+                        }
+                        const hash = await sha256(password);
+                        if (hash !== meta.passwordHash) {
+                            add('❌ Incorrect password.', 'err');
+                            return;
+                        }
+                        roomPassword = password;
+                    } else {
+                        roomPassword = null;
+                    }
+
+                    const membersRef = gun.get('nexus_rooms').get(id).get('members');
+                    membersRef.get(myUserId).put({
+                        alias: myAlias,
+                        joined: Date.now(),
+                        role: 'member'
+                    });
+
+                    const joinSuccess = await joinRoomInternal(id, meta);
+                    if (!joinSuccess) {
+                        add('Failed to join the room.', 'err');
+                        return;
+                    }
+
+                    const tempLabel = meta.temporary ? '⏳ Temporary' : '♾️ Permanent';
+                    add(
+                        `<div class="block"><strong>🔗 Joined room:</strong> ${esc(meta.name)} (${esc(id)}) | ${tempLabel}${meta.passwordProtected ? ' 🔒' : ''}</div>`,
+                        'ok');
+                    updateRoomBadge(meta);
+                    updateRoomStatusDisplay();
+                } catch (e) {
+                    add('Error joining room: ' + esc(e.message), 'err');
                 }
-
-                // Add user to members
-                const membersRef = gun.get('nexus_rooms').get(id).get('members');
-                membersRef.get(myUserId).put({
-                    alias: myAlias,
-                    joined: Date.now(),
-                    role: 'member'
-                });
-
-                await joinRoomInternal(id, meta);
-                add(`<div class="block"><strong>🔗 Joined room:</strong> ${esc(meta.name)} (${esc(id)})${meta.passwordProtected ? ' 🔒' : ''}</div>`, 'ok');
-                updateRoomBadge(meta);
-                updateRoomStatusDisplay();
             }
 
             async function joinRoomInternal(roomId, meta) {
-                if (currentRoomRef) {
-                    currentRoomRef.off();
-                    currentRoomRef = null;
-                }
-
-                currentRoomId = roomId;
-                roomMeta = meta;
-                currentRoomRef = gun.get('nexus_rooms').get(roomId);
-                knownUsers.clear();
-                processedLogIds.clear();
-                processedChatIds.clear();
-                roomUsers = {};
-                isRoomInitialized = true;
-
-                // Set up references
-                roomMetaRef = currentRoomRef.get('meta');
-                roomLogRef = currentRoomRef.get('log');
-                roomChatRef = currentRoomRef.get('chat');
-                roomPresenceRef = currentRoomRef.get('presence');
-                roomMembersRef = currentRoomRef.get('members');
-
-                // Listen for members
-                roomMembersRef.map().on((data, key) => {
-                    if (!key) return;
-                    if (data && data.alias) {
-                        roomUsers[key] = data;
-                        if (!knownUsers.has(key) && key !== myUserId) {
-                            knownUsers.add(key);
-                            addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
-                        }
-                        updateRoomUsersUI();
-                        updateMemberCount();
+                try {
+                    if (currentRoomRef) {
+                        try { currentRoomRef.off(); } catch (e) { /* ignore */ }
+                        currentRoomRef = null;
                     }
-                });
 
-                // Listen for log (remote commands)
-                roomLogRef.map().on((data, key) => {
-                    if (!data || processedLogIds.has(data.msgId)) return;
-                    if (data.senderId === myUserId) return;
-                    processedLogIds.add(data.msgId);
-                    const line = document.createElement('div');
-                    line.className = 'line';
-                    line.innerHTML =
-                        `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
-                    output.appendChild(line);
-                    const outLine = document.createElement('div');
-                    outLine.className = 'line';
-                    outLine.innerHTML = data.outputHTML;
-                    output.appendChild(outLine);
-                    outputLines.push(line, outLine);
-                    limitOutputLines();
-                    output.scrollTop = output.scrollHeight;
-                });
+                    currentRoomId = roomId;
+                    roomMeta = meta;
+                    currentRoomRef = gun.get('nexus_rooms').get(roomId);
+                    knownUsers.clear();
+                    processedLogIds.clear();
+                    processedChatIds.clear();
+                    roomUsers = {};
+                    isRoomInitialized = true;
 
-                // Listen for chat
-                roomChatRef.map().on((data, key) => {
-                    if (!data || processedChatIds.has(data.msgId)) return;
-                    processedChatIds.add(data.msgId);
-                    const line = document.createElement('div');
-                    line.className = 'line chat-msg';
-                    const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
-                    line.innerHTML =
-                        `💬 <strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
-                    output.appendChild(line);
-                    outputLines.push(line);
-                    limitOutputLines();
-                    output.scrollTop = output.scrollHeight;
-                });
+                    roomMetaRef = currentRoomRef.get('meta');
+                    roomLogRef = currentRoomRef.get('log');
+                    roomChatRef = currentRoomRef.get('chat');
+                    roomPresenceRef = currentRoomRef.get('presence');
+                    roomMembersRef = currentRoomRef.get('members');
 
-                // Listen for presence
-                roomPresenceRef.map().on((data, key) => {
-                    if (!key) return;
-                    if (key === myUserId) return;
-
-                    if (data === null) {
-                        if (knownUsers.has(key)) {
-                            const alias = roomUsers[key]?.alias || key;
-                            knownUsers.delete(key);
-                            delete roomUsers[key];
-                            addSystemMsg(`🚪 ${esc(alias)} left the room.`);
+                    roomMembersRef.map().on((data, key) => {
+                        if (!key) return;
+                        if (data && data.alias) {
+                            const wasNew = !roomUsers[key];
+                            roomUsers[key] = data;
+                            if (wasNew && key !== myUserId && !knownUsers.has(key)) {
+                                knownUsers.add(key);
+                                addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
+                            }
                             updateRoomUsersUI();
                             updateMemberCount();
                         }
-                        return;
-                    }
+                    });
 
-                    if (data && data.alias) {
-                        const now = Date.now();
-                        if (now - (data.lastSeen || 0) > 15000) return;
-                        if (!knownUsers.has(key)) {
-                            knownUsers.add(key);
-                            roomUsers[key] = { alias: data.alias, lastSeen: data.lastSeen || now, role: 'member' };
-                            addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
-                            updateRoomUsersUI();
-                            updateMemberCount();
-                        } else {
-                            roomUsers[key].lastSeen = data.lastSeen || now;
+                    roomLogRef.map().on((data, key) => {
+                        if (!data || processedLogIds.has(data.msgId)) return;
+                        if (data.senderId === myUserId) return;
+                        processedLogIds.add(data.msgId);
+                        const line = document.createElement('div');
+                        line.className = 'line';
+                        line.innerHTML =
+                            `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
+                        output.appendChild(line);
+                        const outLine = document.createElement('div');
+                        outLine.className = 'line';
+                        outLine.innerHTML = data.outputHTML || '';
+                        output.appendChild(outLine);
+                        outputLines.push(line, outLine);
+                        limitOutputLines();
+                        output.scrollTop = output.scrollHeight;
+                    });
+
+                    roomChatRef.map().on((data, key) => {
+                        if (!data || processedChatIds.has(data.msgId)) return;
+                        processedChatIds.add(data.msgId);
+                        if (data.senderId === myUserId) return;
+                        const line = document.createElement('div');
+                        line.className = 'line chat-msg';
+                        const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
+                        line.innerHTML =
+                            `💬 <strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
+                        output.appendChild(line);
+                        outputLines.push(line);
+                        limitOutputLines();
+                        output.scrollTop = output.scrollHeight;
+                    });
+
+                    roomPresenceRef.map().on((data, key) => {
+                        if (!key) return;
+                        if (key === myUserId) return;
+
+                        if (data === null) {
+                            if (knownUsers.has(key)) {
+                                const alias = roomUsers[key]?.alias || key;
+                                knownUsers.delete(key);
+                                delete roomUsers[key];
+                                addSystemMsg(`🚪 ${esc(alias)} left the room.`);
+                                updateRoomUsersUI();
+                                updateMemberCount();
+                            }
+                            return;
                         }
-                    }
-                });
 
-                // Update presence
-                roomPresenceRef.get(myUserId).put({
-                    alias: myAlias,
-                    lastSeen: Date.now()
-                });
-
-                // Clean up stale presence every 15s
-                setInterval(() => {
-                    if (!currentRoomId) return;
-                    const now = Date.now();
-                    let changed = false;
-                    Object.keys(roomUsers).forEach(id => {
-                        if (id === myUserId) return;
-                        if (now - (roomUsers[id]?.lastSeen || 0) > 15000) {
-                            const alias = roomUsers[id]?.alias || id;
-                            delete roomUsers[id];
-                            if (knownUsers.has(id)) {
-                                knownUsers.delete(id);
-                                addSystemMsg(`⏱️ ${esc(alias)} timed out.`);
-                                changed = true;
+                        if (data && data.alias) {
+                            const now = Date.now();
+                            if (now - (data.lastSeen || 0) > 15000) {
+                                if (knownUsers.has(key)) {
+                                    const alias = roomUsers[key]?.alias || key;
+                                    knownUsers.delete(key);
+                                    delete roomUsers[key];
+                                    addSystemMsg(`⏱️ ${esc(alias)} timed out.`);
+                                    updateRoomUsersUI();
+                                    updateMemberCount();
+                                }
+                                return;
+                            }
+                            if (!knownUsers.has(key)) {
+                                knownUsers.add(key);
+                                roomUsers[key] = { alias: data.alias, lastSeen: data.lastSeen || now,
+                                role: 'member' };
+                                addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
+                                updateRoomUsersUI();
+                                updateMemberCount();
+                            } else {
+                                roomUsers[key].lastSeen = data.lastSeen || now;
                             }
                         }
                     });
-                    if (changed) {
-                        updateRoomUsersUI();
-                        updateMemberCount();
-                    }
-                }, 15000);
 
-                // Update meta lastActivity
-                roomMetaRef.get('lastActivity').put(Date.now());
+                    roomPresenceRef.get(myUserId).put({
+                        alias: myAlias,
+                        lastSeen: Date.now()
+                    });
 
-                // Update member count in meta
-                updateMemberCount();
+                    if (cleanupInterval) clearInterval(cleanupInterval);
+                    cleanupInterval = setInterval(() => {
+                        if (!currentRoomId) return;
+                        const now = Date.now();
+                        let changed = false;
+                        Object.keys(roomUsers).forEach(id => {
+                            if (id === myUserId) return;
+                            if (now - (roomUsers[id]?.lastSeen || 0) > 15000) {
+                                const alias = roomUsers[id]?.alias || id;
+                                delete roomUsers[id];
+                                if (knownUsers.has(id)) {
+                                    knownUsers.delete(id);
+                                    addSystemMsg(`⏱️ ${esc(alias)} timed out.`);
+                                    changed = true;
+                                }
+                            }
+                        });
+                        if (changed) {
+                            updateRoomUsersUI();
+                            updateMemberCount();
+                        }
+                    }, 15000);
+
+                    roomMetaRef.get('lastActivity').put(Date.now());
+                    updateMemberCount();
+
+                    return true;
+                } catch (e) {
+                    add('Error in joinRoomInternal: ' + esc(e.message), 'err');
+                    return false;
+                }
             }
 
             function updateMemberCount() {
                 if (!roomMetaRef) return;
                 const count = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
                 roomMemberCount = count;
-                roomMetaRef.get('memberCount').put(count);
+                try {
+                    roomMetaRef.get('memberCount').put(count);
+                } catch (e) { /* ignore */ }
             }
 
             function leaveRoom() {
-                if (!currentRoomId || !gun) return;
-                if (currentRoomRef) {
-                    // Remove from members
-                    if (roomMembersRef) {
-                        roomMembersRef.get(myUserId).put(null);
-                    }
-                    // Remove presence
-                    if (roomPresenceRef) {
-                        roomPresenceRef.get(myUserId).put(null);
-                    }
-                    // Off all listeners
-                    currentRoomRef.off();
+                if (!currentRoomId || !gun) {
+                    add('Not in a room.', 'err');
+                    return;
                 }
-                currentRoomRef = null;
-                currentRoomId = null;
-                roomMeta = null;
-                roomPassword = null;
-                knownUsers.clear();
-                processedLogIds.clear();
-                processedChatIds.clear();
-                roomUsers = {};
-                roomMemberCount = 0;
-                isRoomInitialized = false;
-                roomMetaRef = null;
-                roomLogRef = null;
-                roomChatRef = null;
-                roomPresenceRef = null;
-                roomMembersRef = null;
+                try {
+                    if (roomMembersRef) {
+                        try { roomMembersRef.get(myUserId).put(null); } catch (e) { /* ignore */ }
+                    }
+                    if (roomPresenceRef) {
+                        try { roomPresenceRef.get(myUserId).put(null); } catch (e) { /* ignore */ }
+                    }
+                    if (currentRoomRef) {
+                        try { currentRoomRef.off(); } catch (e) { /* ignore */ }
+                    }
+                } catch (e) { /* ignore */ }
+
+                if (cleanupInterval) {
+                    clearInterval(cleanupInterval);
+                    cleanupInterval = null;
+                }
+
+                cleanupRoomListeners();
                 updateRoomBadge(null);
                 updateRoomUsersUI();
                 updateRoomStatusDisplay();
@@ -1406,41 +1735,35 @@
                     return;
                 }
 
-                // Confirm deletion
-                const line = add('<strong>⚠️ Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
+                const line = add('<strong>⚠️ Are you sure you want to delete this room? Type "yes" to confirm.</strong>',
+                'warning');
                 const confirmHandler = async function(e) {
                     const cmd = e.target.value.trim().toLowerCase();
                     if (cmd === 'yes') {
-                        // Delete room
-                        if (currentRoomRef) {
-                            currentRoomRef.off();
-                            currentRoomRef.put(null);
+                        try {
+                            if (currentRoomRef) {
+                                try {
+                                    currentRoomRef.off();
+                                    currentRoomRef.put(null);
+                                } catch (e) { /* ignore */ }
+                            }
+                            createdRooms = createdRooms.filter(id => id !== currentRoomId);
+                            localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
+                            add('🗑️ Room deleted.', 'ok');
+
+                            if (cleanupInterval) {
+                                clearInterval(cleanupInterval);
+                                cleanupInterval = null;
+                            }
+                            cleanupRoomListeners();
+                            updateRoomBadge(null);
+                            updateRoomUsersUI();
+                            updateRoomStatusDisplay();
+                        } catch (e) {
+                            add('Error deleting room: ' + esc(e.message), 'err');
                         }
-                        // Remove from created rooms
-                        createdRooms = createdRooms.filter(id => id !== currentRoomId);
-                        localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
-                        add('🗑️ Room deleted.', 'ok');
-                        // Clean up state
-                        currentRoomRef = null;
-                        currentRoomId = null;
-                        roomMeta = null;
-                        roomPassword = null;
-                        knownUsers.clear();
-                        processedLogIds.clear();
-                        processedChatIds.clear();
-                        roomUsers = {};
-                        roomMemberCount = 0;
-                        isRoomInitialized = false;
-                        roomMetaRef = null;
-                        roomLogRef = null;
-                        roomChatRef = null;
-                        roomPresenceRef = null;
-                        roomMembersRef = null;
-                        updateRoomBadge(null);
-                        updateRoomUsersUI();
-                        updateRoomStatusDisplay();
                         input.removeEventListener('keypress', confirmHandler);
-                    } else {
+                    } else if (cmd) {
                         add('Room deletion cancelled.', 'info');
                         input.removeEventListener('keypress', confirmHandler);
                     }
@@ -1462,8 +1785,20 @@
                     text: text.trim(),
                     timestamp: Date.now()
                 };
-                roomChatRef.set(msg);
-                addSystemMsg(`💬 You: ${esc(text.trim())}`);
+                try {
+                    roomChatRef.set(msg);
+                } catch (e) {
+                    add('Failed to send chat message: ' + esc(e.message), 'err');
+                    return;
+                }
+                const line = document.createElement('div');
+                line.className = 'line chat-msg';
+                line.innerHTML =
+                    `💬 <strong>${esc(myAlias)}</strong> (you): ${esc(text.trim())}`;
+                output.appendChild(line);
+                outputLines.push(line);
+                limitOutputLines();
+                output.scrollTop = output.scrollHeight;
             }
 
             function sendMessageToRoom(cmd, outputHTML) {
@@ -1477,8 +1812,10 @@
                     outputHTML,
                     timestamp: Date.now()
                 };
-                roomLogRef.set(msg);
-                processedLogIds.add(msgId);
+                try {
+                    roomLogRef.set(msg);
+                    processedLogIds.add(msgId);
+                } catch (e) { /* ignore */ }
             }
 
             function addSystemMsg(text) {
@@ -1498,8 +1835,9 @@
                 }
                 let lockedClass = meta?.passwordProtected ? ' locked' : '';
                 const displayName = meta?.name || currentRoomId;
+                const tempIcon = meta?.temporary ? '⏳' : '♾️';
                 roomBadgeContainer.innerHTML =
-                    `<span class="room-badge${lockedClass}" title="Click to copy Room ID">${esc(displayName)}</span>`;
+                    `<span class="room-badge${lockedClass}" title="Click to copy Room ID">${tempIcon} ${esc(displayName)}</span>`;
             }
 
             function updateRoomStatusDisplay() {
@@ -1509,8 +1847,9 @@
                 }
                 const displayName = roomMeta?.name || currentRoomId;
                 const members = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
+                const tempLabel = roomMeta?.temporary ? '⏳ Temporary' : '♾️ Permanent';
                 roomStatusDisplay.innerHTML =
-                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | 👥 ${members} member${members > 1 ? 's' : ''}${roomMeta?.passwordProtected ? ' 🔒' : ''}`;
+                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | 👥 ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' 🔒' : ''}`;
             }
 
             function updateRoomUsersUI() {
@@ -1524,7 +1863,6 @@
                     return;
                 }
 
-                // Sort: admin first, then by alias
                 users.sort((a, b) => {
                     if (a.role === 'admin' && b.role !== 'admin') return -1;
                     if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -1542,38 +1880,52 @@
             // ============================================================
 
             async function listAllRooms() {
-                if (!gun) { add('Gun not initialized.', 'err'); return; }
+                if (!gun) {
+                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    return;
+                }
 
                 const lid = loader('Fetching rooms...');
                 try {
                     const roomsRef = gun.get('nexus_rooms');
-                    const rooms = await new Promise((resolve) => {
-                        const result = {};
-                        roomsRef.map().once((data, key) => {
-                            if (data && data.meta) {
-                                result[key] = data.meta;
-                            }
-                        });
-                        // Give time for data to load
-                        setTimeout(() => resolve(result), 500);
+                    const result = {};
+                    roomsRef.map().once((data, key) => {
+                        if (data && data.meta) {
+                            result[key] = data.meta;
+                        }
                     });
 
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     unloader(lid);
 
-                    const entries = Object.entries(rooms);
+                    const entries = Object.entries(result);
                     if (entries.length === 0) {
-                        add('No rooms found. Create one with <span class="clickable-cmd" data-cmd="room create">room create</span>.', 'info');
+                        add(
+                            'No rooms found. Create one with <span class="clickable-cmd" data-cmd="room create">room create</span>.',
+                            'info');
                         return;
                     }
 
+                    const now = Date.now();
+                    let active = 0;
                     add('<strong>📋 Available Rooms:</strong>', 'highlight');
                     entries.forEach(([id, meta]) => {
+                        // Filter expired
+                        if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return;
+                        active++;
                         const name = meta.name || id;
                         const members = meta.memberCount || 0;
                         const locked = meta.passwordProtected ? '🔒' : '🔓';
                         const creator = meta.creatorAlias || 'unknown';
-                        add(`<div class="block"><strong>${esc(name)}</strong> ${locked}<br>ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</div>`, 'ok');
+                        const tempLabel = meta.temporary ? '⏳' : '♾️';
+                        add(
+                            `<div class="block"><strong>${esc(name)}</strong> ${tempLabel} ${locked}<br>ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</div>`,
+                            'ok');
                     });
+                    if (active === 0) {
+                        add('No active rooms found. Create one with <span class="clickable-cmd" data-cmd="room create">room create</span>.',
+                            'info');
+                    }
                 } catch (e) {
                     unloader(lid);
                     add('Error listing rooms: ' + esc(e.message), 'err');
@@ -1581,25 +1933,31 @@
             }
 
             async function searchRooms(query) {
-                if (!gun) { add('Gun not initialized.', 'err'); return; }
-                if (!query) { add('Usage: room search <query>', 'err'); return; }
+                if (!gun) {
+                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    return;
+                }
+                if (!query) {
+                    add('Usage: room search <query>', 'err');
+                    return;
+                }
 
                 const lid = loader('Searching rooms...');
                 try {
                     const roomsRef = gun.get('nexus_rooms');
-                    const rooms = await new Promise((resolve) => {
-                        const result = {};
-                        roomsRef.map().once((data, key) => {
-                            if (data && data.meta) {
-                                result[key] = data.meta;
-                            }
-                        });
-                        setTimeout(() => resolve(result), 500);
+                    const result = {};
+                    roomsRef.map().once((data, key) => {
+                        if (data && data.meta) {
+                            result[key] = data.meta;
+                        }
                     });
 
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     unloader(lid);
 
-                    const entries = Object.entries(rooms).filter(([id, meta]) => {
+                    const now = Date.now();
+                    const entries = Object.entries(result).filter(([id, meta]) => {
+                        if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return false;
                         const name = (meta.name || '').toLowerCase();
                         const desc = (meta.description || '').toLowerCase();
                         const q = query.toLowerCase();
@@ -1616,7 +1974,10 @@
                         const name = meta.name || id;
                         const members = meta.memberCount || 0;
                         const locked = meta.passwordProtected ? '🔒' : '🔓';
-                        add(`<div class="block"><strong>${esc(name)}</strong> ${locked}<br>ID: ${esc(id)} | 👥 ${members}</div>`, 'ok');
+                        const tempLabel = meta.temporary ? '⏳' : '♾️';
+                        add(
+                            `<div class="block"><strong>${esc(name)}</strong> ${tempLabel} ${locked}<br>ID: ${esc(id)} | 👥 ${members}</div>`,
+                            'ok');
                     });
                 } catch (e) {
                     unloader(lid);
@@ -1625,30 +1986,59 @@
             }
 
             async function getRoomInfo(roomId) {
-                if (!gun) { add('Gun not initialized.', 'err'); return; }
-                if (!roomId) { add('Usage: room info <id>', 'err'); return; }
-
-                roomId = roomId.trim();
-                const metaRef = gun.get('nexus_rooms').get(roomId).get('meta');
-                const meta = await new Promise((resolve) => {
-                    metaRef.once((data) => {
-                        resolve(data);
-                    });
-                });
-
-                if (!meta || !meta.created) {
-                    add('Room not found.', 'err');
+                if (!gun) {
+                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    return;
+                }
+                if (!roomId) {
+                    add('Usage: room info <id>', 'err');
                     return;
                 }
 
-                const name = meta.name || roomId;
-                const created = new Date(meta.created).toLocaleString();
-                const members = meta.memberCount || 0;
-                const locked = meta.passwordProtected ? '🔒 Yes' : '🔓 No';
-                const creator = meta.creatorAlias || meta.creator || 'unknown';
-                const desc = meta.description || 'No description';
+                roomId = roomId.trim();
+                try {
+                    const metaRef = gun.get('nexus_rooms').get(roomId).get('meta');
+                    const meta = await new Promise((resolve) => {
+                        let resolved = false;
+                        metaRef.once((data) => {
+                            if (!resolved) {
+                                resolved = true;
+                                resolve(data);
+                            }
+                        });
+                        setTimeout(() => {
+                            if (!resolved) {
+                                resolved = true;
+                                resolve(null);
+                            }
+                        }, 5000);
+                    });
 
-                add(`<div class="block"><strong>🏠 Room: ${esc(name)}</strong><br>ID: ${esc(roomId)}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${members}<br>Password Protected: ${locked}</div>`, 'ok');
+                    if (!meta || !meta.created) {
+                        add('Room not found.', 'err');
+                        return;
+                    }
+
+                    if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
+                        add('❌ This room has expired.', 'err');
+                        return;
+                    }
+
+                    const name = meta.name || roomId;
+                    const created = new Date(meta.created).toLocaleString();
+                    const members = meta.memberCount || 0;
+                    const locked = meta.passwordProtected ? '🔒 Yes' : '🔓 No';
+                    const creator = meta.creatorAlias || meta.creator || 'unknown';
+                    const desc = meta.description || 'No description';
+                    const tempLabel = meta.temporary ? '⏳ Temporary (expires ' + new Date(meta.expiresAt)
+                        .toLocaleString() + ')' : '♾️ Permanent';
+
+                    add(
+                        `<div class="block"><strong>🏠 Room: ${esc(name)}</strong><br>ID: ${esc(roomId)}<br>Type: ${tempLabel}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${members}<br>Password Protected: ${locked}</div>`,
+                        'ok');
+                } catch (e) {
+                    add('Error getting room info: ' + esc(e.message), 'err');
+                }
             }
 
             function getRoomInvite() {
@@ -1657,7 +2047,7 @@
                     return;
                 }
                 const inviteText =
-                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.passwordProtected ? '🔒 Password protected' : '🔓 Open'}`;
+                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.temporary ? '⏳ Temporary' : '♾️ Permanent'}${roomMeta?.passwordProtected ? '\n🔒 Password protected' : ''}`;
 
                 if (navigator.share) {
                     navigator.share({ text: inviteText }).then(() => {
@@ -2494,7 +2884,7 @@
                 const url = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(text);
                 add(
                     '<img src="' + url +
-                    '" alt="QR Code" style="display:block;margin:8px 0;border:2px solid var(--accent);border-radius:var(--radius-sm);">',
+                    '" alt="QR Code" style="display:block;margin:6px 0;border:2px solid var(--accent);border-radius:var(--radius-sm);">',
                     'ok');
             }
 
@@ -2565,7 +2955,7 @@
                 if (cached) {
                     add(
                         '<img src="' + cached +
-                        '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:8px;">',
+                        '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;">',
                         'ok');
                     return;
                 }
@@ -2577,7 +2967,7 @@
                     unloader(lid);
                     add(
                         '<img src="' + data.message +
-                        '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:8px;">',
+                        '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;">',
                         'ok');
                 } catch { unloader(lid);
                     add('Dog image error.', 'err'); }
@@ -2678,7 +3068,7 @@
                             ['THEME <name>', 'theme'],
                             ['CACHE clear', 'cache clear'], ['CLEAR', 'clear'],
                             ['NICK <name>', 'nick'],
-                            ['ROOM create [name] [description] [password]', 'room create'],
+                            ['ROOM create [name] [description] [password] [temporary]', 'room create'],
                             ['ROOM join <id> [password]', 'room join'],
                             ['ROOM leave', 'room leave'],
                             ['ROOM list', 'room list'],
@@ -2849,8 +3239,10 @@
                         if (args.length === 0) { add('Usage: nick <name>', 'err'); break; }
                         myAlias = args.join(' ').trim();
                         if (currentRoomRef) {
-                            currentRoomRef.get('presence').get(myUserId).put({ alias: myAlias, lastSeen: Date
-                                    .now() });
+                            try {
+                                currentRoomRef.get('presence').get(myUserId).put({ alias: myAlias, lastSeen: Date
+                                        .now() });
+                            } catch (e) { /* ignore */ }
                         }
                         add(`Nickname set to ${esc(myAlias)}.`, 'ok');
                         break;
@@ -2859,7 +3251,9 @@
                             const name = args[1] || null;
                             const description = args[2] || null;
                             const password = args[3] || null;
-                            await createRoom(name, description, password);
+                            const temporary = args[4] === 'temp' || args[4] === 'temporary' || args[4] === 't';
+                            const ttl = temporary ? '604800000' : null;
+                            await createRoom(name, description, password, temporary, ttl);
                         } else if (args[0] === 'join') {
                             const id = args[1];
                             const password = args[2] || null;
@@ -2901,7 +3295,7 @@
                         break;
                     case 'about':
                         add(
-                            '<div class="block"><strong>Nexus Terminal Pro v5.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
+                            '<div class="block"><strong>Nexus Terminal Pro v5.2</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
                             'ok');
                         break;
                     default:
@@ -2910,7 +3304,7 @@
                 }
 
                 add = originalAdd;
-                if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room') {
+                if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room' && main !== 'help') {
                     sendMessageToRoom(raw, capturedHTML);
                 }
                 updateRoomStatusDisplay();
@@ -2973,11 +3367,17 @@
             });
             aliasInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') aliasAddBtn.click(); });
 
+            roomTemporaryCheck.addEventListener('change', function() {
+                ttlSelectContainer.classList.toggle('active', this.checked);
+            });
+
             roomCreateBtn.addEventListener('click', function() {
                 const name = roomNameInput.value.trim() || null;
                 const desc = roomDescInput.value.trim() || null;
                 const pass = roomCreatePassInput.value.trim() || null;
-                createRoom(name, desc, pass);
+                const temporary = roomTemporaryCheck.checked;
+                const ttl = temporary ? ttlSelect.value : null;
+                createRoom(name, desc, pass, temporary, ttl);
             });
             roomJoinBtn.addEventListener('click', function() {
                 const id = roomJoinInput.value.trim();
@@ -2988,7 +3388,6 @@
             roomLeaveBtn.addEventListener('click', leaveRoom);
             roomDeleteBtn.addEventListener('click', deleteRoom);
 
-            // Copy Room ID on badge click
             roomBadgeContainer.addEventListener('click', function() {
                 if (!currentRoomId) return;
                 copyToClipboard(currentRoomId).then(() => {
@@ -3055,7 +3454,7 @@
             }
 
             add(
-                '<div class="block"><strong>🚀 Nexus Terminal Pro v5.0</strong><br>Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands. Room system improved!</div>',
+                '<div class="block"><strong>🚀 Nexus Terminal Pro v5.2</strong><br>Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands. Rooms now support Temporary/Permanent!</div>',
                 'ok');
             add('Ready.', 'info');
             input.focus();
@@ -3063,4 +3462,4 @@
         })();
     </script>
 </body>
-    </html>
+                        </html>
