@@ -1,76 +1,2383 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#080c14">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Nexus Terminal Pro | Marvic Studios UG</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#080c14">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Nexus Terminal Pro | Marvic Studios UG</title>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'none';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https:;
+        connect-src https://geocoding-api.open-meteo.com https://api.open-meteo.com https://icanhazdadjoke.com https://api.coingecko.com https://hacker-news.firebaseio.com https://ipapi.co https://dns.google https://api.exchangerate-api.com https://api.github.com https://api.spacexdata.com https://api.quotable.io https://www.thesportsdb.com https://www.cheapshark.com https://numbersapi.com https://en.wikipedia.org https://api.dictionaryapi.dev https://api.qrserver.com https://randomuser.me https://www.boredapi.com https://catfact.ninja https://dog.ceo https://www.reddit.com https://api.alpha-vantage.co https://libretranslate.com;
+        frame-src 'none';
+        base-uri 'self';
+        form-action 'none';
+    ">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-deep: #080c14;
+            --surface: rgba(10, 18, 30, 0.96);
+            --glass-border: rgba(0, 255, 200, 0.18);
+            --neon-cyan: #00ffcc;
+            --neon-blue: #0088ff;
+            --text: #e0e8ff;
+            --dim: #6b7f99;
+            --error: #ff5370;
+            --success: #4cff8f;
+            --warning: #ffb86c;
+            --scroll-thumb: #00ffcc;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Courier New', monospace;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            --gradient-bg: linear-gradient(135deg, #080c14 0%, #0a1225 50%, #080c14 100%);
+            --shadow-glow: 0 0 30px rgba(0, 255, 200, 0.15);
+        }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+        body {
+            background: var(--gradient-bg);
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            font-family: var(--font-mono);
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(0, 255, 200, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 200, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .terminal {
+            width: 100vw;
+            height: 100vh;
+            background: var(--surface);
+            backdrop-filter: blur(25px) saturate(180%);
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 0 60px rgba(0, 255, 200, 0.1), 0 0 80px rgba(0, 136, 255, 0.15);
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(0, 255, 200, 0.12);
+            border-radius: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 1.8rem;
+            background: rgba(0, 10, 20, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+        }
+        .dots {
+            display: flex;
+            gap: 0.7rem;
+        }
+        .dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            box-shadow: 0 0 6px currentColor;
+            transition: 0.2s;
+        }
+        .dot.red {
+            background: #ff5f57;
+            color: #ff5f57;
+        }
+        .dot.yellow {
+            background: #febc2e;
+            color: #febc2e;
+        }
+        .dot.green {
+            background: #28c840;
+            color: #28c840;
+        }
+        .dot:hover {
+            transform: scale(1.2);
+        }
+        .title {
+            color: var(--neon-cyan);
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(0, 255, 200, 0.5);
+        }
+        .status {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--dim);
+            align-items: center;
+        }
+        .led {
+            width: 9px;
+            height: 9px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 6px var(--success);
+            }
+            50% {
+                opacity: 0.3;
+                box-shadow: 0 0 2px var(--success);
+            }
+        }
+        .body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.2rem 1.8rem;
+            line-height: 1.65;
+            color: var(--text);
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 0.88rem;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+        .output::-webkit-scrollbar {
+            width: 6px;
+        }
+        .output::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .output::-webkit-scrollbar-thumb {
+            background: var(--scroll-thumb);
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+        .line {
+            margin-bottom: 0.25rem;
+            animation: fadeIn 0.25s ease;
+            position: relative;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .cmd {
+            color: var(--neon-cyan);
+            font-weight: bold;
+        }
+        .cmd::before {
+            content: "> ";
+            opacity: 0.6;
+        }
+        .err {
+            color: var(--error);
+            background: rgba(255, 83, 112, 0.08);
+            padding: 0.25rem 0.7rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--error);
+        }
+        .ok {
+            color: var(--success);
+        }
+        .info {
+            color: var(--dim);
+        }
+        .highlight {
+            color: var(--neon-cyan);
+            font-weight: bold;
+        }
+        .warning {
+            color: var(--warning);
+        }
+        .block {
+            background: rgba(0, 255, 200, 0.05);
+            border-left: 3px solid var(--neon-cyan);
+            padding: 0.6rem 1.2rem;
+            margin: 0.4rem 0;
+            border-radius: 0 8px 8px 0;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .clickable-cmd {
+            cursor: pointer;
+            color: var(--neon-cyan);
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            transition: 0.2s;
+            display: inline-block;
+            margin-right: 15px;
+        }
+        .clickable-cmd:hover {
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-cyan);
+            transform: translateX(3px);
+        }
+        .quickbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem 1.8rem;
+            border-top: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+        .quickbar::-webkit-scrollbar {
+            height: 4px;
+        }
+        .quickbar::-webkit-scrollbar-thumb {
+            background: var(--scroll-thumb);
+            border-radius: 10px;
+        }
+        .qbtn {
+            background: rgba(0, 255, 200, 0.08);
+            border: 1px solid rgba(0, 255, 200, 0.25);
+            color: var(--neon-cyan);
+            padding: 0.4rem 1.1rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(5px);
+        }
+        .qbtn:hover {
+            background: rgba(0, 255, 200, 0.2);
+            box-shadow: 0 0 18px rgba(0, 255, 200, 0.5);
+            transform: translateY(-2px);
+            border-color: var(--neon-cyan);
+        }
+        .qbtn:active {
+            transform: translateY(0);
+        }
+        .inputline {
+            display: flex;
+            padding: 0.7rem 1.8rem;
+            border-top: 1px solid var(--glass-border);
+            background: rgba(5, 12, 22, 0.96);
+            backdrop-filter: blur(15px);
+            flex-shrink: 0;
+            position: relative;
+        }
+        .prompt {
+            color: var(--neon-cyan);
+            font-weight: bold;
+            margin-right: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #cmdInput {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.92rem;
+            outline: none;
+            caret-color: var(--neon-cyan);
+        }
+        #cmdInput::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        .input-actions {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+        }
+        #execBtn {
+            background: linear-gradient(135deg, #00ffcc, #0088ff);
+            border: none;
+            color: #050810;
+            font-weight: bold;
+            padding: 0.55rem 1.8rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 200, 0.5);
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(0, 255, 200, 0.4);
+        }
+        #execBtn:hover {
+            box-shadow: 0 0 35px rgba(0, 255, 200, 0.9);
+            transform: scale(1.05);
+        }
+        #execBtn:active {
+            transform: scale(0.96);
+        }
+        .icon-btn {
+            background: rgba(0, 255, 200, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--dim);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .icon-btn:hover {
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 12px rgba(0, 255, 200, 0.4);
+        }
+        .settings-panel {
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: 20px;
+            background: var(--surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.4rem;
+            width: 290px;
+            z-index: 100;
+            backdrop-filter: blur(30px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            animation: slideIn 0.3s ease;
+        }
+        .settings-panel.active {
+            display: block;
+        }
+        .settings-btn {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--dim);
+            padding: 0.3rem 1.1rem;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.3s;
+            letter-spacing: 0.5px;
+        }
+        .settings-btn:hover {
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+            background: rgba(0, 255, 200, 0.05);
+        }
+        .settings-section {
+            margin-bottom: 1.2rem;
+        }
+        .settings-section h3 {
+            color: var(--neon-cyan);
+            font-size: 0.8rem;
+            margin-bottom: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        select,
+        input[type="range"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            padding: 0.45rem;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            outline: none;
+        }
+        select:focus,
+        input[type="range"]:focus {
+            border-color: var(--neon-cyan);
+        }
+        @media (max-width: 600px) {
+            .header {
+                padding: 0.4rem 0.8rem;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+            }
+            .title {
+                font-size: 0.7rem;
+            }
+            .status {
+                font-size: 0.6rem;
+                gap: 0.5rem;
+            }
+            .output {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.75rem;
+            }
+            .quickbar {
+                padding: 0.3rem 0.8rem;
+                gap: 0.3rem;
+            }
+            .qbtn {
+                padding: 0.25rem 0.7rem;
+                font-size: 0.65rem;
+            }
+            .inputline {
+                padding: 0.4rem 0.8rem;
+            }
+            #cmdInput {
+                font-size: 0.8rem;
+            }
+            #execBtn {
+                padding: 0.4rem 1rem;
+                font-size: 0.7rem;
+            }
+            .settings-panel {
+                width: 220px;
+                right: 8px;
+                top: 48px;
+                padding: 1rem;
+            }
+            .dots .dot {
+                width: 10px;
+                height: 10px;
+            }
+            .block {
+                padding: 0.4rem 0.8rem;
+            }
+        }
+        @media (max-width: 400px) {
+            .header .dots {
+                gap: 0.4rem;
+            }
+            .status span:not(:first-child) {
+                display: none;
+            }
+            .input-actions .icon-btn {
+                width: 30px;
+                height: 30px;
+            }
+        }
+        .drop-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 255, 200, 0.05);
+            border: 3px dashed var(--neon-cyan);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 50;
+            backdrop-filter: blur(4px);
+            color: var(--neon-cyan);
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .drop-overlay.active {
+            display: flex;
+        }
+    </style>
 </head>
 <body>
-  <div class="terminal" id="app" role="application" aria-label="Nexus Terminal Pro">
-    <div class="drop-overlay" id="dropOverlay" aria-label="Drop files to upload">DROP FILES HERE</div>
+    <div class="terminal" id="app" role="application" aria-label="Nexus Terminal Pro">
+        <div class="drop-overlay" id="dropOverlay" aria-label="Drop files to upload">DROP FILES HERE</div>
 
-    <div class="header" role="banner">
-      <div class="dots">
-        <div class="dot red" aria-hidden="true"></div>
-        <div class="dot yellow" aria-hidden="true"></div>
-        <div class="dot green" aria-hidden="true"></div>
-      </div>
-      <div class="title" aria-label="Nexus Terminal Pro">NEXUS TERMINAL PRO</div>
-      <div class="status" role="status" aria-live="polite">
-        <span><span class="led" aria-hidden="true"></span> ONLINE</span>
-        <span id="liveClock" aria-label="Current time">--:--:--</span>
-        <button class="settings-btn" id="settingsToggle" aria-label="Open settings">Settings</button>
-      </div>
-    </div>
-
-    <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Terminal settings">
-      <div class="settings-section">
-        <h3 id="themeLabel">Theme</h3>
-        <select id="themeSelect" aria-labelledby="themeLabel">
-          <option value="default">Cyber Neon</option>
-          <option value="ocean">Deep Ocean</option>
-          <option value="mono">Monochrome</option>
-          <option value="matrix">Matrix</option>
-          <option value="sunset">Sunset</option>
-        </select>
-      </div>
-      <div class="settings-section">
-        <h3 id="fontLabel">Font Size</h3>
-        <input type="range" id="fontSizeSlider" min="11" max="18" value="14" aria-labelledby="fontLabel">
-        <span id="fontSizeValue" style="color:var(--dim);">14px</span>
-      </div>
-      <div class="settings-section">
-        <h3 id="aliasLabel">Command Aliases</h3>
-        <input type="text" id="aliasInput" placeholder="alias=command" aria-labelledby="aliasLabel">
-        <button id="aliasAddBtn">Add Alias</button>
-      </div>
-      <div class="settings-section">
-        <h3 id="statsLabel">Session Stats</h3>
-        <div style="font-size:0.7rem;color:var(--dim);" id="sessionStats" aria-labelledby="statsLabel"></div>
-      </div>
-      <div style="margin-top:1rem;font-size:0.7rem;color:var(--dim);text-align:center;">
-        Nexus Terminal Pro v4.3<br>Marvic Studios UG
-      </div>
-    </div>
-
-    <div class="body">
-      <div class="output" id="outputContainer" role="log" aria-live="polite" aria-label="Terminal output"></div>
-      <div class="quickbar" id="quickbar" role="toolbar" aria-label="Quick commands"></div>
-      <div class="inputline" role="form" aria-label="Command input">
-        <div class="prompt" aria-hidden="true"><span>></span></div>
-        <input type="text" id="cmdInput" placeholder="type command..." autofocus autocomplete="off" spellcheck="false" aria-label="Command input">
-        <div class="input-actions">
-          <button class="icon-btn" id="clearBtn" title="Clear (Ctrl+L)" aria-label="Clear terminal">&#x2715;</button>
-          <button id="execBtn" aria-label="Execute command">EXEC</button>
+        <div class="header" role="banner">
+            <div class="dots">
+                <div class="dot red" aria-hidden="true"></div>
+                <div class="dot yellow" aria-hidden="true"></div>
+                <div class="dot green" aria-hidden="true"></div>
+            </div>
+            <div class="title" aria-label="Nexus Terminal Pro">NEXUS TERMINAL PRO</div>
+            <div class="status" role="status" aria-live="polite">
+                <span><span class="led" aria-hidden="true"></span> ONLINE</span>
+                <span id="liveClock" aria-label="Current time">--:--:--</span>
+                <button class="settings-btn" id="settingsToggle" aria-label="Open settings">Settings</button>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <script type="module" src="js/main.js"></script>
+        <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Terminal settings">
+            <div class="settings-section">
+                <h3 id="themeLabel">Theme</h3>
+                <select id="themeSelect" aria-labelledby="themeLabel">
+                    <option value="default">Cyber Neon</option>
+                    <option value="ocean">Deep Ocean</option>
+                    <option value="mono">Monochrome</option>
+                    <option value="matrix">Matrix</option>
+                    <option value="sunset">Sunset</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <h3 id="fontLabel">Font Size</h3>
+                <input type="range" id="fontSizeSlider" min="11" max="18" value="14" aria-labelledby="fontLabel">
+                <span id="fontSizeValue" style="color:var(--dim);">14px</span>
+            </div>
+            <div class="settings-section">
+                <h3 id="aliasLabel">Command Aliases</h3>
+                <input type="text" id="aliasInput" placeholder="alias=command" aria-labelledby="aliasLabel" style="width:100%;background:rgba(0,0,0,0.35);border:1px solid var(--glass-border);color:var(--text);padding:0.45rem;border-radius:0.5rem;font-family:inherit;outline:none;">
+                <button id="aliasAddBtn" style="margin-top:0.3rem;background:var(--neon-cyan);border:none;color:#050810;padding:0.25rem 1rem;border-radius:1.5rem;cursor:pointer;font-weight:bold;font-size:0.75rem;">Add Alias</button>
+            </div>
+            <div class="settings-section">
+                <h3 id="statsLabel">Session Stats</h3>
+                <div style="font-size:0.7rem;color:var(--dim);" id="sessionStats" aria-labelledby="statsLabel"></div>
+            </div>
+            <div style="margin-top:1rem;font-size:0.7rem;color:var(--dim);text-align:center;">
+                Nexus Terminal Pro v4.2<br>Marvic Studios UG
+            </div>
+        </div>
+
+        <div class="body">
+            <div class="output" id="outputContainer" role="log" aria-live="polite" aria-label="Terminal output"></div>
+            <div class="quickbar" id="quickbar" role="toolbar" aria-label="Quick commands"></div>
+            <div class="inputline" role="form" aria-label="Command input">
+                <div class="prompt" aria-hidden="true"><span>></span></div>
+                <input type="text" id="cmdInput" placeholder="type command..." autofocus autocomplete="off" spellcheck="false" aria-label="Command input">
+                <div class="input-actions">
+                    <button class="icon-btn" id="clearBtn" title="Clear (Ctrl+L)" aria-label="Clear terminal">&#x2715;</button>
+                    <button id="execBtn" aria-label="Execute command">EXEC</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  DOM references
+            // ============================================================
+            const output = document.getElementById('outputContainer');
+            const input = document.getElementById('cmdInput');
+            const execBtn = document.getElementById('execBtn');
+            const clockEl = document.getElementById('liveClock');
+            const settingsPanel = document.getElementById('settingsPanel');
+            const themeSelect = document.getElementById('themeSelect');
+            const sessionStats = document.getElementById('sessionStats');
+            const quickbar = document.getElementById('quickbar');
+            const dropOverlay = document.getElementById('dropOverlay');
+            const aliasInput = document.getElementById('aliasInput');
+            const aliasAddBtn = document.getElementById('aliasAddBtn');
+
+            // ============================================================
+            //  State
+            // ============================================================
+            let history = JSON.parse(localStorage.getItem('nexus_history') || '[]');
+            let histIdx = history.length;
+            let vaultPassword = null;
+            let vaultKey = null;
+            let sessionCommands = 0;
+            let sessionStart = Date.now();
+            let cmdFrequency = JSON.parse(localStorage.getItem('nexus_cmdfreq') || '{}');
+            let commandCount = 0;
+            let outputLines = [];
+            let MAX_OUTPUT_LINES = 500;
+            let aliases = JSON.parse(localStorage.getItem('nexus_aliases') || '{}');
+            let apiCache = new Map();
+
+            // ============================================================
+            //  Utility
+            // ============================================================
+            function esc(s) {
+                return String(s).replace(/[&<>"]/g, function(m) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[m];
+                });
+            }
+
+            function add(html, cls) {
+                cls = cls || '';
+                const line = document.createElement('div');
+                line.className = 'line ' + cls;
+                line.innerHTML = html;
+                output.appendChild(line);
+                outputLines.push(line);
+                if (outputLines.length > MAX_OUTPUT_LINES) {
+                    const removed = outputLines.shift();
+                    if (removed && removed.parentNode) removed.parentNode.removeChild(removed);
+                }
+                output.scrollTop = output.scrollHeight;
+                return line;
+            }
+
+            function cmdEcho(t) {
+                add('<span class="cmd">' + esc(t) + '</span>');
+            }
+
+            function loader(msg) {
+                const id = 'l' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                add('<span id="' + id + '" class="info">[...] ' + esc(msg) + '</span>');
+                return id;
+            }
+
+            function unloader(id) {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            }
+
+            function updateStats() {
+                const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                sessionStats.textContent = 'Commands: ' + sessionCommands + ' | Session: ' + mins + 'm ' + secs + 's';
+            }
+
+            function tick() {
+                clockEl.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+                updateStats();
+            }
+            setInterval(tick, 1000);
+            tick();
+
+            // ============================================================
+            //  API Cache (rate limiting)
+            // ============================================================
+            function cacheGet(key) {
+                const entry = apiCache.get(key);
+                if (!entry) return null;
+                if (Date.now() > entry.expiry) {
+                    apiCache.delete(key);
+                    return null;
+                }
+                return entry.data;
+            }
+
+            function cacheSet(key, data, ttl) {
+                ttl = ttl || 300000; // 5 min default
+                apiCache.set(key, { data: data, expiry: Date.now() + ttl });
+            }
+
+            function cacheClear() {
+                apiCache.clear();
+            }
+
+            // ============================================================
+            //  Safe Math Parser (no eval, no Function)
+            // ============================================================
+            function safeCalc(expr) {
+                expr = expr.replace(/\s/g, '');
+                if (!/^[0-9+\-*/().%]+$/.test(expr)) {
+                    throw new Error('Invalid characters in expression');
+                }
+                var tokens = [];
+                var i = 0;
+                while (i < expr.length) {
+                    var ch = expr[i];
+                    if (ch >= '0' && ch <= '9') {
+                        var num = '';
+                        while (i < expr.length && ((expr[i] >= '0' && expr[i] <= '9') || expr[i] === '.')) {
+                            num += expr[i];
+                            i++;
+                        }
+                        tokens.push({ type: 'num', value: parseFloat(num) });
+                    } else if (ch === '+' || ch === '-' || ch === '*' || ch === '/' || ch === '(' || ch === ')' || ch ===
+                        '%') {
+                        tokens.push({ type: 'op', value: ch });
+                        i++;
+                    } else {
+                        throw new Error('Unexpected character: ' + ch);
+                    }
+                }
+
+                function parseExpr(pos) {
+                    var result = parseTerm(pos);
+                    var p = result.pos;
+                    while (p < tokens.length && (tokens[p].value === '+' || tokens[p].value === '-')) {
+                        var op = tokens[p].value;
+                        p++;
+                        var right = parseTerm(p);
+                        p = right.pos;
+                        if (op === '+') result.value += right.value;
+                        else result.value -= right.value;
+                    }
+                    return { value: result.value, pos: p };
+                }
+
+                function parseTerm(pos) {
+                    var result = parseFactor(pos);
+                    var p = result.pos;
+                    while (p < tokens.length && (tokens[p].value === '*' || tokens[p].value === '/' || tokens[p].value ===
+                            '%')) {
+                        var op = tokens[p].value;
+                        p++;
+                        var right = parseFactor(p);
+                        p = right.pos;
+                        if (op === '*') result.value *= right.value;
+                        else if (op === '/') {
+                            if (right.value === 0) throw new Error('Division by zero');
+                            result.value /= right.value;
+                        } else if (op === '%') {
+                            if (right.value === 0) throw new Error('Modulo by zero');
+                            result.value %= right.value;
+                        }
+                    }
+                    return { value: result.value, pos: p };
+                }
+
+                function parseFactor(pos) {
+                    if (pos >= tokens.length) throw new Error('Unexpected end of expression');
+                    if (tokens[pos].type === 'num') {
+                        return { value: tokens[pos].value, pos: pos + 1 };
+                    }
+                    if (tokens[pos].value === '(') {
+                        var inner = parseExpr(pos + 1);
+                        if (inner.pos >= tokens.length || tokens[inner.pos].value !== ')') {
+                            throw new Error('Missing closing parenthesis');
+                        }
+                        return { value: inner.value, pos: inner.pos + 1 };
+                    }
+                    if (tokens[pos].value === '-') {
+                        var factor = parseFactor(pos + 1);
+                        return { value: -factor.value, pos: factor.pos };
+                    }
+                    throw new Error('Unexpected token: ' + tokens[pos].value);
+                }
+
+                var result = parseExpr(0);
+                if (result.pos !== tokens.length) {
+                    throw new Error('Unexpected tokens after expression');
+                }
+                if (!isFinite(result.value) || isNaN(result.value)) {
+                    throw new Error('Invalid result');
+                }
+                return result.value;
+            }
+
+            // ============================================================
+            //  Vault with Web Crypto (AES-GCM)
+            // ============================================================
+            async function getVaultKey(password) {
+                var enc = new TextEncoder();
+                var keyMaterial = await crypto.subtle.importKey(
+                    'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+                );
+                return await crypto.subtle.deriveKey({
+                        name: 'PBKDF2',
+                        salt: enc.encode('nexus-vault-salt-2025'),
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial, { name: 'AES-GCM', length: 256 },
+                    false, ['encrypt', 'decrypt']
+                );
+            }
+
+            async function vaultEncrypt(plaintext, password) {
+                var key = await getVaultKey(password);
+                var enc = new TextEncoder();
+                var data = enc.encode(plaintext);
+                var iv = crypto.getRandomValues(new Uint8Array(12));
+                var cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, data);
+                var combined = new Uint8Array(iv.length + cipher.byteLength);
+                combined.set(iv, 0);
+                combined.set(new Uint8Array(cipher), iv.length);
+                return btoa(String.fromCharCode.apply(null, combined));
+            }
+
+            async function vaultDecrypt(ciphertext, password) {
+                var combined = Uint8Array.from(atob(ciphertext), function(c) { return c.charCodeAt(0); });
+                var iv = combined.slice(0, 12);
+                var cipher = combined.slice(12);
+                var key = await getVaultKey(password);
+                var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, cipher);
+                return new TextDecoder().decode(plain);
+            }
+
+            function getVaultData() {
+                return JSON.parse(localStorage.getItem('nexus_vault2') || '[]');
+            }
+
+            function setVaultData(data) {
+                localStorage.setItem('nexus_vault2', JSON.stringify(data));
+            }
+
+            async function vaultSetPassword(password) {
+                if (!password || password.length < 4) {
+                    add('Password too short (min 4).', 'err');
+                    return;
+                }
+                var hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+                var hashStr = btoa(String.fromCharCode.apply(null, new Uint8Array(hash)));
+                localStorage.setItem('nexus_vault_hash', hashStr);
+                vaultPassword = password;
+                add('Vault password set.', 'ok');
+            }
+
+            async function vaultUnlock(password) {
+                var storedHash = localStorage.getItem('nexus_vault_hash');
+                if (!storedHash) {
+                    add('No vault password set.', 'err');
+                    return false;
+                }
+                var hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+                var hashStr = btoa(String.fromCharCode.apply(null, new Uint8Array(hash)));
+                if (hashStr !== storedHash) {
+                    add('Wrong password.', 'err');
+                    return false;
+                }
+                vaultPassword = password;
+                add('Vault unlocked.', 'ok');
+                return true;
+            }
+
+            async function vaultAdd(text) {
+                if (!vaultPassword) {
+                    add('Vault locked.', 'err');
+                    return;
+                }
+                try {
+                    var cipher = await vaultEncrypt(text, vaultPassword);
+                    var data = getVaultData();
+                    data.push({ cipher: cipher, time: Date.now() });
+                    setVaultData(data);
+                    add('Added to vault.', 'ok');
+                } catch (e) {
+                    add('Encryption error: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function vaultList() {
+                if (!vaultPassword) {
+                    add('Vault locked.', 'err');
+                    return;
+                }
+                var data = getVaultData();
+                if (!data.length) {
+                    add('Vault empty.', 'info');
+                    return;
+                }
+                add('<strong>Vault entries:</strong>', 'highlight');
+                for (var i = 0; i < data.length; i++) {
+                    try {
+                        var decrypted = await vaultDecrypt(data[i].cipher, vaultPassword);
+                        var date = new Date(data[i].time).toLocaleString();
+                        add('#' + (i + 1) + ' [' + date + '] ' + esc(decrypted), 'ok');
+                    } catch (e) {
+                        add('#' + (i + 1) + ': Decryption failed', 'err');
+                    }
+                }
+            }
+
+            async function vaultDelete(index) {
+                if (!vaultPassword) {
+                    add('Vault locked.', 'err');
+                    return;
+                }
+                var data = getVaultData();
+                if (index < 1 || index > data.length) {
+                    add('Invalid index.', 'err');
+                    return;
+                }
+                data.splice(index - 1, 1);
+                setVaultData(data);
+                add('Entry deleted.', 'ok');
+            }
+
+            function vaultLock() {
+                vaultPassword = null;
+                add('Vault locked.', 'ok');
+            }
+
+            (function() {
+                var savedHash = localStorage.getItem('nexus_vault_hash');
+                if (savedHash) {
+                    vaultPassword = 'locked';
+                }
+            })();
+
+            // ============================================================
+            //  Virtual FS with path validation
+            // ============================================================
+            function fsList() {
+                var files = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
+                var names = Object.keys(files);
+                if (!names.length) {
+                    add('FS empty.', 'info');
+                } else {
+                    names.forEach(function(n) {
+                        add(esc(n) + ' (' + files[n].length + ' bytes)', 'ok');
+                    });
+                }
+            }
+
+            function fsSanitize(name) {
+                if (!name || typeof name !== 'string') return null;
+                if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+                    return null;
+                }
+                return name.replace(/[^a-zA-Z0-9_\-\.]/g, '');
+            }
+
+            function fsCreate(name, content) {
+                var safe = fsSanitize(name);
+                if (!safe) {
+                    add('Invalid filename (no path traversal, alphanumeric only).', 'err');
+                    return;
+                }
+                var f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
+                if (f[safe]) {
+                    add('File exists.', 'err');
+                    return;
+                }
+                f[safe] = String(content || '');
+                localStorage.setItem('nexus_fs', JSON.stringify(f));
+                add('Created "' + esc(safe) + '".', 'ok');
+            }
+
+            function fsRead(name) {
+                var safe = fsSanitize(name);
+                if (!safe) {
+                    add('Invalid filename.', 'err');
+                    return;
+                }
+                var f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
+                if (!f[safe]) {
+                    add('File not found.', 'err');
+                    return;
+                }
+                add('<div class="block"><strong>' + esc(safe) + '</strong><br>' + esc(f[safe]) + '</div>', 'ok');
+            }
+
+            function fsDelete(name) {
+                var safe = fsSanitize(name);
+                if (!safe) {
+                    add('Invalid filename.', 'err');
+                    return;
+                }
+                var f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
+                if (!f[safe]) {
+                    add('File not found.', 'err');
+                    return;
+                }
+                delete f[safe];
+                localStorage.setItem('nexus_fs', JSON.stringify(f));
+                add('Deleted "' + esc(safe) + '".', 'ok');
+            }
+
+            function fsSearch(query) {
+                if (!query) {
+                    add('Usage: fs search <query>', 'err');
+                    return;
+                }
+                var f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
+                var results = [];
+                Object.keys(f).forEach(function(name) {
+                    if (name.includes(query) || f[name].includes(query)) {
+                        results.push(name);
+                    }
+                });
+                if (!results.length) {
+                    add('No matches.', 'info');
+                } else {
+                    add('<strong>Search results:</strong>', 'highlight');
+                    results.forEach(function(n) {
+                        add(esc(n), 'ok');
+                    });
+                }
+            }
+
+            // ============================================================
+            //  Command Aliases
+            // ============================================================
+            function addAlias(alias, command) {
+                if (!alias || !command) {
+                    add('Usage: alias <name> <command>', 'err');
+                    return;
+                }
+                alias = alias.trim();
+                command = command.trim();
+                if (alias.includes(' ') || alias.includes('=')) {
+                    add('Alias name cannot contain spaces or equals.', 'err');
+                    return;
+                }
+                aliases[alias] = command;
+                localStorage.setItem('nexus_aliases', JSON.stringify(aliases));
+                add('Alias "' + esc(alias) + '" -> "' + esc(command) + '"', 'ok');
+            }
+
+            function listAliases() {
+                var keys = Object.keys(aliases);
+                if (!keys.length) {
+                    add('No aliases defined.', 'info');
+                    return;
+                }
+                add('<strong>Aliases:</strong>', 'highlight');
+                keys.forEach(function(k) {
+                    add(esc(k) + ' = ' + esc(aliases[k]), 'ok');
+                });
+            }
+
+            function removeAlias(alias) {
+                alias = alias.trim();
+                if (!aliases[alias]) {
+                    add('Alias not found.', 'err');
+                    return;
+                }
+                delete aliases[alias];
+                localStorage.setItem('nexus_aliases', JSON.stringify(aliases));
+                add('Alias "' + esc(alias) + '" removed.', 'ok');
+            }
+
+            function resolveAlias(cmd) {
+                var parts = cmd.trim().split(/\s+/);
+                var first = parts[0];
+                if (aliases[first]) {
+                    var rest = parts.slice(1).join(' ');
+                    return aliases[first] + (rest ? ' ' + rest : '');
+                }
+                return cmd;
+            }
+
+            // ============================================================
+            //  Quickbar (debounced)
+            // ============================================================
+            function updateQuickbar() {
+                var sorted = Object.entries(cmdFrequency).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 8);
+                quickbar.innerHTML = '';
+                sorted.forEach(function(entry) {
+                    var cmd = entry[0];
+                    var btn = document.createElement('button');
+                    btn.className = 'qbtn';
+                    btn.dataset.cmd = cmd;
+                    btn.textContent = cmd;
+                    btn.addEventListener('click', function() {
+                        execute(cmd);
+                        input.focus();
+                    });
+                    quickbar.appendChild(btn);
+                });
+            }
+
+            function recordCmd(cmd) {
+                if (!cmdFrequency[cmd]) cmdFrequency[cmd] = 0;
+                cmdFrequency[cmd]++;
+                localStorage.setItem('nexus_cmdfreq', JSON.stringify(cmdFrequency));
+                commandCount++;
+                if (commandCount % 5 === 0) {
+                    updateQuickbar();
+                }
+            }
+
+            // ============================================================
+            //  Theme system
+            // ============================================================
+            var themes = {
+                default: { cyan: '#00ffcc', blue: '#0088ff', thumb: '#00ffcc', bg: '#080c14' },
+                ocean: { cyan: '#4dc9f6', blue: '#0277bd', thumb: '#4dc9f6', bg: '#0a1628' },
+                mono: { cyan: '#aaaaaa', blue: '#666666', thumb: '#aaaaaa', bg: '#0a0a0a' },
+                matrix: { cyan: '#00ff41', blue: '#008f11', thumb: '#00ff41', bg: '#0a0f0a' },
+                sunset: { cyan: '#ff6b6b', blue: '#ee5a24', thumb: '#ff6b6b', bg: '#1a0a0a' }
+            };
+
+            function applyTheme(name) {
+                var t = themes[name] || themes.default;
+                var r = document.documentElement;
+                r.style.setProperty('--neon-cyan', t.cyan);
+                r.style.setProperty('--neon-blue', t.blue);
+                r.style.setProperty('--scroll-thumb', t.thumb);
+                r.style.setProperty('--bg-deep', t.bg);
+                localStorage.setItem('nexus_theme', name);
+                themeSelect.value = name;
+            }
+
+            // ============================================================
+            //  Lazy-load API modules
+            // ============================================================
+            var apiModules = {};
+
+            function lazyLoad(name, loaderFn) {
+                if (!apiModules[name]) {
+                    apiModules[name] = loaderFn();
+                }
+                return apiModules[name];
+            }
+
+            // ============================================================
+            //  API Functions (with caching)
+            // ============================================================
+            async function weather(city) {
+                var cacheKey = 'weather_' + city.toLowerCase();
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    var d = cached;
+                    add('<div class="block"><strong>' + esc(d.name) + ', ' + esc(d.admin1 || '') + ' ' + esc(d.country || '') +
+                        '</strong><br>Temperature: ' + d.temp + '°C | Wind: ' + d.wind + ' km/h</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Weather for ' + city + '...');
+                try {
+                    var geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(
+                        city) + '&count=1');
+                    if (!geoRes.ok) throw new Error('City not found');
+                    var geo = await geoRes.json();
+                    if (!geo.results || !geo.results.length) throw new Error('City not found');
+                    var loc = geo.results[0];
+                    var wRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + loc.latitude +
+                        '&longitude=' + loc.longitude + '&current_weather=true');
+                    if (!wRes.ok) throw new Error('Weather error');
+                    var w = await wRes.json();
+                    var data = { name: loc.name, admin1: loc.admin1 || '', country: loc.country || '',
+                        temp: w.current_weather.temperature, wind: w.current_weather.windspeed };
+                    cacheSet(cacheKey, data, 600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>' + esc(data.name) + ', ' + esc(data.admin1 || '') + ' ' + esc(data
+                            .country || '') + '</strong><br>Temperature: ' + data.temp + '°C | Wind: ' + data.wind +
+                        ' km/h</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Error: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function joke(count) {
+                count = Math.min(parseInt(count) || 1, 10);
+                var lid = loader('Jokes...');
+                try {
+                    var results = [];
+                    for (var i = 0; i < count; i++) {
+                        var r = await fetch('https://icanhazdadjoke.com/', { headers: { Accept: 'application/json' } });
+                        var d = await r.json();
+                        results.push(d.joke);
+                    }
+                    unloader(lid);
+                    results.forEach(function(j, idx) {
+                        add('<div class="block"><strong>#' + (idx + 1) + '</strong><br>' + esc(j) + '</div>', 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Joke service unavailable.', 'err');
+                }
+            }
+
+            async function crypto(coins) {
+                coins = coins || 'bitcoin,ethereum';
+                var cacheKey = 'crypto_' + coins;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<strong>Live Prices (cached):</strong>', 'highlight');
+                    Object.entries(cached).forEach(function(entry) {
+                        var coin = entry[0],
+                            val = entry[1];
+                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !== undefined ? val
+                            .usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
+                    });
+                    return;
+                }
+                var lid = loader('Crypto prices...');
+                try {
+                    var r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + coins +
+                        '&vs_currencies=usd&include_24hr_change=true');
+                    if (!r.ok) throw new Error('API error');
+                    var d = await r.json();
+                    cacheSet(cacheKey, d, 120000);
+                    unloader(lid);
+                    add('<strong>Live Prices:</strong>', 'highlight');
+                    Object.entries(d).forEach(function(entry) {
+                        var coin = entry[0],
+                            val = entry[1];
+                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !== undefined ? val
+                            .usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Crypto unavailable.', 'err');
+                }
+            }
+
+            async function news() {
+                var cacheKey = 'hackernews';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<strong>Tech Headlines (cached):</strong>', 'highlight');
+                    cached.forEach(function(it, i) {
+                        add('<div class="block">' + (i + 1) + '. <a href="' + esc(it.url || '#') +
+                            '" target="_blank" rel="noopener noreferrer" style="color:#00ffcc;">' + esc(it.title) +
+                            '</a> (' + it.score + ' pts)</div>', 'ok');
+                    });
+                    return;
+                }
+                var lid = loader('News...');
+                try {
+                    var ids = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(function(r) {
+                        return r.json();
+                    });
+                    var items = await Promise.all(ids.slice(0, 5).map(function(id) {
+                        return fetch('https://hacker-news.firebaseio.com/v0/item/' + id + '.json').then(function(
+                        r) { return r.json(); });
+                    }));
+                    cacheSet(cacheKey, items, 600000);
+                    unloader(lid);
+                    add('<strong>Tech Headlines:</strong>', 'highlight');
+                    items.forEach(function(it, i) {
+                        add('<div class="block">' + (i + 1) + '. <a href="' + esc(it.url || '#') +
+                            '" target="_blank" rel="noopener noreferrer" style="color:#00ffcc;">' + esc(it.title) +
+                            '</a> (' + it.score + ' pts)</div>', 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('News unavailable.', 'err');
+                }
+            }
+
+            async function ipInfo() {
+                var cacheKey = 'ipinfo';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block">IP: ' + esc(cached.ip) + ' | Location: ' + esc(cached.city) + ', ' + esc(cached
+                            .region) + ' ' + esc(cached.country_name) + ' | ISP: ' + esc(cached.org) + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('IP lookup...');
+                try {
+                    var d = await fetch('https://ipapi.co/json/').then(function(r) { return r.json(); });
+                    cacheSet(cacheKey, d, 3600000);
+                    unloader(lid);
+                    add('<div class="block">IP: ' + esc(d.ip) + ' | Location: ' + esc(d.city) + ', ' + esc(d.region) +
+                        ' ' + esc(d.country_name) + ' | ISP: ' + esc(d.org) + '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('IP lookup failed.', 'err');
+                }
+            }
+
+            async function dnsLookup(domain) {
+                var cacheKey = 'dns_' + domain;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    cached.forEach(function(r) {
+                        add(r.type + ': ' + esc(r.data), 'ok');
+                    });
+                    return;
+                }
+                var lid = loader('DNS for ' + domain + '...');
+                try {
+                    var d = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) + '&type=A')
+                        .then(function(r) { return r.json(); });
+                    unloader(lid);
+                    if (d.Answer) {
+                        cacheSet(cacheKey, d.Answer, 600000);
+                        d.Answer.forEach(function(r) {
+                            add(r.type + ': ' + esc(r.data), 'ok');
+                        });
+                    } else {
+                        add('No A records found.', 'err');
+                    }
+                } catch (e) {
+                    unloader(lid);
+                    add('DNS failed.', 'err');
+                }
+            }
+
+            async function currency(from, to, amount) {
+                from = (from || 'USD').toUpperCase();
+                to = (to || 'EUR').toUpperCase();
+                amount = parseFloat(amount) || 1;
+                var cacheKey = 'currency_' + from + '_' + to;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block">' + amount + ' ' + from + ' = <strong>' + (amount * cached).toFixed(2) +
+                        ' ' + to + '</strong> (rate: ' + cached + ')</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Currency...');
+                try {
+                    var d = await fetch('https://api.exchangerate-api.com/v4/latest/' + from).then(function(r) {
+                        return r.json();
+                    });
+                    var rate = d.rates[to];
+                    if (!rate) throw new Error('Invalid currency');
+                    cacheSet(cacheKey, rate, 3600000);
+                    unloader(lid);
+                    add('<div class="block">' + amount + ' ' + from + ' = <strong>' + (amount * rate).toFixed(2) +
+                        ' ' + to + '</strong> (rate: ' + rate + ')</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Currency error: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function github(username) {
+                var cacheKey = 'github_' + username;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    var u = cached.user,
+                        repos = cached.repos;
+                    add('<div class="block"><strong>' + esc(u.name || u.login) + '</strong> | Followers: ' + u
+                        .followers + ' | Repos: ' + u.public_repos + '<br>Bio: ' + esc(u.bio || 'N/A') + '</div>',
+                        'ok');
+                    if (repos.length) {
+                        add('<strong>Top Repos:</strong>', 'highlight');
+                        repos.forEach(function(r) {
+                            add(r.stargazers_count + '* <a href="' + esc(r.html_url) +
+                                '" target="_blank" style="color:#00ffcc;">' + esc(r.name) + '</a>: ' + esc(r
+                                    .description || ''), 'ok');
+                        });
+                    }
+                    return;
+                }
+                var lid = loader('GitHub...');
+                try {
+                    var userRes = await fetch('https://api.github.com/users/' + username);
+                    var reposRes = await fetch('https://api.github.com/users/' + username +
+                        '/repos?sort=stars&per_page=5');
+                    if (!userRes.ok || !reposRes.ok) throw new Error('GitHub error');
+                    var user = await userRes.json();
+                    var repos = await reposRes.json();
+                    cacheSet(cacheKey, { user: user, repos: repos }, 600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>' + esc(user.name || user.login) + '</strong> | Followers: ' + user
+                        .followers + ' | Repos: ' + user.public_repos + '<br>Bio: ' + esc(user.bio || 'N/A') +
+                        '</div>', 'ok');
+                    if (repos.length) {
+                        add('<strong>Top Repos:</strong>', 'highlight');
+                        repos.forEach(function(r) {
+                            add(r.stargazers_count + '* <a href="' + esc(r.html_url) +
+                                '" target="_blank" style="color:#00ffcc;">' + esc(r.name) + '</a>: ' + esc(r
+                                    .description || ''), 'ok');
+                        });
+                    }
+                } catch (e) {
+                    unloader(lid);
+                    add('GitHub error.', 'err');
+                }
+            }
+
+            async function spacex() {
+                var cacheKey = 'spacex';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block"><strong>SpaceX</strong><br>Next: ' + esc(cached.next.name) + ' (' + new Date(
+                            cached.next.date_utc).toLocaleString() + ')<br>Latest: ' + esc(cached.latest.name) +
+                        ' - ' + (cached.latest.success ? 'Success' : 'Failed') + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('SpaceX...');
+                try {
+                    var nextRes = await fetch('https://api.spacexdata.com/v5/launches/next');
+                    var latestRes = await fetch('https://api.spacexdata.com/v5/launches/latest');
+                    if (!nextRes.ok || !latestRes.ok) throw new Error('SpaceX API error');
+                    var next = await nextRes.json();
+                    var latest = await latestRes.json();
+                    cacheSet(cacheKey, { next: next, latest: latest }, 3600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>SpaceX</strong><br>Next: ' + esc(next.name) + ' (' + new Date(next
+                            .date_utc).toLocaleString() + ')<br>Latest: ' + esc(latest.name) + ' - ' + (latest
+                            .success ? 'Success' : 'Failed') + '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('SpaceX error.', 'err');
+                }
+            }
+
+            async function quote() {
+                var cacheKey = 'quote';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block">"' + esc(cached.content) + '"<br><span style="color:var(--dim);">-- ' + esc(
+                            cached.author) + '</span></div>', 'ok');
+                    return;
+                }
+                var lid = loader('Quote...');
+                try {
+                    var d = await fetch('https://api.quotable.io/random').then(function(r) { return r.json(); });
+                    cacheSet(cacheKey, d, 600000);
+                    unloader(lid);
+                    add('<div class="block">"' + esc(d.content) + '"<br><span style="color:var(--dim);">-- ' + esc(d
+                            .author) + '</span></div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Quote error.', 'err');
+                }
+            }
+
+            // ============================================================
+            //  Sports (fixed with season parameter)
+            // ============================================================
+            var leagueMap = {
+                "english premier league": "4328",
+                "premier league": "4328",
+                "epl": "4328",
+                "la liga": "4335",
+                "bundesliga": "4331",
+                "serie a": "4332",
+                "ligue 1": "4334",
+                "uefa champions league": "4480"
+            };
+
+            function getLeagueId(name) {
+                return leagueMap[name.toLowerCase()] || null;
+            }
+
+            async function sportsSchedule(league) {
+                var lid = loader('Schedule for ' + league + '...');
+                var leagueId = getLeagueId(league);
+                if (!leagueId) {
+                    try {
+                        var res = await fetch(
+                            'https://www.thesportsdb.com/api/v1/json/1/search_all_leagues.php?l=' + encodeURIComponent(
+                                league));
+                        var data = await res.json();
+                        if (data.leagues && data.leagues.length) leagueId = data.leagues[0].idLeague;
+                    } catch (e) {}
+                }
+                if (!leagueId) {
+                    unloader(lid);
+                    add('League not found (try EPL, La Liga).', 'err');
+                    return;
+                }
+                try {
+                    var res2 = await fetch(
+                        'https://www.thesportsdb.com/api/v1/json/1/eventsnextleague.php?id=' + leagueId);
+                    var data2 = await res2.json();
+                    unloader(lid);
+                    if (!data2.events || !data2.events.length) {
+                        add('No upcoming events.', 'info');
+                        return;
+                    }
+                    add('<strong>Upcoming matches:</strong>', 'highlight');
+                    data2.events.slice(0, 10).forEach(function(e) {
+                        add(esc(e.strEvent) + ': ' + esc(e.strHomeTeam) + ' vs ' + esc(e.strAwayTeam) + ' (' +
+                            e.dateEvent + ')', 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Schedule error.', 'err');
+                }
+            }
+
+            async function sportsScores(league) {
+                var lid = loader('Scores for ' + league + '...');
+                var leagueId = getLeagueId(league);
+                if (!leagueId) {
+                    try {
+                        var res = await fetch(
+                            'https://www.thesportsdb.com/api/v1/json/1/search_all_leagues.php?l=' + encodeURIComponent(
+                                league));
+                        var data = await res.json();
+                        if (data.leagues && data.leagues.length) leagueId = data.leagues[0].idLeague;
+                    } catch (e) {}
+                }
+                if (!leagueId) {
+                    unloader(lid);
+                    add('League not found.', 'err');
+                    return;
+                }
+                try {
+                    var res2 = await fetch(
+                        'https://www.thesportsdb.com/api/v1/json/1/eventspastleague.php?id=' + leagueId);
+                    var data2 = await res2.json();
+                    unloader(lid);
+                    if (!data2.events || !data2.events.length) {
+                        add('No recent results.', 'info');
+                        return;
+                    }
+                    add('<strong>Recent results:</strong>', 'highlight');
+                    data2.events.slice(0, 10).forEach(function(e) {
+                        var score = (e.intHomeScore != null) ? e.intHomeScore + '-' + e.intAwayScore : '?';
+                        add(esc(e.strHomeTeam) + ' ' + score + ' ' + esc(e.strAwayTeam) + ' (' + e.dateEvent + ')',
+                            'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Scores error.', 'err');
+                }
+            }
+
+            async function sportsTable(league) {
+                var lid = loader('Table for ' + league + '...');
+                var leagueId = getLeagueId(league);
+                if (!leagueId) {
+                    try {
+                        var res = await fetch(
+                            'https://www.thesportsdb.com/api/v1/json/1/search_all_leagues.php?l=' + encodeURIComponent(
+                                league));
+                        var data = await res.json();
+                        if (data.leagues && data.leagues.length) leagueId = data.leagues[0].idLeague;
+                    } catch (e) {}
+                }
+                if (!leagueId) {
+                    unloader(lid);
+                    add('League not found.', 'err');
+                    return;
+                }
+                try {
+                    var res2 = await fetch(
+                        'https://www.thesportsdb.com/api/v1/json/1/lookuptable.php?id=' + leagueId +
+                        '&s=2024-2025');
+                    var data2 = await res2.json();
+                    unloader(lid);
+                    if (!data2.table || !data2.table.length) {
+                        add('No standings available for current season.', 'info');
+                        return;
+                    }
+                    add('<strong>League Table:</strong>', 'highlight');
+                    data2.table.slice(0, 10).forEach(function(t) {
+                        add(t.intRank + '. ' + esc(t.strTeam) + ' - P:' + t.intPlayed + ' W:' + t.intWin + ' D:' +
+                            t.intDraw + ' L:' + t.intLoss + ' Pts:' + t.intPoints, 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Table error.', 'err');
+                }
+            }
+
+            async function sportsTeam(name) {
+                var lid = loader('Team info: ' + name + '...');
+                try {
+                    var res = await fetch(
+                        'https://www.thesportsdb.com/api/v1/json/1/searchteams.php?t=' + encodeURIComponent(name));
+                    var data = await res.json();
+                    unloader(lid);
+                    if (!data.teams || !data.teams.length) {
+                        add('Team not found. Try a different spelling.', 'err');
+                        return;
+                    }
+                    var t = data.teams[0];
+                    add('<div class="block"><strong>' + esc(t.strTeam) + '</strong> (' + esc(t.strLeague || 'Unknown') +
+                        ')<br>Stadium: ' + esc(t.strStadium || 'N/A') + '<br>' + esc((t.strDescriptionEN || '')
+                            .substring(0, 150)) + '...</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Team error.', 'err');
+                }
+            }
+
+            // ============================================================
+            //  Games
+            // ============================================================
+            async function gameDeals() {
+                var cacheKey = 'gamedeals';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<strong>Game Deals (<$15):</strong>', 'highlight');
+                    cached.slice(0, 8).forEach(function(d) {
+                        add('<div class="block"><strong>' + esc(d.title) + '</strong><br>$' + d.salePrice +
+                            ' (was $' + d.normalPrice + ') | Rating: ' + d.steamRatingPercent + '%</div>', 'ok');
+                    });
+                    return;
+                }
+                var lid = loader('Game deals...');
+                try {
+                    var res = await fetch('https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15');
+                    var data = await res.json();
+                    cacheSet(cacheKey, data, 3600000);
+                    unloader(lid);
+                    add('<strong>Game Deals (<$15):</strong>', 'highlight');
+                    data.slice(0, 8).forEach(function(d) {
+                        add('<div class="block"><strong>' + esc(d.title) + '</strong><br>$' + d.salePrice +
+                            ' (was $' + d.normalPrice + ') | Rating: ' + d.steamRatingPercent + '%</div>', 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Game deals unavailable.', 'err');
+                }
+            }
+
+            // ============================================================
+            //  New APIs: Reddit, Stocks, Translate
+            // ============================================================
+            async function reddit(subreddit, limit) {
+                subreddit = subreddit || 'all';
+                limit = Math.min(parseInt(limit) || 5, 10);
+                var cacheKey = 'reddit_' + subreddit;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<strong>r/' + esc(subreddit) + ' (cached):</strong>', 'highlight');
+                    cached.slice(0, limit).forEach(function(post, i) {
+                        add((i + 1) + '. <a href="' + esc('https://reddit.com' + post.permalink) +
+                            '" target="_blank" rel="noopener" style="color:#00ffcc;">' + esc(post.title) +
+                            '</a> (' + post.score + ' pts)', 'ok');
+                    });
+                    return;
+                }
+                var lid = loader('r/' + subreddit + '...');
+                try {
+                    var res = await fetch(
+                        'https://www.reddit.com/r/' + encodeURIComponent(subreddit) +
+                        '/hot.json?limit=' + limit + '&t=week');
+                    if (!res.ok) throw new Error('Reddit error');
+                    var data = await res.json();
+                    var posts = data.data.children.map(function(c) { return c.data; });
+                    cacheSet(cacheKey, posts, 300000);
+                    unloader(lid);
+                    add('<strong>r/' + esc(subreddit) + ':</strong>', 'highlight');
+                    posts.forEach(function(post, i) {
+                        add((i + 1) + '. <a href="' + esc('https://reddit.com' + post.permalink) +
+                            '" target="_blank" rel="noopener" style="color:#00ffcc;">' + esc(post.title) +
+                            '</a> (' + post.score + ' pts)', 'ok');
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Reddit error: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function stocks(symbol) {
+                symbol = (symbol || 'AAPL').toUpperCase();
+                var cacheKey = 'stocks_' + symbol;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block"><strong>' + esc(symbol) + '</strong><br>Price: $' + cached.price +
+                        ' | Change: ' + cached.change + '%</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Stock: ' + symbol + '...');
+                try {
+                    var res = await fetch(
+                        'https://api.alpha-vantage.co/query?function=GLOBAL_QUOTE&symbol=' + encodeURIComponent(
+                            symbol) + '&apikey=demo');
+                    var data = await res.json();
+                    if (!data['Global Quote'] || !data['Global Quote']['05. price']) {
+                        throw new Error('Stock not found or API limit');
+                    }
+                    var q = data['Global Quote'];
+                    var result = { price: parseFloat(q['05. price']), change: parseFloat(q['10. change percent']) };
+                    cacheSet(cacheKey, result, 300000);
+                    unloader(lid);
+                    add('<div class="block"><strong>' + esc(symbol) + '</strong><br>Price: $' + result.price +
+                        ' | Change: ' + result.change + '%</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Stocks error: ' + esc(e.message) + ' (use demo symbols like AAPL, MSFT, GOOGL)', 'err');
+                }
+            }
+
+            async function translate(text, target) {
+                target = target || 'es';
+                var cacheKey = 'translate_' + text + '_' + target;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block"><strong>Translation:</strong><br>' + esc(cached) + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Translating...');
+                try {
+                    var res = await fetch('https://libretranslate.com/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            q: text,
+                            source: 'en',
+                            target: target,
+                            format: 'text'
+                        })
+                    });
+                    if (!res.ok) throw new Error('Translation error');
+                    var data = await res.json();
+                    var translated = data.translatedText;
+                    cacheSet(cacheKey, translated, 3600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>Translation (' + target + '):</strong><br>' + esc(translated) +
+                        '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Translation error: ' + esc(e.message), 'err');
+                }
+            }
+
+            // ============================================================
+            //  Other utilities
+            // ============================================================
+            function genPass(length) {
+                length = Math.min(parseInt(length) || 12, 50);
+                var chars =
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+                var pass = '';
+                for (var i = 0; i < length; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+                add('Generated password: ' + esc(pass), 'ok');
+            }
+
+            function reverseText(text) {
+                add('Reversed: ' + esc(text.split('').reverse().join('')), 'ok');
+            }
+
+            function upperText(text) {
+                add('UPPER: ' + esc(text.toUpperCase()), 'ok');
+            }
+
+            function lowerText(text) {
+                add('lower: ' + esc(text.toLowerCase()), 'ok');
+            }
+
+            function lenText(text) {
+                add('Length: ' + text.length, 'ok');
+            }
+
+            function echoText(text) {
+                add(esc(text), 'ok');
+            }
+
+            async function randomFact() {
+                var cacheKey = 'fact';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block">' + esc(cached) + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Fact...');
+                try {
+                    var res = await fetch('https://numbersapi.com/random/trivia');
+                    var fact = await res.text();
+                    cacheSet(cacheKey, fact, 600000);
+                    unloader(lid);
+                    add('<div class="block">' + esc(fact) + '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Fact unavailable.', 'err');
+                }
+            }
+
+            async function wikiSearch(term) {
+                var cacheKey = 'wiki_' + term;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block"><strong>' + esc(cached.title) + '</strong><br>' + esc(cached.extract
+                            .substring(0, 400)) + '...</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Wikipedia: ' + term + '...');
+                try {
+                    var res = await fetch(
+                        'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(term));
+                    var data = await res.json();
+                    if (data.type === 'disambiguation') {
+                        unloader(lid);
+                        add('Disambiguation page.', 'warning');
+                        return;
+                    }
+                    var result = { title: data.title, extract: data.extract || '' };
+                    cacheSet(cacheKey, result, 3600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>' + esc(data.title) + '</strong><br>' + esc((data.extract || '')
+                            .substring(0, 400)) + '...</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Wikipedia error.', 'err');
+                }
+            }
+
+            async function defineWord(word) {
+                var cacheKey = 'define_' + word;
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<strong>' + esc(cached.word) + '</strong> (' + esc(cached.phonetic || '') + ')', 'highlight');
+                    cached.meanings.forEach(function(meaning) {
+                        add('<em>' + esc(meaning.partOfSpeech) + '</em>', 'info');
+                        meaning.definitions.slice(0, 3).forEach(function(def) {
+                            add('- ' + esc(def.definition), 'ok');
+                        });
+                    });
+                    return;
+                }
+                var lid = loader('Define: ' + word + '...');
+                try {
+                    var res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(
+                        word));
+                    var data = await res.json();
+                    if (data.title === 'No Definitions Found') {
+                        unloader(lid);
+                        add('No definition.', 'info');
+                        return;
+                    }
+                    var entry = data[0];
+                    cacheSet(cacheKey, entry, 3600000);
+                    unloader(lid);
+                    add('<strong>' + esc(entry.word) + '</strong> (' + esc(entry.phonetic || '') + ')', 'highlight');
+                    entry.meanings.forEach(function(meaning) {
+                        add('<em>' + esc(meaning.partOfSpeech) + '</em>', 'info');
+                        meaning.definitions.slice(0, 3).forEach(function(def) {
+                            add('- ' + esc(def.definition), 'ok');
+                        });
+                    });
+                } catch (e) {
+                    unloader(lid);
+                    add('Dictionary error.', 'err');
+                }
+            }
+
+            function qrCode(text) {
+                if (!text) {
+                    add('Usage: qr <text>', 'err');
+                    return;
+                }
+                var url = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(text);
+                add('<img src="' + url +
+                    '" alt="QR Code" style="display:block;margin:0.5rem 0;border:2px solid var(--neon-cyan);border-radius:8px;">',
+                    'ok');
+            }
+
+            async function randomUser() {
+                var cacheKey = 'randomuser';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    var u = cached;
+                    add('<div class="block"><strong>' + esc(u.name.first) + ' ' + esc(u.name.last) +
+                        '</strong><br>Email: ' + esc(u.email) + '<br>Location: ' + esc(u.location.city) + ', ' + esc(
+                            u.location.country) + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Random user...');
+                try {
+                    var res = await fetch('https://randomuser.me/api/');
+                    var data = await res.json();
+                    var u2 = data.results[0];
+                    cacheSet(cacheKey, u2, 600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>' + esc(u2.name.first) + ' ' + esc(u2.name.last) +
+                        '</strong><br>Email: ' + esc(u2.email) + '<br>Location: ' + esc(u2.location.city) + ', ' +
+                        esc(u2.location.country) + '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Random user error.', 'err');
+                }
+            }
+
+            async function boredActivity() {
+                var cacheKey = 'bored';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block"><strong>Activity:</strong> ' + esc(cached.activity) + '<br>Type: ' + esc(
+                            cached.type) + ' | Participants: ' + cached.participants + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Activity...');
+                try {
+                    var res = await fetch('https://www.boredapi.com/api/activity');
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    var data = await res.json();
+                    cacheSet(cacheKey, data, 600000);
+                    unloader(lid);
+                    add('<div class="block"><strong>Activity:</strong> ' + esc(data.activity) + '<br>Type: ' + esc(data
+                            .type) + ' | Participants: ' + data.participants + '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Activity error: ' + esc(e.message), 'err');
+                }
+            }
+
+            async function catFact() {
+                var cacheKey = 'catfact';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<div class="block">' + esc(cached) + '</div>', 'ok');
+                    return;
+                }
+                var lid = loader('Cat fact...');
+                try {
+                    var res = await fetch('https://catfact.ninja/fact');
+                    var data = await res.json();
+                    cacheSet(cacheKey, data.fact, 600000);
+                    unloader(lid);
+                    add('<div class="block">' + esc(data.fact) + '</div>', 'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Cat fact error.', 'err');
+                }
+            }
+
+            async function dogImage() {
+                var cacheKey = 'dog';
+                var cached = cacheGet(cacheKey);
+                if (cached) {
+                    add('<img src="' + cached +
+                        '" alt="Dog" style="max-width:300px;border:2px solid var(--neon-cyan);border-radius:8px;margin-top:0.5rem;">',
+                        'ok');
+                    return;
+                }
+                var lid = loader('Dog image...');
+                try {
+                    var res = await fetch('https://dog.ceo/api/breeds/image/random');
+                    var data = await res.json();
+                    cacheSet(cacheKey, data.message, 600000);
+                    unloader(lid);
+                    add('<img src="' + data.message +
+                        '" alt="Dog" style="max-width:300px;border:2px solid var(--neon-cyan);border-radius:8px;margin-top:0.5rem;">',
+                        'ok');
+                } catch (e) {
+                    unloader(lid);
+                    add('Dog image error.', 'err');
+                }
+            }
+
+            function worldClock() {
+                var zones = [
+                    { n: 'New York', tz: 'America/New_York' },
+                    { n: 'London', tz: 'Europe/London' },
+                    { n: 'Tokyo', tz: 'Asia/Tokyo' },
+                    { n: 'Dubai', tz: 'Asia/Dubai' },
+                    { n: 'Sydney', tz: 'Australia/Sydney' }
+                ];
+                add('<strong>World Clock:</strong>', 'highlight');
+                zones.forEach(function(z) {
+                    add(z.n + ': ' + new Date().toLocaleTimeString('en-US', { timeZone: z.tz, hour12: true }),
+                        'ok');
+                });
+            }
+
+            // ============================================================
+            //  File drag & drop
+            // ============================================================
+            var dragCounter = 0;
+            var terminalEl = document.getElementById('app');
+
+            terminalEl.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                dragCounter++;
+                dropOverlay.classList.add('active');
+            });
+
+            terminalEl.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+
+            terminalEl.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dragCounter--;
+                if (dragCounter === 0) dropOverlay.classList.remove('active');
+            });
+
+            terminalEl.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dragCounter = 0;
+                dropOverlay.classList.remove('active');
+                var files = e.dataTransfer.files;
+                if (!files.length) return;
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        var name = fsSanitize(file.name);
+                        if (!name) {
+                            add('Invalid filename: ' + esc(file.name), 'err');
+                            return;
+                        }
+                        var f = JSON.parse(localStorage.getItem('nexus_fs') || '{}');
+                        if (f[name]) {
+                            add('File "' + esc(name) + '" already exists. Use fs delete first.', 'err');
+                            return;
+                        }
+                        f[name] = ev.target.result;
+                        localStorage.setItem('nexus_fs', JSON.stringify(f));
+                        add('Uploaded "' + esc(name) + '" (' + ev.target.result.length + ' bytes).', 'ok');
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // ============================================================
+            //  Command Registry
+            // ============================================================
+            var commands = {
+                help: {
+                    exec: function() {
+                        add('<strong>=== All Commands (click to load) ===</strong>', 'highlight');
+                        var cmdList = [
+                            ['WEATHER <city>', 'weather'],
+                            ['JOKE [count]', 'joke'],
+                            ['CRYPTO [coins]', 'crypto'],
+                            ['NEWS', 'news'],
+                            ['IP', 'ip'],
+                            ['DNS <domain>', 'dns'],
+                            ['CURRENCY <from> <to> [amount]', 'currency'],
+                            ['GITHUB <user>', 'github'],
+                            ['SPACEX', 'spacex'],
+                            ['QUOTE', 'quote'],
+                            ['SPORTS schedule <league>', 'sports schedule'],
+                            ['SPORTS scores <league>', 'sports scores'],
+                            ['SPORTS table <league>', 'sports table'],
+                            ['SPORTS team <name>', 'sports team'],
+                            ['GAMES deals', 'games deals'],
+                            ['TIME', 'time'],
+                            ['DATE', 'date'],
+                            ['CALC <expression>', 'calc'],
+                            ['GENPASS [length]', 'genpass'],
+                            ['REVERSE <text>', 'reverse'],
+                            ['UPPER <text>', 'upper'],
+                            ['LOWER <text>', 'lower'],
+                            ['LEN <text>', 'len'],
+                            ['ECHO <text>', 'echo'],
+                            ['FACT', 'fact'],
+                            ['WIKI <term>', 'wiki'],
+                            ['DEFINE <word>', 'define'],
+                            ['QR <text>', 'qr'],
+                            ['RANDOMUSER', 'randomuser'],
+                            ['BORED', 'bored'],
+                            ['CATFACT', 'catfact'],
+                            ['DOG', 'dog'],
+                            ['REDDIT <subreddit> [limit]', 'reddit'],
+                            ['STOCKS <symbol>', 'stocks'],
+                            ['TRANSLATE <text> <target>', 'translate'],
+                            ['FS ls|create|read|delete|search', 'fs'],
+                            ['VAULT setpass|unlock|add|list|delete|lock', 'vault'],
+                            ['ALIAS <name> <command>', 'alias'],
+                            ['ALIAS list', 'alias list'],
+                            ['ALIAS remove <name>', 'alias remove'],
+                            ['THEME <name>', 'theme'],
+                            ['CACHE clear', 'cache clear'],
+                            ['CLEAR', 'clear'],
+                            ['ABOUT', 'about']
+                        ];
+                        cmdList.forEach(function(item) {
+                            add('<span class="clickable-cmd" data-cmd="' + esc(item[1]) + '">' + esc(item[
+                                0]) + '</span>', 'info');
+                        });
+                    },
+                    help: 'help'
+                },
+                weather: { exec: function(args) { if (!args.length) { add('Usage: weather <city>', 'err'); } else { weather(
+                            args.join(' ')); } }, help: 'weather <city>' },
+                joke: { exec: function(args) { joke(args[0] ? Math.min(parseInt(args[0]), 10) : 1); }, help: 'joke [count]' },
+                crypto: { exec: function(args) { crypto(args.join(',') || 'bitcoin,ethereum'); }, help: 'crypto [coins]' },
+                news: { exec: news, help: 'news' },
+                ip: { exec: ipInfo, help: 'ip' },
+                dns: { exec: function(args) { if (!args.length) { add('Usage: dns <domain>', 'err'); } else { dnsLookup(
+                            args[0]); } }, help: 'dns <domain>' },
+                currency: { exec: function(args) { currency(args[0] || 'USD', args[1] || 'EUR', args[2] ? parseFloat(args[
+                            2]) : 1); }, help: 'currency <from> <to> [amount]' },
+                github: { exec: function(args) { if (!args.length) { add('Usage: github <user>', 'err'); } else { github(
+                            args[0]); } }, help: 'github <user>' },
+                spacex: { exec: spacex, help: 'spacex' },
+                quote: { exec: quote, help: 'quote' },
+                sports: {
+                    exec: function(args) {
+                        if (args[0] === 'schedule' && args[1]) sportsSchedule(args.slice(1).join(' '));
+                        else if (args[0] === 'scores' && args[1]) sportsScores(args.slice(1).join(' '));
+                        else if (args[0] === 'table' && args[1]) sportsTable(args.slice(1).join(' '));
+                        else if (args[0] === 'team' && args[1]) sportsTeam(args.slice(1).join(' '));
+                        else add('Usage: sports <schedule|scores|table|team> <league/team>', 'err');
+                    },
+                    help: 'sports <schedule|scores|table|team> <league/team>'
+                },
+                games: { exec: function(args) { if (args[0] === 'deals') gameDeals();
+                        else add('Usage: games deals', 'err'); }, help: 'games deals' },
+                time: { exec: worldClock, help: 'time' },
+                date: { exec: function() { add(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric',
+                                month: 'long', day: 'numeric' }), 'ok'); }, help: 'date' },
+                calc: {
+                    exec: function(args) {
+                        if (!args.length) { add('Usage: calc <expression>', 'err'); return; }
+                        try {
+                            var res = safeCalc(args.join(''));
+                            add(args.join('') + ' = ' + res, 'ok');
+                        } catch (e) {
+                            add('Invalid expression. Use numbers and + - * / ( ).', 'err');
+                        }
+                    },
+                    help: 'calc <expression>'
+                },
+                math: { exec: function(args) { commands.calc.exec(args); }, help: 'math <expression>' },
+                genpass: { exec: function(args) { genPass(args[0] ? parseInt(args[0]) : 12); }, help: 'genpass [length]' },
+                reverse: { exec: function(args) { if (!args.length) { add('Usage: reverse <text>', 'err'); } else { reverseText(
+                            args.join(' ')); } }, help: 'reverse <text>' },
+                upper: { exec: function(args) { if (!args.length) { add('Usage: upper <text>', 'err'); } else { upperText(
+                            args.join(' ')); } }, help: 'upper <text>' },
+                lower: { exec: function(args) { if (!args.length) { add('Usage: lower <text>', 'err'); } else { lowerText(
+                            args.join(' ')); } }, help: 'lower <text>' },
+                len: { exec: function(args) { if (!args.length) { add('Usage: len <text>', 'err'); } else { lenText(args.join(
+                                ' ')); } }, help: 'len <text>' },
+                echo: { exec: function(args) { if (!args.length) { add('Usage: echo <text>', 'err'); } else { echoText(args
+                                .join(' ')); } }, help: 'echo <text>' },
+                fact: { exec: randomFact, help: 'fact' },
+                wiki: { exec: function(args) { if (!args[0]) { add('Usage: wiki <search term>', 'err'); } else { wikiSearch(
+                            args.join(' ')); } }, help: 'wiki <term>' },
+                define: { exec: function(args) { if (!args[0]) { add('Usage: define <word>', 'err'); } else { defineWord(
+                            args[0]); } }, help: 'define <word>' },
+                qr: { exec: function(args) { if (!args[0]) { add('Usage: qr <text>', 'err'); } else { qrCode(args.join(
+                                ' ')); } }, help: 'qr <text>' },
+                randomuser: { exec: randomUser, help: 'randomuser' },
+                bored: { exec: boredActivity, help: 'bored' },
+                catfact: { exec: catFact, help: 'catfact' },
+                dog: { exec: dogImage, help: 'dog' },
+                reddit: { exec: function(args) { reddit(args[0] || 'all', args[1] || 5); }, help: 'reddit <subreddit> [limit]' },
+                stocks: { exec: function(args) { stocks(args[0] || 'AAPL'); }, help: 'stocks <symbol>' },
+                translate: { exec: function(args) { if (args.length < 2) { add('Usage: translate <text> <target>',
+                                'err'); } else { var target = args.pop();
+                            translate(args.join(' '), target); } }, help: 'translate <text> <target>' },
+                fs: {
+                    exec: function(args) {
+                        if (args[0] === 'ls' || args[0] === 'list') fsList();
+                        else if (args[0] === 'create' && args[1]) fsCreate(args[1], args.slice(2).join(' '));
+                        else if (args[0] === 'read' && args[1]) fsRead(args[1]);
+                        else if (args[0] === 'delete' && args[1]) fsDelete(args[1]);
+                        else if (args[0] === 'search' && args[1]) fsSearch(args[1]);
+                        else add('Usage: fs <ls|create|read|delete|search> ...', 'err');
+                    },
+                    help: 'fs <ls|create|read|delete|search> ...'
+                },
+                vault: {
+                    exec: function(args) {
+                        if (args[0] === 'setpass' && args[1]) vaultSetPassword(args[1]);
+                        else if (args[0] === 'unlock' && args[1]) vaultUnlock(args[1]);
+                        else if (args[0] === 'add' && args.slice(1).join(' ')) vaultAdd(args.slice(1).join(' '));
+                        else if (args[0] === 'list') vaultList();
+                        else if (args[0] === 'delete' && args[1]) vaultDelete(parseInt(args[1]));
+                        else if (args[0] === 'lock') vaultLock();
+                        else add('Usage: vault <setpass|unlock|add|list|delete|lock> [args]', 'err');
+                    },
+                    help: 'vault <setpass|unlock|add|list|delete|lock> [args]'
+                },
+                alias: {
+                    exec: function(args) {
+                        if (args[0] === 'list') listAliases();
+                        else if (args[0] === 'remove' && args[1]) removeAlias(args[1]);
+                        else if (args.length >= 2) addAlias(args[0], args.slice(1).join(' '));
+                        else add('Usage: alias <name> <command> or alias list or alias remove <name>', 'err');
+                    },
+                    help: 'alias <name> <command>'
+                },
+                theme: {
+                    exec: function(args) {
+                        if (args[0] && themes[args[0]]) { applyTheme(args[0]);
+                            add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(
+                                themes).join(', '), 'info');
+                    },
+                    help: 'theme <name>'
+                },
+                cache: {
+                    exec: function(args) {
+                        if (args[0] === 'clear') { cacheClear();
+                            add('Cache cleared.', 'ok'); } else add('Usage: cache clear', 'err');
+                    },
+                    help: 'cache clear'
+                },
+                clear: { exec: function() { output.innerHTML = '';
+                        outputLines = [];
+                        add('Terminal cleared.', 'info'); }, help: 'clear' },
+                about: { exec: function() { add('<div class="block"><strong>Nexus Terminal Pro v4.2</strong><br>Professional command hub with real-time APIs, vault, tools, and more.<br>Marvic Studios UG</div>',
+                            'ok'); }, help: 'about' }
+            };
+
+            // ============================================================
+            //  Execute function
+            // ============================================================
+            async function execute(raw) {
+                if (!raw || !raw.trim()) return;
+                var resolved = resolveAlias(raw.trim());
+                if (resolved !== raw.trim()) {
+                    add('(alias) ' + esc(resolved), 'info');
+                }
+                var parts = resolved.trim().split(/\s+/);
+                var main = parts[0].toLowerCase();
+                var args = parts.slice(1);
+
+                cmdEcho(resolved);
+
+                history.push(resolved);
+                histIdx = history.length;
+                if (history.length > 200) history = history.slice(-200);
+                localStorage.setItem('nexus_history', JSON.stringify(history));
+
+                var cmd = main;
+                recordCmd(cmd);
+                sessionCommands++;
+
+                if (commands[cmd]) {
+                    try {
+                        await commands[cmd].exec(args);
+                    } catch (e) {
+                        add('Error: ' + esc(e.message), 'err');
+                    }
+                } else {
+                    add('Unknown command: ' + esc(cmd) + '. Type help.', 'err');
+                }
+            }
+
+            // ============================================================
+            //  Autocomplete (Tab)
+            // ============================================================
+            function getCompletions(prefix) {
+                var cmdNames = Object.keys(commands);
+                var completions = [];
+                var lower = prefix.toLowerCase();
+                cmdNames.forEach(function(name) {
+                    if (name.startsWith(lower)) completions.push(name);
+                });
+                var aliasNames = Object.keys(aliases);
+                aliasNames.forEach(function(name) {
+                    if (name.startsWith(lower)) completions.push(name);
+                });
+                return completions.sort();
+            }
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    var val = input.value.trim();
+                    if (!val) return;
+                    var parts = val.split(/\s+/);
+                    var prefix = parts[0];
+                    var completions = getCompletions(prefix);
+                    if (completions.length === 1) {
+                        parts[0] = completions[0];
+                        input.value = parts.join(' ') + ' ';
+                    } else if (completions.length > 1) {
+                        add('Completions: ' + completions.join('  '), 'info');
+                    }
+                }
+                if (e.ctrlKey && e.key === 'r') {
+                    e.preventDefault();
+                    var search = prompt('Search command history:', '');
+                    if (search) {
+                        var found = null;
+                        for (var i = history.length - 1; i >= 0; i--) {
+                            if (history[i].includes(search)) { found = history[i]; break; }
+                        }
+                        if (found) {
+                            input.value = found;
+                            add('Found: ' + esc(found), 'info');
+                        } else {
+                            add('No matches found.', 'info');
+                        }
+                    }
+                }
+                if (e.ctrlKey && e.key === 'l') {
+                    e.preventDefault();
+                    output.innerHTML = '';
+                    outputLines = [];
+                    add('Terminal cleared.', 'info');
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (histIdx > 0) {
+                        histIdx--;
+                        input.value = history[histIdx] || '';
+                    }
+                }
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (histIdx < history.length - 1) {
+                        histIdx++;
+                        input.value = history[histIdx] || '';
+                    } else {
+                        histIdx = history.length;
+                        input.value = '';
+                    }
+                }
+            });
+
+            // ============================================================
+            //  UI Events
+            // ============================================================
+            execBtn.addEventListener('click', function() {
+                execute(input.value);
+                input.value = '';
+                input.focus();
+            });
+
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    execute(input.value);
+                    input.value = '';
+                }
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', function() {
+                output.innerHTML = '';
+                outputLines = [];
+                add('Terminal cleared.', 'info');
+            });
+
+            document.getElementById('settingsToggle').addEventListener('click', function() {
+                settingsPanel.classList.toggle('active');
+            });
+
+            document.querySelector('.terminal').addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') input.focus();
+            });
+
+            themeSelect.addEventListener('change', function(e) {
+                applyTheme(e.target.value);
+            });
+
+            var fontSizeSlider = document.getElementById('fontSizeSlider');
+            fontSizeSlider.addEventListener('input', function(e) {
+                var val = e.target.value;
+                document.documentElement.style.fontSize = val + 'px';
+                document.getElementById('fontSizeValue').textContent = val + 'px';
+                localStorage.setItem('nexus_fontSize', val);
+            });
+
+            aliasAddBtn.addEventListener('click', function() {
+                var val = aliasInput.value.trim();
+                if (!val) { add('Usage: alias <name> <command>', 'err'); return; }
+                var parts = val.split('=');
+                if (parts.length === 2) {
+                    addAlias(parts[0].trim(), parts[1].trim());
+                } else {
+                    add('Format: alias=command (e.g. gs=git status)', 'err');
+                }
+                aliasInput.value = '';
+            });
+
+            aliasInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') aliasAddBtn.click();
+            });
+
+            // Clickable commands
+            output.addEventListener('click', function(e) {
+                var cmdEl = e.target.closest('.clickable-cmd');
+                if (!cmdEl) return;
+                var cmd = cmdEl.dataset.cmd;
+                if (cmd) {
+                    input.value = cmd;
+                    input.focus();
+                }
+            });
+
+            // ============================================================
+            //  Init
+            // ============================================================
+            (function init() {
+                var savedTheme = localStorage.getItem('nexus_theme') || 'default';
+                themeSelect.value = savedTheme;
+                applyTheme(savedTheme);
+
+                var savedFont = localStorage.getItem('nexus_fontSize') || '14';
+                fontSizeSlider.value = savedFont;
+                document.documentElement.style.fontSize = savedFont + 'px';
+                document.getElementById('fontSizeValue').textContent = savedFont + 'px';
+
+                add('<div class="block"><strong>Nexus Terminal Pro v4.2</strong><br>Type <span class="cmd">help</span> to see all commands.</div>',
+                    'ok');
+                add('Ready.', 'info');
+
+                updateQuickbar();
+                input.focus();
+            })();
+
+        })();
+    </script>
 </body>
-</html>
+  </html>
