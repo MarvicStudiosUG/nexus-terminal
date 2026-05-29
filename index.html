@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover, shrink-to-fit=no">
-    <meta name="theme-color" content="#070d19">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Nexus Terminal Pro | Marvic Studios UG</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover, shrink-to-fit=no" />
+    <meta name="theme-color" content="#070d19" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Nexus Terminal Pro v6.0 | Marvic Studios UG</title>
 
     <style>
         :root {
@@ -42,6 +42,7 @@
             --safe-top: env(safe-area-inset-top, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
             --safe-right: env(safe-area-inset-right, 0px);
+            --font-size-base: 14px;
         }
 
         * {
@@ -61,7 +62,7 @@
             background: var(--bg-deep);
             color: var(--text-primary);
             font-family: var(--font-mono);
-            font-size: 14px;
+            font-size: var(--font-size-base);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -1049,6 +1050,85 @@
             font-size: 0.7rem;
             flex-shrink: 0;
         }
+
+        .room-search-highlight {
+            background: rgba(0, 240, 208, 0.15);
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .room-list-item {
+            padding: 6px 10px;
+            margin: 4px 0;
+            border-left: 2px solid var(--accent);
+            background: rgba(0, 240, 208, 0.02);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            transition: background var(--transition-fast);
+        }
+        .room-list-item:hover {
+            background: rgba(0, 240, 208, 0.06);
+        }
+        .room-list-item .room-id {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            display: block;
+        }
+        .room-list-item .room-name {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .room-list-item .room-meta {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
+        .room-list-item .room-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .output .badge-temp {
+            background: rgba(245, 166, 35, 0.15);
+            color: #f5a623;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .output .badge-perm {
+            background: rgba(61, 214, 140, 0.12);
+            color: #3dd68c;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .output .badge-locked {
+            background: rgba(255, 92, 108, 0.12);
+            color: #ff5c6c;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .output .badge-unlocked {
+            background: rgba(61, 214, 140, 0.08);
+            color: #3dd68c;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
     </style>
 </head>
 <body>
@@ -1063,7 +1143,7 @@
                 <div class="dot yellow"></div>
                 <div class="dot green"></div>
             </div>
-            <div class="title text-glow">NEXUS TERMINAL PRO</div>
+            <div class="title text-glow">NEXUS TERMINAL PRO v6.0</div>
             <div class="status">
                 <span id="roomBadgeContainer"></span>
                 <span><span class="led"></span></span>
@@ -1108,7 +1188,7 @@
 
             <!-- COLLABORATION ROOM -->
             <div class="settings-section" id="roomSection">
-                <h3>⚡ COLLABORATION ROOM <span class="badge">v2</span></h3>
+                <h3>⚡ COLLABORATION ROOM <span class="badge">v3</span></h3>
                 <p style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat &amp; share terminal in real-time.</p>
 
                 <div class="room-status-display" id="roomStatusDisplay">Not in a room.</div>
@@ -1162,7 +1242,7 @@
             </div>
 
             <div class="settings-footer">
-                Nexus Terminal Pro v5.2 &bull; Marvic Studios UG
+                Nexus Terminal Pro v6.0 &bull; Marvic Studios UG
             </div>
         </div>
 
@@ -1357,7 +1437,7 @@
             }
 
             // ============================================================
-            //  IMPROVED ROOM SYSTEM with Temporary/Permanent
+            //  IMPROVED ROOM SYSTEM with Temporary/Permanent + Enhanced Search
             // ============================================================
 
             function cleanupRoomListeners() {
@@ -1386,6 +1466,7 @@
                 return Date.now() > meta.expiresAt;
             }
 
+            // Enhanced room creation with better metadata for search
             async function createRoom(name, description, password, temporary, ttl) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
@@ -1409,6 +1490,10 @@
                     memberCount: 0,
                     lastActivity: Date.now(),
                     temporary: !!temporary,
+                    // Searchable fields
+                    searchableName: (name || 'Unnamed Room').toLowerCase(),
+                    searchableDescription: (description || '').toLowerCase(),
+                    searchableId: roomId.toLowerCase()
                 };
 
                 if (temporary && ttl) {
@@ -1876,7 +1961,7 @@
             }
 
             // ============================================================
-            //  ROOM LISTING (Discovery)
+            //  ENHANCED ROOM SEARCH – search by name, ID, or description
             // ============================================================
 
             async function listAllRooms() {
@@ -1919,7 +2004,7 @@
                         const creator = meta.creatorAlias || 'unknown';
                         const tempLabel = meta.temporary ? '⏳' : '♾️';
                         add(
-                            `<div class="block"><strong>${esc(name)}</strong> ${tempLabel} ${locked}<br>ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</div>`,
+                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</span></div>`,
                             'ok');
                     });
                     if (active === 0) {
@@ -1932,6 +2017,7 @@
                 }
             }
 
+            // ENHANCED: Search by name, ID, or description with relevance scoring
             async function searchRooms(query) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
@@ -1942,7 +2028,7 @@
                     return;
                 }
 
-                const lid = loader('Searching rooms...');
+                const lid = loader('Searching rooms for "' + query + '"...');
                 try {
                     const roomsRef = gun.get('nexus_rooms');
                     const result = {};
@@ -1956,27 +2042,58 @@
                     unloader(lid);
 
                     const now = Date.now();
-                    const entries = Object.entries(result).filter(([id, meta]) => {
-                        if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return false;
+                    const queryLower = query.toLowerCase();
+                    const matches = [];
+
+                    Object.entries(result).forEach(([id, meta]) => {
+                        // Skip expired
+                        if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return;
+
                         const name = (meta.name || '').toLowerCase();
                         const desc = (meta.description || '').toLowerCase();
-                        const q = query.toLowerCase();
-                        return name.includes(q) || desc.includes(q) || id.toLowerCase().includes(q);
+                        const idLower = id.toLowerCase();
+
+                        // Calculate relevance score
+                        let score = 0;
+                        let matchType = '';
+
+                        if (idLower === queryLower) { score = 100;
+                            matchType = 'exact ID'; } else if (name === queryLower) { score = 90;
+                            matchType = 'exact name'; } else if (idLower.includes(queryLower)) { score = 70;
+                            matchType = 'ID contains'; } else if (name.includes(queryLower)) { score = 60;
+                            matchType = 'name contains'; } else if (desc.includes(queryLower)) { score = 40;
+                            matchType = 'description contains'; }
+
+                        if (score > 0) {
+                            matches.push({ id, meta, score, matchType });
+                        }
                     });
 
-                    if (entries.length === 0) {
-                        add(`No rooms found matching "${esc(query)}".`, 'info');
+                    // Sort by score (highest first)
+                    matches.sort((a, b) => b.score - a.score);
+
+                    if (matches.length === 0) {
+                        add(`No rooms found matching "<span class="highlight">${esc(query)}</span>".`, 'info');
                         return;
                     }
 
-                    add(`<strong>🔍 Search results for "${esc(query)}":</strong>`, 'highlight');
-                    entries.forEach(([id, meta]) => {
+                    add(`<strong>🔍 Found ${matches.length} room(s) matching "<span class="highlight">${esc(query)}</span>":</strong>`,
+                        'highlight');
+
+                    matches.forEach(({ id, meta, matchType }) => {
                         const name = meta.name || id;
                         const members = meta.memberCount || 0;
                         const locked = meta.passwordProtected ? '🔒' : '🔓';
                         const tempLabel = meta.temporary ? '⏳' : '♾️';
+                        const creator = meta.creatorAlias || 'unknown';
+
+                        // Highlight the matched term in the output
+                        const highlightedName = name.replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,
+                            '\\$&') + ')', 'gi'),
+                            '<span class="room-search-highlight">$1</span>');
+
                         add(
-                            `<div class="block"><strong>${esc(name)}</strong> ${tempLabel} ${locked}<br>ID: ${esc(id)} | 👥 ${members}</div>`,
+                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)} | Match: ${matchType}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</span></div>`,
                             'ok');
                     });
                 } catch (e) {
@@ -3295,7 +3412,7 @@
                         break;
                     case 'about':
                         add(
-                            '<div class="block"><strong>Nexus Terminal Pro v5.2</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
+                            '<div class="block"><strong>Nexus Terminal Pro v6.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
                             'ok');
                         break;
                     default:
@@ -3454,7 +3571,7 @@
             }
 
             add(
-                '<div class="block"><strong>🚀 Nexus Terminal Pro v5.2</strong><br>Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands. Rooms now support Temporary/Permanent!</div>',
+                '<div class="block"><strong>🚀 Nexus Terminal Pro v6.0</strong><br>Enhanced room search by name, ID, or description! Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands.</div>',
                 'ok');
             add('Ready.', 'info');
             input.focus();
@@ -3462,4 +3579,4 @@
         })();
     </script>
 </body>
-                        </html>
+    </html>
