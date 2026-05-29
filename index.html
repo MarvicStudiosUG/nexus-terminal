@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#070d19" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Nexus Terminal Pro v6.0 | Marvic Studios UG</title>
+    <title>Nexus Terminal Pro v7.0 | Marvic Studios UG</title>
 
     <style>
         :root {
@@ -849,6 +849,79 @@
             border-radius: var(--radius-xs);
         }
 
+        /* Autocomplete dropdown */
+        .autocomplete-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+
+        #cmdInput {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+            min-height: 36px;
+            padding: 4px 0;
+            width: 100%;
+            -webkit-user-select: text;
+            user-select: text;
+            caret-color: var(--accent);
+            letter-spacing: 0.2px;
+        }
+
+        #suggestions {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-sm);
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 40;
+            display: none;
+            box-shadow: var(--shadow-md);
+            padding: 4px 0;
+        }
+        #suggestions.active {
+            display: block;
+        }
+        #suggestions .suggestion {
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            transition: background var(--transition-fast);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        #suggestions .suggestion:last-child {
+            border-bottom: none;
+        }
+        #suggestions .suggestion:hover,
+        #suggestions .suggestion.active {
+            background: rgba(0, 240, 208, 0.08);
+            color: var(--text-primary);
+        }
+        #suggestions .suggestion .suggestion-cmd {
+            color: var(--accent);
+            font-weight: 700;
+        }
+        #suggestions .suggestion .suggestion-desc {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-left: 8px;
+        }
+
         @media (max-width: 600px) {
             .header {
                 padding: 6px 8px;
@@ -1033,6 +1106,9 @@
         .output a:active {
             color: #fff;
         }
+        .output a:hover {
+            text-decoration: underline;
+        }
 
         .input-group {
             display: flex;
@@ -1143,22 +1219,22 @@
                 <div class="dot yellow"></div>
                 <div class="dot green"></div>
             </div>
-            <div class="title text-glow">NEXUS TERMINAL PRO v6.0</div>
+            <div class="title text-glow">NEXUS TERMINAL PRO v7.0</div>
             <div class="status">
                 <span id="roomBadgeContainer"></span>
                 <span><span class="led"></span></span>
                 <span id="liveClock">--:--:--</span>
-                <button class="settings-btn" id="settingsToggle">⚙</button>
+                <button class="settings-btn" id="settingsToggle">SET</button>
             </div>
         </div>
 
         <!-- SETTINGS PANEL -->
         <div class="settings-panel" id="settingsPanel">
-            <button class="settings-close" id="settingsClose">✕</button>
+            <button class="settings-close" id="settingsClose">x</button>
 
             <!-- THEME -->
             <div class="settings-section">
-                <h3>🎨 THEME</h3>
+                <h3>THEME</h3>
                 <select id="themeSelect">
                     <option value="default">Cyber Neon</option>
                     <option value="ocean">Deep Ocean</option>
@@ -1170,7 +1246,7 @@
 
             <!-- FONT SIZE -->
             <div class="settings-section">
-                <h3>🔤 FONT SIZE</h3>
+                <h3>FONT SIZE</h3>
                 <div class="range-row">
                     <input type="range" id="fontSizeSlider" min="11" max="18" value="14">
                     <span id="fontSizeValue">14px</span>
@@ -1179,30 +1255,30 @@
 
             <!-- ALIASES -->
             <div class="settings-section">
-                <h3>⚡ COMMAND ALIASES</h3>
+                <h3>COMMAND ALIASES</h3>
                 <div class="input-group">
                     <input type="text" id="aliasInput" placeholder="alias=command (e.g. gs=git status)" autocomplete="off" spellcheck="false">
-                    <button id="aliasAddBtn" class="primary" style="width:auto;margin:0;padding:8px 12px;min-height:34px;font-size:0.7rem;">+</button>
+                    <button id="aliasAddBtn" class="primary" style="width:auto;margin:0;padding:8px 12px;min-height:34px;font-size:0.7rem;">ADD</button>
                 </div>
             </div>
 
             <!-- COLLABORATION ROOM -->
             <div class="settings-section" id="roomSection">
-                <h3>⚡ COLLABORATION ROOM <span class="badge">v3</span></h3>
-                <p style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat &amp; share terminal in real-time.</p>
+                <h3>COLLABORATION ROOM <span class="badge">v3</span></h3>
+                <p style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat and share terminal in real-time.</p>
 
                 <div class="room-status-display" id="roomStatusDisplay">Not in a room.</div>
 
                 <!-- CREATE ROOM -->
                 <div style="margin-bottom:8px;">
-                    <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">🚀 Create Room</div>
+                    <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">Create Room</div>
                     <input type="text" id="roomNameInput" placeholder="Room name (optional)" autocomplete="off" spellcheck="false">
                     <input type="text" id="roomDescInput" placeholder="Description (optional)" autocomplete="off" spellcheck="false" style="margin-top:4px;">
                     <input type="password" id="roomCreatePassInput" placeholder="Password (4+ chars, optional)" autocomplete="off" style="margin-top:4px;">
 
                     <div class="checkbox-row">
                         <input type="checkbox" id="roomTemporaryCheck">
-                        <label for="roomTemporaryCheck">Temporary room <span class="hint">(auto-deletes after expiration)</span></label>
+                        <label for="roomTemporaryCheck">Temporary room (auto-deletes after expiration)</label>
                     </div>
                     <div class="ttl-select" id="ttlSelect">
                         <select id="ttlSelect">
@@ -1217,7 +1293,7 @@
 
                 <!-- JOIN ROOM -->
                 <div style="margin-bottom:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
-                    <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">🔗 Join Room</div>
+                    <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">Join Room</div>
                     <div class="input-group">
                         <input type="text" id="roomJoinInput" placeholder="Room ID" autocomplete="off" spellcheck="false">
                         <input type="password" id="roomJoinPassInput" placeholder="Password (if required)" autocomplete="off" style="flex:0.7;">
@@ -1228,8 +1304,8 @@
                 <!-- ROOM ACTIONS -->
                 <div style="border-top:1px solid var(--border-subtle);padding-top:8px;">
                     <div class="btn-group">
-                        <button class="secondary" id="roomLeaveBtn">🚪 Leave</button>
-                        <button class="danger" id="roomDeleteBtn">🗑️ Delete</button>
+                        <button class="secondary" id="roomLeaveBtn">Leave</button>
+                        <button class="danger" id="roomDeleteBtn">Delete</button>
                     </div>
                     <div class="room-users-container" id="roomUsersList">No other users online.</div>
                 </div>
@@ -1237,12 +1313,12 @@
 
             <!-- SESSION STATS -->
             <div class="settings-section">
-                <h3>📊 SESSION STATS</h3>
+                <h3>SESSION STATS</h3>
                 <div style="font-size:0.7rem;color:var(--text-secondary);" id="sessionStats"></div>
             </div>
 
             <div class="settings-footer">
-                Nexus Terminal Pro v6.0 &bull; Marvic Studios UG
+                Nexus Terminal Pro v7.0 - Marvic Studios UG
             </div>
         </div>
 
@@ -1250,10 +1326,13 @@
         <div class="body">
             <div class="output" id="outputContainer"></div>
             <div class="inputline">
-                <div class="prompt">&gt;</div>
-                <input type="text" id="cmdInput" placeholder="type command..." autofocus autocomplete="off" spellcheck="false" enterkeyhint="go">
+                <div class="prompt">></div>
+                <div class="autocomplete-container">
+                    <input type="text" id="cmdInput" placeholder="type command..." autofocus autocomplete="off" spellcheck="false" enterkeyhint="go">
+                    <div id="suggestions"></div>
+                </div>
                 <div class="input-actions">
-                    <button class="icon-btn" id="clearBtn" title="Clear (Ctrl+L)">✕</button>
+                    <button class="icon-btn" id="clearBtn" title="Clear (Ctrl+L)">x</button>
                     <button id="execBtn">EXEC</button>
                 </div>
             </div>
@@ -1266,6 +1345,77 @@
     <script>
         (function() {
             'use strict';
+
+            // ============================================================
+            //  COMMAND DEFINITIONS FOR AUTOCOMPLETE
+            // ============================================================
+            const COMMAND_DEFS = [
+                { cmd: 'help', desc: 'Show all commands with descriptions' },
+                { cmd: 'weather <city>', desc: 'Get current weather for a city' },
+                { cmd: 'joke [count]', desc: 'Get random jokes (optionally specify count)' },
+                { cmd: 'crypto [coins]', desc: 'Get cryptocurrency prices (comma-separated list)' },
+                { cmd: 'news', desc: 'Get latest tech headlines from Hacker News' },
+                { cmd: 'ip', desc: 'Get your public IP address and location' },
+                { cmd: 'dns <domain>', desc: 'Lookup DNS records for a domain' },
+                { cmd: 'currency <from> <to> [amount]', desc: 'Convert currency (default amount: 1)' },
+                { cmd: 'github <user>', desc: 'Get GitHub user info and top repositories' },
+                { cmd: 'spacex', desc: 'Get latest SpaceX launch information' },
+                { cmd: 'quote', desc: 'Get a random inspirational quote' },
+                { cmd: 'sports schedule <league>', desc: 'Get upcoming matches for a league' },
+                { cmd: 'sports scores <league>', desc: 'Get recent scores for a league' },
+                { cmd: 'sports table <league>', desc: 'Get league standings table' },
+                { cmd: 'sports team <name>', desc: 'Get information about a sports team' },
+                { cmd: 'games deals', desc: 'Get current game deals under $15' },
+                { cmd: 'time', desc: 'Show current time in major world cities' },
+                { cmd: 'date', desc: 'Show current date and time' },
+                { cmd: 'calc <expression>', desc: 'Evaluate a mathematical expression' },
+                { cmd: 'genpass [length]', desc: 'Generate a random password (default: 12 chars)' },
+                { cmd: 'reverse <text>', desc: 'Reverse a text string' },
+                { cmd: 'upper <text>', desc: 'Convert text to uppercase' },
+                { cmd: 'lower <text>', desc: 'Convert text to lowercase' },
+                { cmd: 'len <text>', desc: 'Get the length of a text string' },
+                { cmd: 'echo <text>', desc: 'Echo text back to the terminal' },
+                { cmd: 'fact', desc: 'Get a random trivia fact' },
+                { cmd: 'wiki <term>', desc: 'Search Wikipedia for a term' },
+                { cmd: 'define <word>', desc: 'Get dictionary definition of a word' },
+                { cmd: 'qr <text>', desc: 'Generate a QR code for a text' },
+                { cmd: 'randomuser', desc: 'Get a random user profile' },
+                { cmd: 'bored', desc: 'Get a random activity suggestion' },
+                { cmd: 'catfact', desc: 'Get a random cat fact' },
+                { cmd: 'dog', desc: 'Get a random dog image' },
+                { cmd: 'reddit <subreddit> [limit]', desc: 'Get top posts from a subreddit' },
+                { cmd: 'stocks <symbol>', desc: 'Get stock price and change' },
+                { cmd: 'translate <text> <target>', desc: 'Translate text to a target language' },
+                { cmd: 'fs ls', desc: 'List files in the virtual filesystem' },
+                { cmd: 'fs create <name> <content>', desc: 'Create a file in the virtual filesystem' },
+                { cmd: 'fs read <name>', desc: 'Read a file from the virtual filesystem' },
+                { cmd: 'fs delete <name>', desc: 'Delete a file from the virtual filesystem' },
+                { cmd: 'fs search <query>', desc: 'Search files in the virtual filesystem' },
+                { cmd: 'vault setpass <password>', desc: 'Set vault password' },
+                { cmd: 'vault unlock <password>', desc: 'Unlock the vault' },
+                { cmd: 'vault add <text>', desc: 'Add an entry to the vault' },
+                { cmd: 'vault list', desc: 'List vault entries' },
+                { cmd: 'vault delete <index>', desc: 'Delete a vault entry by index' },
+                { cmd: 'vault lock', desc: 'Lock the vault' },
+                { cmd: 'alias <name> <command>', desc: 'Create a command alias' },
+                { cmd: 'alias list', desc: 'List all aliases' },
+                { cmd: 'alias remove <name>', desc: 'Remove an alias' },
+                { cmd: 'theme <name>', desc: 'Change theme (default, ocean, mono, matrix, sunset)' },
+                { cmd: 'cache clear', desc: 'Clear the API cache' },
+                { cmd: 'clear', desc: 'Clear the terminal output' },
+                { cmd: 'nick <name>', desc: 'Change your nickname in the current room' },
+                { cmd: 'room create [name] [description] [password] [temporary]', desc: 'Create a new room' },
+                { cmd: 'room join <id> [password]', desc: 'Join an existing room' },
+                { cmd: 'room leave', desc: 'Leave the current room' },
+                { cmd: 'room list', desc: 'List all available rooms' },
+                { cmd: 'room search <query>', desc: 'Search rooms by name, ID, or description' },
+                { cmd: 'room info <id>', desc: 'Get information about a room' },
+                { cmd: 'room users', desc: 'List users in the current room' },
+                { cmd: 'room invite', desc: 'Get an invite link for the current room' },
+                { cmd: 'room delete', desc: 'Delete the current room (creator only)' },
+                { cmd: 'chat <message>', desc: 'Send a chat message in the current room' },
+                { cmd: 'about', desc: 'Show about information' }
+            ];
 
             // ============================================================
             //  SHARED SPORTS LEAGUE MAP
@@ -1331,6 +1481,7 @@
             const roomTemporaryCheck = document.getElementById('roomTemporaryCheck');
             const ttlSelect = document.getElementById('ttlSelect');
             const ttlSelectContainer = document.getElementById('ttlSelect');
+            const suggestionsEl = document.getElementById('suggestions');
 
             let history = JSON.parse(localStorage.getItem('nexus_history') || '[]');
             let histIdx = history.length;
@@ -1346,7 +1497,7 @@
             let createdRooms = JSON.parse(localStorage.getItem('nexus_created_rooms') || '[]');
 
             // ============================================================
-            //  COLLABORATION (Gun.js) – Robust Room System with Password & Chat
+            //  COLLABORATION (Gun.js)
             // ============================================================
             const gunPeers = ['https://gun-manhattan.herokuapp.com/gun'];
             let gun = null;
@@ -1368,7 +1519,6 @@
             let roomPresenceRef = null;
             let isRoomInitialized = false;
 
-            // Cleanup intervals
             let presenceInterval = null;
             let cleanupInterval = null;
 
@@ -1437,7 +1587,7 @@
             }
 
             // ============================================================
-            //  IMPROVED ROOM SYSTEM with Temporary/Permanent + Enhanced Search
+            //  ROOM SYSTEM
             // ============================================================
 
             function cleanupRoomListeners() {
@@ -1466,7 +1616,6 @@
                 return Date.now() > meta.expiresAt;
             }
 
-            // Enhanced room creation with better metadata for search
             async function createRoom(name, description, password, temporary, ttl) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
@@ -1490,7 +1639,6 @@
                     memberCount: 0,
                     lastActivity: Date.now(),
                     temporary: !!temporary,
-                    // Searchable fields
                     searchableName: (name || 'Unnamed Room').toLowerCase(),
                     searchableDescription: (description || '').toLowerCase(),
                     searchableId: roomId.toLowerCase()
@@ -1527,10 +1675,10 @@
                         localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
                     }
 
-                    const tempLabel = meta.temporary ? '⏳ Temporary (expires ' + new Date(meta.expiresAt)
-                        .toLocaleString() + ')' : '♾️ Permanent';
+                    const tempLabel = meta.temporary ? 'Temporary (expires ' + new Date(meta.expiresAt)
+                        .toLocaleString() + ')' : 'Permanent';
                     add(
-                        `<div class="block"><strong>🚀 Room created!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)} | ${tempLabel}${meta.passwordProtected ? ' 🔒 Password protected' : ''}</div>`,
+                        `<div class="block"><strong>Room created successfully!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)} | ${tempLabel}${meta.passwordProtected ? ' [Password Protected]' : ''}</div>`,
                         'ok');
                     updateRoomBadge(meta);
                     updateRoomStatusDisplay();
@@ -1578,9 +1726,8 @@
                         return;
                     }
 
-                    // Check if expired
                     if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
-                        add('❌ This room has expired and is no longer available.', 'err');
+                        add('This room has expired and is no longer available.', 'err');
                         return;
                     }
 
@@ -1591,7 +1738,7 @@
                         }
                         const hash = await sha256(password);
                         if (hash !== meta.passwordHash) {
-                            add('❌ Incorrect password.', 'err');
+                            add('Incorrect password.', 'err');
                             return;
                         }
                         roomPassword = password;
@@ -1612,9 +1759,9 @@
                         return;
                     }
 
-                    const tempLabel = meta.temporary ? '⏳ Temporary' : '♾️ Permanent';
+                    const tempLabel = meta.temporary ? 'Temporary' : 'Permanent';
                     add(
-                        `<div class="block"><strong>🔗 Joined room:</strong> ${esc(meta.name)} (${esc(id)}) | ${tempLabel}${meta.passwordProtected ? ' 🔒' : ''}</div>`,
+                        `<div class="block"><strong>Joined room:</strong> ${esc(meta.name)} (${esc(id)}) | ${tempLabel}${meta.passwordProtected ? ' [Password Protected]' : ''}</div>`,
                         'ok');
                     updateRoomBadge(meta);
                     updateRoomStatusDisplay();
@@ -1652,7 +1799,7 @@
                             roomUsers[key] = data;
                             if (wasNew && key !== myUserId && !knownUsers.has(key)) {
                                 knownUsers.add(key);
-                                addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
+                                addSystemMsg('User ' + esc(data.alias) + ' joined the room.');
                             }
                             updateRoomUsersUI();
                             updateMemberCount();
@@ -1685,7 +1832,7 @@
                         line.className = 'line chat-msg';
                         const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
                         line.innerHTML =
-                            `💬 <strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
+                            `<strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
                         output.appendChild(line);
                         outputLines.push(line);
                         limitOutputLines();
@@ -1701,7 +1848,7 @@
                                 const alias = roomUsers[key]?.alias || key;
                                 knownUsers.delete(key);
                                 delete roomUsers[key];
-                                addSystemMsg(`🚪 ${esc(alias)} left the room.`);
+                                addSystemMsg('User ' + esc(alias) + ' left the room.');
                                 updateRoomUsersUI();
                                 updateMemberCount();
                             }
@@ -1715,7 +1862,7 @@
                                     const alias = roomUsers[key]?.alias || key;
                                     knownUsers.delete(key);
                                     delete roomUsers[key];
-                                    addSystemMsg(`⏱️ ${esc(alias)} timed out.`);
+                                    addSystemMsg('User ' + esc(alias) + ' timed out.');
                                     updateRoomUsersUI();
                                     updateMemberCount();
                                 }
@@ -1725,7 +1872,7 @@
                                 knownUsers.add(key);
                                 roomUsers[key] = { alias: data.alias, lastSeen: data.lastSeen || now,
                                 role: 'member' };
-                                addSystemMsg(`👤 ${esc(data.alias)} joined the room.`);
+                                addSystemMsg('User ' + esc(data.alias) + ' joined the room.');
                                 updateRoomUsersUI();
                                 updateMemberCount();
                             } else {
@@ -1751,7 +1898,7 @@
                                 delete roomUsers[id];
                                 if (knownUsers.has(id)) {
                                     knownUsers.delete(id);
-                                    addSystemMsg(`⏱️ ${esc(alias)} timed out.`);
+                                    addSystemMsg('User ' + esc(alias) + ' timed out.');
                                     changed = true;
                                 }
                             }
@@ -1807,7 +1954,7 @@
                 updateRoomBadge(null);
                 updateRoomUsersUI();
                 updateRoomStatusDisplay();
-                add('🚪 Left the room.', 'ok');
+                add('Left the room.', 'ok');
             }
 
             async function deleteRoom() {
@@ -1820,7 +1967,7 @@
                     return;
                 }
 
-                const line = add('<strong>⚠️ Are you sure you want to delete this room? Type "yes" to confirm.</strong>',
+                const line = add('<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>',
                 'warning');
                 const confirmHandler = async function(e) {
                     const cmd = e.target.value.trim().toLowerCase();
@@ -1834,7 +1981,7 @@
                             }
                             createdRooms = createdRooms.filter(id => id !== currentRoomId);
                             localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
-                            add('🗑️ Room deleted.', 'ok');
+                            add('Room deleted.', 'ok');
 
                             if (cleanupInterval) {
                                 clearInterval(cleanupInterval);
@@ -1879,7 +2026,7 @@
                 const line = document.createElement('div');
                 line.className = 'line chat-msg';
                 line.innerHTML =
-                    `💬 <strong>${esc(myAlias)}</strong> (you): ${esc(text.trim())}`;
+                    `<strong>${esc(myAlias)}</strong> (you): ${esc(text.trim())}`;
                 output.appendChild(line);
                 outputLines.push(line);
                 limitOutputLines();
@@ -1920,7 +2067,7 @@
                 }
                 let lockedClass = meta?.passwordProtected ? ' locked' : '';
                 const displayName = meta?.name || currentRoomId;
-                const tempIcon = meta?.temporary ? '⏳' : '♾️';
+                const tempIcon = meta?.temporary ? 'TEMP' : 'PERM';
                 roomBadgeContainer.innerHTML =
                     `<span class="room-badge${lockedClass}" title="Click to copy Room ID">${tempIcon} ${esc(displayName)}</span>`;
             }
@@ -1932,9 +2079,9 @@
                 }
                 const displayName = roomMeta?.name || currentRoomId;
                 const members = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
-                const tempLabel = roomMeta?.temporary ? '⏳ Temporary' : '♾️ Permanent';
+                const tempLabel = roomMeta?.temporary ? 'Temporary' : 'Permanent';
                 roomStatusDisplay.innerHTML =
-                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | 👥 ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' 🔒' : ''}`;
+                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | Users: ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' [Password Protected]' : ''}`;
             }
 
             function updateRoomUsersUI() {
@@ -1954,14 +2101,14 @@
                     return a.alias.localeCompare(b.alias);
                 });
 
-                roomUsersList.innerHTML = '<strong>👥 Online:</strong><br>' +
+                roomUsersList.innerHTML = '<strong>Online users:</strong><br>' +
                     users.map(u =>
-                        `<span class="room-user">${esc(u.alias)}${u.role === 'admin' ? ' 👑' : ''}</span>`
+                        `<span class="room-user">${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}</span>`
                     ).join('');
             }
 
             // ============================================================
-            //  ENHANCED ROOM SEARCH – search by name, ID, or description
+            //  ROOM SEARCH
             // ============================================================
 
             async function listAllRooms() {
@@ -1993,18 +2140,17 @@
 
                     const now = Date.now();
                     let active = 0;
-                    add('<strong>📋 Available Rooms:</strong>', 'highlight');
+                    add('<strong>Available Rooms:</strong>', 'highlight');
                     entries.forEach(([id, meta]) => {
-                        // Filter expired
                         if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return;
                         active++;
                         const name = meta.name || id;
                         const members = meta.memberCount || 0;
-                        const locked = meta.passwordProtected ? '🔒' : '🔓';
+                        const locked = meta.passwordProtected ? '[LOCKED]' : '[OPEN]';
                         const creator = meta.creatorAlias || 'unknown';
-                        const tempLabel = meta.temporary ? '⏳' : '♾️';
+                        const tempLabel = meta.temporary ? '[TEMP]' : '[PERM]';
                         add(
-                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</span></div>`,
+                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | Users: ${members} | Creator: ${esc(creator)}${meta.description ? ' | Description: '+esc(meta.description) : ''}</span></div>`,
                             'ok');
                     });
                     if (active === 0) {
@@ -2017,7 +2163,6 @@
                 }
             }
 
-            // ENHANCED: Search by name, ID, or description with relevance scoring
             async function searchRooms(query) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
@@ -2046,14 +2191,12 @@
                     const matches = [];
 
                     Object.entries(result).forEach(([id, meta]) => {
-                        // Skip expired
                         if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return;
 
                         const name = (meta.name || '').toLowerCase();
                         const desc = (meta.description || '').toLowerCase();
                         const idLower = id.toLowerCase();
 
-                        // Calculate relevance score
                         let score = 0;
                         let matchType = '';
 
@@ -2069,31 +2212,29 @@
                         }
                     });
 
-                    // Sort by score (highest first)
                     matches.sort((a, b) => b.score - a.score);
 
                     if (matches.length === 0) {
-                        add(`No rooms found matching "<span class="highlight">${esc(query)}</span>".`, 'info');
+                        add(`No rooms found matching "${esc(query)}".`, 'info');
                         return;
                     }
 
-                    add(`<strong>🔍 Found ${matches.length} room(s) matching "<span class="highlight">${esc(query)}</span>":</strong>`,
+                    add(`<strong>Found ${matches.length} room(s) matching "${esc(query)}":</strong>`,
                         'highlight');
 
                     matches.forEach(({ id, meta, matchType }) => {
                         const name = meta.name || id;
                         const members = meta.memberCount || 0;
-                        const locked = meta.passwordProtected ? '🔒' : '🔓';
-                        const tempLabel = meta.temporary ? '⏳' : '♾️';
+                        const locked = meta.passwordProtected ? '[LOCKED]' : '[OPEN]';
+                        const tempLabel = meta.temporary ? '[TEMP]' : '[PERM]';
                         const creator = meta.creatorAlias || 'unknown';
 
-                        // Highlight the matched term in the output
                         const highlightedName = name.replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,
                             '\\$&') + ')', 'gi'),
                             '<span class="room-search-highlight">$1</span>');
 
                         add(
-                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | 👥 ${members} | 👤 ${esc(creator)} | Match: ${matchType}${meta.description ? ' | 📝 '+esc(meta.description) : ''}</span></div>`,
+                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | Users: ${members} | Creator: ${esc(creator)} | Match: ${matchType}${meta.description ? ' | Description: '+esc(meta.description) : ''}</span></div>`,
                             'ok');
                     });
                 } catch (e) {
@@ -2137,21 +2278,21 @@
                     }
 
                     if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
-                        add('❌ This room has expired.', 'err');
+                        add('This room has expired.', 'err');
                         return;
                     }
 
                     const name = meta.name || roomId;
                     const created = new Date(meta.created).toLocaleString();
                     const members = meta.memberCount || 0;
-                    const locked = meta.passwordProtected ? '🔒 Yes' : '🔓 No';
+                    const locked = meta.passwordProtected ? 'Yes [Password Protected]' : 'No [Open]';
                     const creator = meta.creatorAlias || meta.creator || 'unknown';
                     const desc = meta.description || 'No description';
-                    const tempLabel = meta.temporary ? '⏳ Temporary (expires ' + new Date(meta.expiresAt)
-                        .toLocaleString() + ')' : '♾️ Permanent';
+                    const tempLabel = meta.temporary ? 'Temporary (expires ' + new Date(meta.expiresAt)
+                        .toLocaleString() + ')' : 'Permanent';
 
                     add(
-                        `<div class="block"><strong>🏠 Room: ${esc(name)}</strong><br>ID: ${esc(roomId)}<br>Type: ${tempLabel}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${members}<br>Password Protected: ${locked}</div>`,
+                        `<div class="block"><strong>Room: ${esc(name)}</strong><br>ID: ${esc(roomId)}<br>Type: ${tempLabel}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${members}<br>Password Protected: ${locked}</div>`,
                         'ok');
                 } catch (e) {
                     add('Error getting room info: ' + esc(e.message), 'err');
@@ -2164,7 +2305,7 @@
                     return;
                 }
                 const inviteText =
-                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.temporary ? '⏳ Temporary' : '♾️ Permanent'}${roomMeta?.passwordProtected ? '\n🔒 Password protected' : ''}`;
+                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.temporary ? 'Temporary' : 'Permanent'}${roomMeta?.passwordProtected ? '\nPassword Protected' : ''}`;
 
                 if (navigator.share) {
                     navigator.share({ text: inviteText }).then(() => {
@@ -2174,7 +2315,7 @@
                     });
                 } else {
                     copyToClipboard(inviteText).then(() => {
-                        add('📋 Invite text copied to clipboard!', 'ok');
+                        add('Invite text copied to clipboard!', 'ok');
                     }).catch(() => {
                         add('Failed to copy. Please copy manually.', 'err');
                     });
@@ -2215,7 +2356,7 @@
 
             function loader(msg) {
                 const id = 'l' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-                add('<span id="' + id + '" class="info">⏳ ' + esc(msg) + '</span>');
+                add('<span id="' + id + '" class="info">[LOADING] ' + esc(msg) + '</span>');
                 return id;
             }
 
@@ -2468,18 +2609,27 @@
             function cacheClear() { apiCache.clear(); }
 
             // ============================================================
-            //  API FUNCTIONS (emoji-free)
+            //  API FUNCTIONS (professional, no emojis)
             // ============================================================
+
+            function formatLink(text, url) {
+                return `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(text)}</a>`;
+            }
+
+            function formatClickableCmd(cmd, display) {
+                return `<span class="clickable-cmd" data-cmd="${esc(cmd)}">${esc(display || cmd)}</span>`;
+            }
+
             async function weather(city) {
                 const key = 'weather_' + city.toLowerCase();
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block"><strong>${esc(cached.name)}, ${esc(cached.admin1 || '')} ${esc(cached.country || '')}</strong><br>Temperature: ${cached.temp}°C | Wind: ${cached.wind} km/h</div>`,
+                        `<div class="block"><strong>${esc(cached.name)}, ${esc(cached.admin1 || '')} ${esc(cached.country || '')}</strong><br>Temperature: ${cached.temp}°C | Wind Speed: ${cached.wind} km/h<br>${formatLink('View detailed forecast on Open-Meteo', 'https://open-meteo.com/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Weather for ' + city + '...');
+                const lid = loader('Fetching weather for ' + city + '...');
                 try {
                     const geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(
                         city) + '&count=1');
@@ -2490,14 +2640,14 @@
                     const wRes = await fetch(
                         'https://api.open-meteo.com/v1/forecast?latitude=' + loc.latitude + '&longitude=' + loc
                         .longitude + '&current_weather=true');
-                    if (!wRes.ok) throw new Error('Weather error');
+                    if (!wRes.ok) throw new Error('Weather API error');
                     const w = await wRes.json();
                     const data = { name: loc.name, admin1: loc.admin1 || '', country: loc.country || '',
                         temp: w.current_weather.temperature, wind: w.current_weather.windspeed };
                     cacheSet(key, data, 600000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>${esc(data.name)}, ${esc(data.admin1 || '')} ${esc(data.country || '')}</strong><br>Temperature: ${data.temp}°C | Wind: ${data.wind} km/h</div>`,
+                        `<div class="block"><strong>${esc(data.name)}, ${esc(data.admin1 || '')} ${esc(data.country || '')}</strong><br>Temperature: ${data.temp}°C | Wind Speed: ${data.wind} km/h<br>${formatLink('View detailed forecast on Open-Meteo', 'https://open-meteo.com/')}</div>`,
                         'ok');
                 } catch (e) { unloader(lid);
                     add('Error: ' + esc(e.message), 'err'); }
@@ -2505,7 +2655,7 @@
 
             async function joke(count) {
                 count = Math.min(parseInt(count) || 1, 10);
-                const lid = loader('Jokes...');
+                const lid = loader('Fetching jokes...');
                 try {
                     const results = [];
                     for (let i = 0; i < count; i++) {
@@ -2515,8 +2665,12 @@
                     }
                     unloader(lid);
                     results.forEach(function(j, idx) {
-                        add(`<div class="block"><strong>#${idx + 1}</strong><br>${esc(j)}</div>`, 'ok');
+                        add(`<div class="block"><strong>Joke #${idx + 1}</strong><br>${esc(j)}</div>`, 'ok');
                     });
+                    if (count > 1) {
+                        add('Want more? Try ' + formatClickableCmd('joke ' + (count + 2), 'joke ' + (count + 2)) +
+                            ' or ' + formatClickableCmd('joke 10', 'joke 10'), 'info');
+                    }
                 } catch { unloader(lid);
                     add('Joke service unavailable.', 'err'); }
             }
@@ -2530,12 +2684,13 @@
                     Object.entries(cached).forEach(function(entry) {
                         const coin = entry[0],
                             val = entry[1];
-                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !== undefined ? val
-                            .usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
+                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h change: ' + (val.usd_24h_change !== undefined ?
+                            val.usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
                     });
+                    add('Data from ' + formatLink('CoinGecko', 'https://www.coingecko.com/'), 'info');
                     return;
                 }
-                const lid = loader('Crypto prices...');
+                const lid = loader('Fetching crypto prices...');
                 try {
                     const r = await fetch(
                         'https://api.coingecko.com/api/v3/simple/price?ids=' + coins +
@@ -2548,11 +2703,12 @@
                     Object.entries(d).forEach(function(entry) {
                         const coin = entry[0],
                             val = entry[1];
-                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h: ' + (val.usd_24h_change !== undefined ? val
-                            .usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
+                        add(coin.toUpperCase() + ': $' + val.usd + ' (24h change: ' + (val.usd_24h_change !== undefined ?
+                            val.usd_24h_change.toFixed(2) : 'N/A') + '%)', 'ok');
                     });
+                    add('Data from ' + formatLink('CoinGecko', 'https://www.coingecko.com/'), 'info');
                 } catch { unloader(lid);
-                    add('Crypto unavailable.', 'err'); }
+                    add('Crypto API unavailable.', 'err'); }
             }
 
             async function news() {
@@ -2562,12 +2718,13 @@
                     add('<strong>Tech Headlines (cached):</strong>', 'highlight');
                     cached.forEach(function(it, i) {
                         add(
-                            `<div class="block">${i + 1}. <a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(it.title)}</a> (${it.score} pts)</div>`,
+                            `<div class="block">${i + 1}. ${formatLink(esc(it.title), it.url || '#')} (${it.score} points)${it.by ? ' by '+esc(it.by) : ''}</div>`,
                             'ok');
                     });
+                    add('Data from ' + formatLink('Hacker News', 'https://news.ycombinator.com/'), 'info');
                     return;
                 }
-                const lid = loader('News...');
+                const lid = loader('Fetching news...');
                 try {
                     const ids = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(r => r.json());
                     const items = await Promise.all(ids.slice(0, 5).map(id => fetch(
@@ -2577,11 +2734,12 @@
                     add('<strong>Tech Headlines:</strong>', 'highlight');
                     items.forEach(function(it, i) {
                         add(
-                            `<div class="block">${i + 1}. <a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(it.title)}</a> (${it.score} pts)</div>`,
+                            `<div class="block">${i + 1}. ${formatLink(esc(it.title), it.url || '#')} (${it.score} points)${it.by ? ' by '+esc(it.by) : ''}</div>`,
                             'ok');
                     });
+                    add('Data from ' + formatLink('Hacker News', 'https://news.ycombinator.com/'), 'info');
                 } catch { unloader(lid);
-                    add('News unavailable.', 'err'); }
+                    add('News API unavailable.', 'err'); }
             }
 
             async function ipInfo() {
@@ -2589,17 +2747,17 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block">IP: ${esc(cached.ip)} | Location: ${esc(cached.city)}, ${esc(cached.region)} ${esc(cached.country_name)} | ISP: ${esc(cached.org)}</div>`,
+                        `<div class="block"><strong>IP: ${esc(cached.ip)}</strong> | Location: ${esc(cached.city)}, ${esc(cached.region)} ${esc(cached.country_name)} | ISP: ${esc(cached.org)}<br>${formatLink('More details on ipapi.co', 'https://ipapi.co/'+cached.ip)}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('IP lookup...');
+                const lid = loader('Performing IP lookup...');
                 try {
                     const d = await fetch('https://ipapi.co/json/').then(r => r.json());
                     cacheSet(key, d, 3600000);
                     unloader(lid);
                     add(
-                        `<div class="block">IP: ${esc(d.ip)} | Location: ${esc(d.city)}, ${esc(d.region)} ${esc(d.country_name)} | ISP: ${esc(d.org)}</div>`,
+                        `<div class="block"><strong>IP: ${esc(d.ip)}</strong> | Location: ${esc(d.city)}, ${esc(d.region)} ${esc(d.country_name)} | ISP: ${esc(d.org)}<br>${formatLink('More details on ipapi.co', 'https://ipapi.co/'+d.ip)}</div>`,
                         'ok');
                 } catch { unloader(lid);
                     add('IP lookup failed.', 'err'); }
@@ -2608,17 +2766,19 @@
             async function dnsLookup(domain) {
                 const key = 'dns_' + domain;
                 const cached = cacheGet(key);
-                if (cached) { cached.forEach(function(r) { add(r.type + ': ' + esc(r.data), 'ok'); }); return; }
-                const lid = loader('DNS for ' + domain + '...');
+                if (cached) { cached.forEach(function(r) { add(r.type + ': ' + esc(r.data), 'ok'); });
+                    add('Data from ' + formatLink('Google DNS', 'https://dns.google/'), 'info'); return; }
+                const lid = loader('DNS lookup for ' + domain + '...');
                 try {
                     const d = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) +
                         '&type=A').then(r => r.json());
                     unloader(lid);
                     if (d.Answer) { cacheSet(key, d.Answer, 600000);
-                        d.Answer.forEach(function(r) { add(r.type + ': ' + esc(r.data), 'ok'); }); } else { add(
+                        d.Answer.forEach(function(r) { add(r.type + ': ' + esc(r.data), 'ok'); });
+                        add('Data from ' + formatLink('Google DNS', 'https://dns.google/'), 'info'); } else { add(
                             'No A records found.', 'err'); }
                 } catch { unloader(lid);
-                    add('DNS failed.', 'err'); }
+                    add('DNS lookup failed.', 'err'); }
             }
 
             async function currency(from, to, amount) {
@@ -2629,11 +2789,11 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block">${amount} ${from} = <strong>${(amount * cached).toFixed(2)} ${to}</strong> (rate: ${cached})</div>`,
+                        `<div class="block">${amount} ${from} = <strong>${(amount * cached).toFixed(2)} ${to}</strong> (exchange rate: ${cached})<br>${formatLink('View more currencies', 'https://www.exchangerate-api.com/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Currency...');
+                const lid = loader('Fetching exchange rates...');
                 try {
                     const d = await fetch('https://api.exchangerate-api.com/v4/latest/' + from).then(r => r.json());
                     const rate = d.rates[to];
@@ -2641,7 +2801,7 @@
                     cacheSet(key, rate, 3600000);
                     unloader(lid);
                     add(
-                        `<div class="block">${amount} ${from} = <strong>${(amount * rate).toFixed(2)} ${to}</strong> (rate: ${rate})</div>`,
+                        `<div class="block">${amount} ${from} = <strong>${(amount * rate).toFixed(2)} ${to}</strong> (exchange rate: ${rate})<br>${formatLink('View more currencies', 'https://www.exchangerate-api.com/')}</div>`,
                         'ok');
                 } catch (e) { unloader(lid);
                     add('Currency error: ' + esc(e.message), 'err'); }
@@ -2654,31 +2814,33 @@
                     const u = cached.user,
                         repos = cached.repos;
                     add(
-                        `<div class="block"><strong>${esc(u.name || u.login)}</strong> | Followers: ${u.followers} | Repos: ${u.public_repos}<br>Bio: ${esc(u.bio || 'N/A')}</div>`,
+                        `<div class="block"><strong>${esc(u.name || u.login)}</strong> | Followers: ${u.followers} | Repositories: ${u.public_repos}<br>Bio: ${esc(u.bio || 'N/A')}</div>`,
                         'ok');
-                    if (repos.length) { add('<strong>Top Repos:</strong>', 'highlight');
-                        repos.forEach(function(r) { add(r.stargazers_count + ' stars <a href="' + esc(r.html_url) +
-                                '" target="_blank">' + esc(r.name) + '</a>: ' + esc(r.description || ''), 'ok'); }); }
+                    if (repos.length) { add('<strong>Top Repositories:</strong>', 'highlight');
+                        repos.forEach(function(r) { add(r.stargazers_count + ' stars ' + formatLink(esc(r.name), r
+                                .html_url) + ': ' + esc(r.description || ''), 'ok'); }); }
+                    add('Profile: ' + formatLink('View on GitHub', 'https://github.com/' + username), 'info');
                     return;
                 }
-                const lid = loader('GitHub...');
+                const lid = loader('Fetching GitHub data...');
                 try {
                     const userRes = await fetch('https://api.github.com/users/' + username);
                     const reposRes = await fetch('https://api.github.com/users/' + username +
                         '/repos?sort=stars&per_page=5');
-                    if (!userRes.ok || !reposRes.ok) throw new Error('GitHub error');
+                    if (!userRes.ok || !reposRes.ok) throw new Error('GitHub API error');
                     const user = await userRes.json();
                     const repos = await reposRes.json();
                     cacheSet(key, { user: user, repos: repos }, 600000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>${esc(user.name || user.login)}</strong> | Followers: ${user.followers} | Repos: ${user.public_repos}<br>Bio: ${esc(user.bio || 'N/A')}</div>`,
+                        `<div class="block"><strong>${esc(user.name || user.login)}</strong> | Followers: ${user.followers} | Repositories: ${user.public_repos}<br>Bio: ${esc(user.bio || 'N/A')}</div>`,
                         'ok');
-                    if (repos.length) { add('<strong>Top Repos:</strong>', 'highlight');
-                        repos.forEach(function(r) { add(r.stargazers_count + ' stars <a href="' + esc(r.html_url) +
-                                '" target="_blank">' + esc(r.name) + '</a>: ' + esc(r.description || ''), 'ok'); }); }
+                    if (repos.length) { add('<strong>Top Repositories:</strong>', 'highlight');
+                        repos.forEach(function(r) { add(r.stargazers_count + ' stars ' + formatLink(esc(r.name), r
+                                .html_url) + ': ' + esc(r.description || ''), 'ok'); }); }
+                    add('Profile: ' + formatLink('View on GitHub', 'https://github.com/' + username), 'info');
                 } catch { unloader(lid);
-                    add('GitHub error.', 'err'); }
+                    add('GitHub API error.', 'err'); }
             }
 
             async function spacex() {
@@ -2686,11 +2848,11 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block"><strong>SpaceX</strong><br>Next: ${esc(cached.next.name)} (${new Date(cached.next.date_utc).toLocaleString()})<br>Latest: ${esc(cached.latest.name)} - ${cached.latest.success ? 'Success' : 'Failed'}</div>`,
+                        `<div class="block"><strong>SpaceX</strong><br>Next Launch: ${esc(cached.next.name)} (${new Date(cached.next.date_utc).toLocaleString()})<br>Latest Launch: ${esc(cached.latest.name)} - ${cached.latest.success ? 'Success' : 'Failed'}<br>${formatLink('More details on SpaceX API', 'https://api.spacexdata.com/v5/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('SpaceX...');
+                const lid = loader('Fetching SpaceX data...');
                 try {
                     const nextRes = await fetch('https://api.spacexdata.com/v5/launches/next');
                     const latestRes = await fetch('https://api.spacexdata.com/v5/launches/latest');
@@ -2700,10 +2862,10 @@
                     cacheSet(key, { next: next, latest: latest }, 3600000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>SpaceX</strong><br>Next: ${esc(next.name)} (${new Date(next.date_utc).toLocaleString()})<br>Latest: ${esc(latest.name)} - ${latest.success ? 'Success' : 'Failed'}</div>`,
+                        `<div class="block"><strong>SpaceX</strong><br>Next Launch: ${esc(next.name)} (${new Date(next.date_utc).toLocaleString()})<br>Latest Launch: ${esc(latest.name)} - ${latest.success ? 'Success' : 'Failed'}<br>${formatLink('More details on SpaceX API', 'https://api.spacexdata.com/v5/')}</div>`,
                         'ok');
                 } catch { unloader(lid);
-                    add('SpaceX error.', 'err'); }
+                    add('SpaceX API error.', 'err'); }
             }
 
             async function quote() {
@@ -2711,44 +2873,46 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block">"${esc(cached.content)}"<br><span style="color:var(--text-dim);">-- ${esc(cached.author)}</span></div>`,
+                        `<div class="block">"${esc(cached.content)}"<br><span style="color:var(--text-dim);">-- ${esc(cached.author)}</span><br>${formatLink('More quotes on Quotable', 'https://quotable.io/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Quote...');
+                const lid = loader('Fetching quote...');
                 try {
                     const d = await fetch('https://api.quotable.io/random').then(r => r.json());
                     cacheSet(key, d, 600000);
                     unloader(lid);
                     add(
-                        `<div class="block">"${esc(d.content)}"<br><span style="color:var(--text-dim);">-- ${esc(d.author)}</span></div>`,
+                        `<div class="block">"${esc(d.content)}"<br><span style="color:var(--text-dim);">-- ${esc(d.author)}</span><br>${formatLink('More quotes on Quotable', 'https://quotable.io/')}</div>`,
                         'ok');
                 } catch { unloader(lid);
-                    add('Quote error.', 'err'); }
+                    add('Quote API error.', 'err'); }
             }
 
             async function sportsSchedule(league) {
-                const lid = loader('Schedule for ' + league + '...');
+                const lid = loader('Fetching schedule for ' + league + '...');
                 const leagueId = await resolveLeagueId(league);
                 if (!leagueId) { unloader(lid);
-                    add('League not found (try EPL, La Liga).', 'err'); return; }
+                    add('League not found (try EPL, La Liga, Bundesliga, Serie A, Ligue 1, UEFA Champions League).',
+                        'err'); return; }
                 try {
                     const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/eventsnextleague.php?id=' +
                         leagueId);
                     const data = await res.json();
                     unloader(lid);
-                    if (!data.events || !data.events.length) { add('No upcoming events.', 'info'); return; }
+                    if (!data.events || !data.events.length) { add('No upcoming events found.', 'info'); return; }
                     add('<strong>Upcoming matches:</strong>', 'highlight');
                     data.events.slice(0, 10).forEach(function(e) {
                         add(esc(e.strEvent) + ': ' + esc(e.strHomeTeam) + ' vs ' + esc(e.strAwayTeam) + ' (' + e
                             .dateEvent + ')', 'ok');
                     });
+                    add('Data from ' + formatLink('The Sports DB', 'https://www.thesportsdb.com/'), 'info');
                 } catch { unloader(lid);
-                    add('Schedule error.', 'err'); }
+                    add('Schedule API error.', 'err'); }
             }
 
             async function sportsScores(league) {
-                const lid = loader('Scores for ' + league + '...');
+                const lid = loader('Fetching scores for ' + league + '...');
                 const leagueId = await resolveLeagueId(league);
                 if (!leagueId) { unloader(lid);
                     add('League not found.', 'err'); return; }
@@ -2757,19 +2921,20 @@
                         leagueId);
                     const data = await res.json();
                     unloader(lid);
-                    if (!data.events || !data.events.length) { add('No recent results.', 'info'); return; }
+                    if (!data.events || !data.events.length) { add('No recent results found.', 'info'); return; }
                     add('<strong>Recent results:</strong>', 'highlight');
                     data.events.slice(0, 10).forEach(function(e) {
                         const score = (e.intHomeScore != null) ? e.intHomeScore + '-' + e.intAwayScore : '?';
                         add(esc(e.strHomeTeam) + ' ' + score + ' ' + esc(e.strAwayTeam) + ' (' + e.dateEvent +
                             ')', 'ok');
                     });
+                    add('Data from ' + formatLink('The Sports DB', 'https://www.thesportsdb.com/'), 'info');
                 } catch { unloader(lid);
-                    add('Scores error.', 'err'); }
+                    add('Scores API error.', 'err'); }
             }
 
             async function sportsTable(league) {
-                const lid = loader('Table for ' + league + '...');
+                const lid = loader('Fetching standings for ' + league + '...');
                 const leagueId = await resolveLeagueId(league);
                 if (!leagueId) { unloader(lid);
                     add('League not found.', 'err'); return; }
@@ -2784,12 +2949,13 @@
                         add(t.intRank + '. ' + esc(t.strTeam) + ' - P:' + t.intPlayed + ' W:' + t.intWin +
                             ' D:' + t.intDraw + ' L:' + t.intLoss + ' Pts:' + t.intPoints, 'ok');
                     });
+                    add('Data from ' + formatLink('The Sports DB', 'https://www.thesportsdb.com/'), 'info');
                 } catch { unloader(lid);
-                    add('Table error.', 'err'); }
+                    add('Standings API error.', 'err'); }
             }
 
             async function sportsTeam(name) {
-                const lid = loader('Team info: ' + name + '...');
+                const lid = loader('Fetching team info: ' + name + '...');
                 try {
                     const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/searchteams.php?t=' +
                         encodeURIComponent(name));
@@ -2798,38 +2964,40 @@
                     if (!data.teams || !data.teams.length) { add('Team not found.', 'err'); return; }
                     const t = data.teams[0];
                     add(
-                        `<div class="block"><strong>${esc(t.strTeam)}</strong> (${esc(t.strLeague || 'Unknown')})<br>Stadium: ${esc(t.strStadium || 'N/A')}<br>${esc((t.strDescriptionEN || '').substring(0, 150))}...</div>`,
+                        `<div class="block"><strong>${esc(t.strTeam)}</strong> (${esc(t.strLeague || 'Unknown')})<br>Stadium: ${esc(t.strStadium || 'N/A')}<br>${esc((t.strDescriptionEN || '').substring(0, 150))}...<br>${formatLink('View more on The Sports DB', 'https://www.thesportsdb.com/team/'+t.idTeam)}</div>`,
                         'ok');
                 } catch { unloader(lid);
-                    add('Team error.', 'err'); }
+                    add('Team API error.', 'err'); }
             }
 
             async function gameDeals() {
                 const key = 'gamedeals';
                 const cached = cacheGet(key);
                 if (cached) {
-                    add('<strong>Game Deals (<$15):</strong>', 'highlight');
+                    add('<strong>Game Deals (under $15):</strong>', 'highlight');
                     cached.slice(0, 8).forEach(function(d) {
                         add(
-                            `<div class="block"><strong>${esc(d.title)}</strong><br>$${d.salePrice} (was $${d.normalPrice}) | Rating: ${d.steamRatingPercent}%</div>`,
+                            `<div class="block"><strong>${esc(d.title)}</strong><br>$${d.salePrice} (was $${d.normalPrice}) | Rating: ${d.steamRatingPercent}%<br>${formatLink('View on CheapShark', 'https://www.cheapshark.com/redirect?dealID='+d.dealID)}</div>`,
                             'ok');
                     });
+                    add('Data from ' + formatLink('CheapShark', 'https://www.cheapshark.com/'), 'info');
                     return;
                 }
-                const lid = loader('Game deals...');
+                const lid = loader('Fetching game deals...');
                 try {
                     const res = await fetch('https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15');
                     const data = await res.json();
                     cacheSet(key, data, 3600000);
                     unloader(lid);
-                    add('<strong>Game Deals (<$15):</strong>', 'highlight');
+                    add('<strong>Game Deals (under $15):</strong>', 'highlight');
                     data.slice(0, 8).forEach(function(d) {
                         add(
-                            `<div class="block"><strong>${esc(d.title)}</strong><br>$${d.salePrice} (was $${d.normalPrice}) | Rating: ${d.steamRatingPercent}%</div>`,
+                            `<div class="block"><strong>${esc(d.title)}</strong><br>$${d.salePrice} (was $${d.normalPrice}) | Rating: ${d.steamRatingPercent}%<br>${formatLink('View on CheapShark', 'https://www.cheapshark.com/redirect?dealID='+d.dealID)}</div>`,
                             'ok');
                     });
+                    add('Data from ' + formatLink('CheapShark', 'https://www.cheapshark.com/'), 'info');
                 } catch { unloader(lid);
-                    add('Game deals unavailable.', 'err'); }
+                    add('Game deals API unavailable.', 'err'); }
             }
 
             async function reddit(subreddit, limit) {
@@ -2840,29 +3008,29 @@
                 if (cached) {
                     add('<strong>r/' + esc(subreddit) + ' (cached):</strong>', 'highlight');
                     cached.slice(0, limit).forEach(function(post, i) {
-                        add((i + 1) + '. <a href="' + esc('https://reddit.com' + post.permalink) +
-                            '" target="_blank" rel="noopener">' + esc(post.title) + '</a> (' + post.score +
-                            ' pts)', 'ok');
+                        add((i + 1) + '. ' + formatLink(esc(post.title), 'https://reddit.com' + post.permalink) +
+                            ' (' + post.score + ' points) by ' + esc(post.author), 'ok');
                     });
+                    add('Data from ' + formatLink('Reddit', 'https://www.reddit.com/r/' + subreddit), 'info');
                     return;
                 }
-                const lid = loader('r/' + subreddit + '...');
+                const lid = loader('Fetching r/' + subreddit + '...');
                 try {
                     const res = await fetch('https://www.reddit.com/r/' + encodeURIComponent(subreddit) +
                         '/hot.json?limit=' + limit + '&t=week');
-                    if (!res.ok) throw new Error('Reddit error');
+                    if (!res.ok) throw new Error('Reddit API error');
                     const data = await res.json();
                     const posts = data.data.children.map(c => c.data);
                     cacheSet(key, posts, 300000);
                     unloader(lid);
                     add('<strong>r/' + esc(subreddit) + ':</strong>', 'highlight');
                     posts.forEach(function(post, i) {
-                        add((i + 1) + '. <a href="' + esc('https://reddit.com' + post.permalink) +
-                            '" target="_blank" rel="noopener">' + esc(post.title) + '</a> (' + post.score +
-                            ' pts)', 'ok');
+                        add((i + 1) + '. ' + formatLink(esc(post.title), 'https://reddit.com' + post.permalink) +
+                            ' (' + post.score + ' points) by ' + esc(post.author), 'ok');
                     });
+                    add('Data from ' + formatLink('Reddit', 'https://www.reddit.com/r/' + subreddit), 'info');
                 } catch (e) { unloader(lid);
-                    add('Reddit error: ' + esc(e.message), 'err'); }
+                    add('Reddit API error: ' + esc(e.message), 'err'); }
             }
 
             async function stocks(symbol) {
@@ -2871,27 +3039,27 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${cached.price} | Change: ${cached.change}%</div>`,
+                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${cached.price} | Change: ${cached.change}%<br>${formatLink('View on Alpha Vantage', 'https://www.alphavantage.co/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Stock: ' + symbol + '...');
+                const lid = loader('Fetching stock data for ' + symbol + '...');
                 try {
                     const res = await fetch(
                         'https://api.alpha-vantage.co/query?function=GLOBAL_QUOTE&symbol=' + encodeURIComponent(
                             symbol) + '&apikey=demo');
                     const data = await res.json();
                     if (!data['Global Quote'] || !data['Global Quote']['05. price']) throw new Error(
-                        'Stock not found or API limit');
+                        'Stock not found or API limit reached');
                     const q = data['Global Quote'];
                     const result = { price: parseFloat(q['05. price']), change: parseFloat(q['10. change percent']) };
                     cacheSet(key, result, 300000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${result.price} | Change: ${result.change}%</div>`,
+                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${result.price} | Change: ${result.change}%<br>${formatLink('View on Alpha Vantage', 'https://www.alphavantage.co/')}</div>`,
                         'ok');
                 } catch (e) { unloader(lid);
-                    add('Stocks error: ' + esc(e.message) +
+                    add('Stocks API error: ' + esc(e.message) +
                         ' (use demo symbols like AAPL, MSFT, GOOGL)', 'err'); }
             }
 
@@ -2900,7 +3068,8 @@
                 const key = 'translate_' + text + '_' + target;
                 const cached = cacheGet(key);
                 if (cached) {
-                    add(`<div class="block"><strong>Translation:</strong><br>${esc(cached)}</div>`, 'ok');
+                    add(`<div class="block"><strong>Translation:</strong><br>${esc(cached)}<br>${formatLink('Try LibreTranslate', 'https://libretranslate.com/')}</div>`,
+                        'ok');
                     return;
                 }
                 const lid = loader('Translating...');
@@ -2910,13 +3079,13 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ q: text, source: 'en', target: target, format: 'text' })
                     });
-                    if (!res.ok) throw new Error('Translation error');
+                    if (!res.ok) throw new Error('Translation API error');
                     const data = await res.json();
                     const translated = data.translatedText;
                     cacheSet(key, translated, 3600000);
                     unloader(lid);
-                    add(`<div class="block"><strong>Translation (${target}):</strong><br>${esc(translated)}</div>`,
-                    'ok');
+                    add(`<div class="block"><strong>Translation (${target}):</strong><br>${esc(translated)}<br>${formatLink('Try LibreTranslate', 'https://libretranslate.com/')}</div>`,
+                        'ok');
                 } catch (e) { unloader(lid);
                     add('Translation error: ' + esc(e.message), 'err'); }
             }
@@ -2924,16 +3093,18 @@
             async function randomFact() {
                 const key = 'fact';
                 const cached = cacheGet(key);
-                if (cached) { add(`<div class="block">${esc(cached)}</div>`, 'ok'); return; }
-                const lid = loader('Fact...');
+                if (cached) { add(`<div class="block">${esc(cached)}<br>${formatLink('More facts on NumbersAPI', 'https://numbersapi.com/')}</div>`,
+                        'ok'); return; }
+                const lid = loader('Fetching random fact...');
                 try {
                     const res = await fetch('https://numbersapi.com/random/trivia');
                     const fact = await res.text();
                     cacheSet(key, fact, 600000);
                     unloader(lid);
-                    add(`<div class="block">${esc(fact)}</div>`, 'ok');
+                    add(`<div class="block">${esc(fact)}<br>${formatLink('More facts on NumbersAPI', 'https://numbersapi.com/')}</div>`,
+                        'ok');
                 } catch { unloader(lid);
-                    add('Fact unavailable.', 'err'); }
+                    add('Fact API unavailable.', 'err'); }
             }
 
             async function wikiSearch(term) {
@@ -2941,25 +3112,25 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block"><strong>${esc(cached.title)}</strong><br>${esc(cached.extract.substring(0, 400))}...</div>`,
+                        `<div class="block"><strong>${esc(cached.title)}</strong><br>${esc(cached.extract.substring(0, 400))}...<br>${formatLink('Read more on Wikipedia', 'https://en.wikipedia.org/wiki/'+encodeURIComponent(cached.title))}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Wikipedia: ' + term + '...');
+                const lid = loader('Searching Wikipedia for ' + term + '...');
                 try {
                     const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(
                         term));
                     const data = await res.json();
                     if (data.type === 'disambiguation') { unloader(lid);
-                        add('Disambiguation page.', 'warning'); return; }
+                        add('Disambiguation page. Please be more specific.', 'warning'); return; }
                     const result = { title: data.title, extract: data.extract || '' };
                     cacheSet(key, result, 3600000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>${esc(data.title)}</strong><br>${esc((data.extract || '').substring(0, 400))}...</div>`,
+                        `<div class="block"><strong>${esc(data.title)}</strong><br>${esc((data.extract || '').substring(0, 400))}...<br>${formatLink('Read more on Wikipedia', 'https://en.wikipedia.org/wiki/'+encodeURIComponent(data.title))}</div>`,
                         'ok');
                 } catch { unloader(lid);
-                    add('Wikipedia error.', 'err'); }
+                    add('Wikipedia API error.', 'err'); }
             }
 
             async function defineWord(word) {
@@ -2970,18 +3141,20 @@
                     cached.meanings.forEach(function(meaning) {
                         add('<em>' + esc(meaning.partOfSpeech) + '</em>', 'info');
                         meaning.definitions.slice(0, 3).forEach(function(def) {
-                            add('- ' + esc(def.definition), 'ok');
+                            add('- ' + esc(def.definition) + (def.example ? ' (e.g. ' + esc(def.example) + ')' :
+                                ''), 'ok');
                         });
                     });
+                    add('Data from ' + formatLink('Free Dictionary API', 'https://dictionaryapi.dev/'), 'info');
                     return;
                 }
-                const lid = loader('Define: ' + word + '...');
+                const lid = loader('Looking up definition for ' + word + '...');
                 try {
                     const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(
                         word));
                     const data = await res.json();
                     if (data.title === 'No Definitions Found') { unloader(lid);
-                        add('No definition.', 'info'); return; }
+                        add('No definition found.', 'info'); return; }
                     const entry = data[0];
                     cacheSet(key, entry, 3600000);
                     unloader(lid);
@@ -2989,19 +3162,20 @@
                     entry.meanings.forEach(function(meaning) {
                         add('<em>' + esc(meaning.partOfSpeech) + '</em>', 'info');
                         meaning.definitions.slice(0, 3).forEach(function(def) {
-                            add('- ' + esc(def.definition), 'ok');
+                            add('- ' + esc(def.definition) + (def.example ? ' (e.g. ' + esc(def.example) + ')' :
+                                ''), 'ok');
                         });
                     });
+                    add('Data from ' + formatLink('Free Dictionary API', 'https://dictionaryapi.dev/'), 'info');
                 } catch { unloader(lid);
-                    add('Dictionary error.', 'err'); }
+                    add('Dictionary API error.', 'err'); }
             }
 
             function qrCode(text) {
                 if (!text) { add('Usage: qr <text>', 'err'); return; }
                 const url = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(text);
                 add(
-                    '<img src="' + url +
-                    '" alt="QR Code" style="display:block;margin:6px 0;border:2px solid var(--accent);border-radius:var(--radius-sm);">',
+                    `<img src="${url}" alt="QR Code" style="display:block;margin:6px 0;border:2px solid var(--accent);border-radius:var(--radius-sm);"><br>${formatLink('Scan or download', url)}`,
                     'ok');
             }
 
@@ -3010,11 +3184,11 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block"><strong>${esc(cached.name.first)} ${esc(cached.name.last)}</strong><br>Email: ${esc(cached.email)}<br>Location: ${esc(cached.location.city)}, ${esc(cached.location.country)}</div>`,
+                        `<div class="block"><strong>${esc(cached.name.first)} ${esc(cached.name.last)}</strong><br>Email: ${esc(cached.email)}<br>Location: ${esc(cached.location.city)}, ${esc(cached.location.country)}<br>${formatLink('View more on RandomUser', 'https://randomuser.me/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Random user...');
+                const lid = loader('Fetching random user...');
                 try {
                     const res = await fetch('https://randomuser.me/api/');
                     const data = await res.json();
@@ -3022,10 +3196,10 @@
                     cacheSet(key, u, 600000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>${esc(u.name.first)} ${esc(u.name.last)}</strong><br>Email: ${esc(u.email)}<br>Location: ${esc(u.location.city)}, ${esc(u.location.country)}</div>`,
+                        `<div class="block"><strong>${esc(u.name.first)} ${esc(u.name.last)}</strong><br>Email: ${esc(u.email)}<br>Location: ${esc(u.location.city)}, ${esc(u.location.country)}<br>${formatLink('View more on RandomUser', 'https://randomuser.me/')}</div>`,
                         'ok');
                 } catch { unloader(lid);
-                    add('Random user error.', 'err'); }
+                    add('Random user API error.', 'err'); }
             }
 
             async function boredActivity() {
@@ -3033,11 +3207,11 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        `<div class="block"><strong>Activity:</strong> ${esc(cached.activity)}<br>Type: ${esc(cached.type)} | Participants: ${cached.participants}</div>`,
+                        `<div class="block"><strong>Activity:</strong> ${esc(cached.activity)}<br>Type: ${esc(cached.type)} | Participants: ${cached.participants}<br>${formatLink('Find more on BoredAPI', 'https://www.boredapi.com/')}</div>`,
                         'ok');
                     return;
                 }
-                const lid = loader('Activity...');
+                const lid = loader('Fetching activity suggestion...');
                 try {
                     const res = await fetch('https://www.boredapi.com/api/activity');
                     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -3045,25 +3219,27 @@
                     cacheSet(key, data, 600000);
                     unloader(lid);
                     add(
-                        `<div class="block"><strong>Activity:</strong> ${esc(data.activity)}<br>Type: ${esc(data.type)} | Participants: ${data.participants}</div>`,
+                        `<div class="block"><strong>Activity:</strong> ${esc(data.activity)}<br>Type: ${esc(data.type)} | Participants: ${data.participants}<br>${formatLink('Find more on BoredAPI', 'https://www.boredapi.com/')}</div>`,
                         'ok');
                 } catch (e) { unloader(lid);
-                    add('Activity error: ' + esc(e.message), 'err'); }
+                    add('Activity API error: ' + esc(e.message), 'err'); }
             }
 
             async function catFact() {
                 const key = 'catfact';
                 const cached = cacheGet(key);
-                if (cached) { add(`<div class="block">${esc(cached)}</div>`, 'ok'); return; }
-                const lid = loader('Cat fact...');
+                if (cached) { add(`<div class="block">${esc(cached)}<br>${formatLink('More cat facts', 'https://catfact.ninja/')}</div>`,
+                        'ok'); return; }
+                const lid = loader('Fetching cat fact...');
                 try {
                     const res = await fetch('https://catfact.ninja/fact');
                     const data = await res.json();
                     cacheSet(key, data.fact, 600000);
                     unloader(lid);
-                    add(`<div class="block">${esc(data.fact)}</div>`, 'ok');
+                    add(`<div class="block">${esc(data.fact)}<br>${formatLink('More cat facts', 'https://catfact.ninja/')}</div>`,
+                        'ok');
                 } catch { unloader(lid);
-                    add('Cat fact error.', 'err'); }
+                    add('Cat fact API error.', 'err'); }
             }
 
             async function dogImage() {
@@ -3071,23 +3247,21 @@
                 const cached = cacheGet(key);
                 if (cached) {
                     add(
-                        '<img src="' + cached +
-                        '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;">',
+                        `<img src="${cached}" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;"><br>${formatLink('More dog images', 'https://dog.ceo/')}`,
                         'ok');
                     return;
                 }
-                const lid = loader('Dog image...');
+                const lid = loader('Fetching dog image...');
                 try {
                     const res = await fetch('https://dog.ceo/api/breeds/image/random');
                     const data = await res.json();
                     cacheSet(key, data.message, 600000);
                     unloader(lid);
                     add(
-                        '<img src="' + data.message +
-                        '" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;">',
+                        `<img src="${data.message}" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;"><br>${formatLink('More dog images', 'https://dog.ceo/')}`,
                         'ok');
                 } catch { unloader(lid);
-                    add('Dog image error.', 'err'); }
+                    add('Dog image API error.', 'err'); }
             }
 
             function worldClock() {
@@ -3098,6 +3272,7 @@
                     add(z.n + ': ' + new Date().toLocaleTimeString('en-US', { timeZone: z.tz, hour12: true }),
                     'ok');
                 });
+                add('Want more time zones? Try ' + formatClickableCmd('time', 'time'), 'info');
             }
 
             function genPass(length) {
@@ -3105,7 +3280,8 @@
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
                 let pass = '';
                 for (let i = 0; i < length; i++) pass += chars[Math.floor(Math.random() * chars.length)];
-                add('Generated password: ' + esc(pass), 'ok');
+                add('Generated password: ' + esc(pass) + ' (length: ' + length + ')', 'ok');
+                add('Try ' + formatClickableCmd('genpass 16', 'genpass 16') + ' for a longer password.', 'info');
             }
 
             function reverseText(text) { add('Reversed: ' + esc(text.split('').reverse().join('')), 'ok'); }
@@ -3114,7 +3290,7 @@
 
             function lowerText(text) { add('lower: ' + esc(text.toLowerCase()), 'ok'); }
 
-            function lenText(text) { add('Length: ' + text.length, 'ok'); }
+            function lenText(text) { add('Length: ' + text.length + ' characters', 'ok'); }
 
             function echoText(text) { add(esc(text), 'ok'); }
 
@@ -3126,6 +3302,147 @@
 
             function closeSettings() { settingsPanel.classList.remove('active');
                 settingsOverlay.classList.remove('active'); }
+
+            // ============================================================
+            //  AUTOCOMPLETE
+            // ============================================================
+            function getSuggestions(partial) {
+                if (!partial.trim()) return [];
+                const lower = partial.toLowerCase();
+                const results = [];
+                for (const def of COMMAND_DEFS) {
+                    if (def.cmd.toLowerCase().startsWith(lower)) {
+                        results.push(def);
+                    }
+                }
+                // Sort by relevance: exact prefix match first
+                results.sort((a, b) => {
+                    const aStarts = a.cmd.toLowerCase().startsWith(lower);
+                    const bStarts = b.cmd.toLowerCase().startsWith(lower);
+                    if (aStarts && !bStarts) return -1;
+                    if (!aStarts && bStarts) return 1;
+                    return a.cmd.length - b.cmd.length;
+                });
+                return results.slice(0, 8);
+            }
+
+            function showSuggestions(partial) {
+                const results = getSuggestions(partial);
+                if (results.length === 0) {
+                    suggestionsEl.classList.remove('active');
+                    return;
+                }
+                suggestionsEl.innerHTML = results.map(function(def) {
+                    const idx = def.cmd.toLowerCase().indexOf(partial.toLowerCase());
+                    let display = esc(def.cmd);
+                    if (idx !== -1) {
+                        const before = esc(def.cmd.substring(0, idx));
+                        const match = esc(def.cmd.substring(idx, idx + partial.length));
+                        const after = esc(def.cmd.substring(idx + partial.length));
+                        display = before + '<span class="suggestion-cmd">' + match + '</span>' + after;
+                    }
+                    return `<div class="suggestion" data-cmd="${esc(def.cmd)}">
+                                <span>${display}</span>
+                                <span class="suggestion-desc">${esc(def.desc)}</span>
+                            </div>`;
+                }).join('');
+                suggestionsEl.classList.add('active');
+            }
+
+            let activeSuggestionIndex = -1;
+
+            function updateActiveSuggestion() {
+                const items = suggestionsEl.querySelectorAll('.suggestion');
+                items.forEach((el, i) => {
+                    el.classList.toggle('active', i === activeSuggestionIndex);
+                });
+            }
+
+            function selectActiveSuggestion() {
+                const items = suggestionsEl.querySelectorAll('.suggestion');
+                if (activeSuggestionIndex >= 0 && activeSuggestionIndex < items.length) {
+                    const cmd = items[activeSuggestionIndex].dataset.cmd;
+                    if (cmd) {
+                        input.value = cmd;
+                        suggestionsEl.classList.remove('active');
+                        activeSuggestionIndex = -1;
+                        input.focus();
+                    }
+                }
+            }
+
+            input.addEventListener('input', function() {
+                const val = this.value;
+                if (val.trim()) {
+                    showSuggestions(val);
+                } else {
+                    suggestionsEl.classList.remove('active');
+                }
+            });
+
+            input.addEventListener('blur', function() {
+                setTimeout(() => {
+                    suggestionsEl.classList.remove('active');
+                }, 150);
+            });
+
+            input.addEventListener('focus', function() {
+                if (this.value.trim()) {
+                    showSuggestions(this.value);
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const items = suggestionsEl.querySelectorAll('.suggestion');
+                    if (items.length) {
+                        if (activeSuggestionIndex < items.length - 1) {
+                            activeSuggestionIndex++;
+                            updateActiveSuggestion();
+                        }
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const items = suggestionsEl.querySelectorAll('.suggestion');
+                    if (items.length) {
+                        if (activeSuggestionIndex > 0) {
+                            activeSuggestionIndex--;
+                            updateActiveSuggestion();
+                        }
+                    }
+                } else if (e.key === 'Tab' || e.key === 'Enter') {
+                    if (suggestionsEl.classList.contains('active')) {
+                        e.preventDefault();
+                        if (activeSuggestionIndex === -1) {
+                            // Select first suggestion
+                            activeSuggestionIndex = 0;
+                            updateActiveSuggestion();
+                        }
+                        selectActiveSuggestion();
+                    }
+                } else if (e.key === 'Escape') {
+                    suggestionsEl.classList.remove('active');
+                    activeSuggestionIndex = -1;
+                } else {
+                    // Reset active index on typing
+                    activeSuggestionIndex = -1;
+                }
+            });
+
+            // Click on suggestion
+            suggestionsEl.addEventListener('click', function(e) {
+                const item = e.target.closest('.suggestion');
+                if (item) {
+                    const cmd = item.dataset.cmd;
+                    if (cmd) {
+                        input.value = cmd;
+                        suggestionsEl.classList.remove('active');
+                        activeSuggestionIndex = -1;
+                        input.focus();
+                    }
+                }
+            });
 
             // ============================================================
             //  EXECUTE
@@ -3145,282 +3462,304 @@
                     capturedHTML += line.outerHTML;
                     return line;
                 };
-                add = window._captureAdd;
 
-                cmdEcho(resolved);
-                history.push(resolved);
-                histIdx = history.length;
-                if (history.length > 200) history = history.slice(-200);
-                localStorage.setItem('nexus_history', JSON.stringify(history));
-                recordCmd(main);
-                sessionCommands++;
+                try {
+                    add = window._captureAdd;
+                    cmdEcho(resolved);
+                    history.push(resolved);
+                    histIdx = history.length;
+                    if (history.length > 200) history = history.slice(-200);
+                    localStorage.setItem('nexus_history', JSON.stringify(history));
+                    recordCmd(main);
+                    sessionCommands++;
 
-                switch (main) {
-                    case 'help':
-                        add('<strong>=== All Commands (click to load) ===</strong>', 'highlight');
-                        const cmds = [
-                            ['WEATHER <city>', 'weather'], ['JOKE [count]', 'joke'], ['CRYPTO [coins]', 'crypto'],
-                            ['NEWS', 'news'], ['IP', 'ip'], ['DNS <domain>', 'dns'],
-                            ['CURRENCY <from> <to> [amount]', 'currency'],
-                            ['GITHUB <user>', 'github'], ['SPACEX', 'spacex'], ['QUOTE', 'quote'],
-                            ['SPORTS schedule <league>', 'sports schedule'],
-                            ['SPORTS scores <league>', 'sports scores'],
-                            ['SPORTS table <league>', 'sports table'],
-                            ['SPORTS team <name>', 'sports team'],
-                            ['GAMES deals', 'games deals'], ['TIME', 'time'], ['DATE', 'date'],
-                            ['CALC <expression>', 'calc'],
-                            ['GENPASS [length]', 'genpass'], ['REVERSE <text>', 'reverse'],
-                            ['UPPER <text>', 'upper'],
-                            ['LOWER <text>', 'lower'], ['LEN <text>', 'len'], ['ECHO <text>', 'echo'],
-                            ['FACT', 'fact'],
-                            ['WIKI <term>', 'wiki'], ['DEFINE <word>', 'define'], ['QR <text>', 'qr'],
-                            ['RANDOMUSER', 'randomuser'], ['BORED', 'bored'], ['CATFACT', 'catfact'],
-                            ['DOG', 'dog'],
-                            ['REDDIT <subreddit> [limit]', 'reddit'], ['STOCKS <symbol>', 'stocks'],
-                            ['TRANSLATE <text> <target>', 'translate'],
-                            ['FS ls|create|read|delete|search', 'fs'],
-                            ['VAULT setpass|unlock|add|list|delete|lock', 'vault'],
-                            ['ALIAS <name> <command>', 'alias'],
-                            ['ALIAS list', 'alias list'], ['ALIAS remove <name>', 'alias remove'],
-                            ['THEME <name>', 'theme'],
-                            ['CACHE clear', 'cache clear'], ['CLEAR', 'clear'],
-                            ['NICK <name>', 'nick'],
-                            ['ROOM create [name] [description] [password] [temporary]', 'room create'],
-                            ['ROOM join <id> [password]', 'room join'],
-                            ['ROOM leave', 'room leave'],
-                            ['ROOM list', 'room list'],
-                            ['ROOM search <query>', 'room search'],
-                            ['ROOM info <id>', 'room info'],
-                            ['ROOM users', 'room users'],
-                            ['ROOM invite', 'room invite'],
-                            ['ROOM delete', 'room delete'],
-                            ['CHAT <message>', 'chat'],
-                            ['ABOUT', 'about']
-                        ];
-                        cmds.forEach(function(item) {
-                            add('<span class="clickable-cmd" data-cmd="' + esc(item[1]) + '">' + esc(item[0]) +
-                                '</span>', 'info');
-                        });
-                        break;
-                    case 'weather':
-                        if (!args[0]) add('Usage: weather <city>', 'err');
-                        else await weather(args.join(' '));
-                        break;
-                    case 'joke':
-                        await joke(args[0] ? Math.min(parseInt(args[0]), 10) : 1);
-                        break;
-                    case 'crypto':
-                        await crypto(args.join(',') || 'bitcoin,ethereum');
-                        break;
-                    case 'news':
-                        await news();
-                        break;
-                    case 'ip':
-                        await ipInfo();
-                        break;
-                    case 'dns':
-                        if (!args[0]) add('Usage: dns <domain>', 'err');
-                        else await dnsLookup(args[0]);
-                        break;
-                    case 'currency':
-                        await currency(args[0] || 'USD', args[1] || 'EUR', args[2] ? parseFloat(args[2]) : 1);
-                        break;
-                    case 'github':
-                        if (!args[0]) add('Usage: github <user>', 'err');
-                        else await github(args[0]);
-                        break;
-                    case 'spacex':
-                        await spacex();
-                        break;
-                    case 'quote':
-                        await quote();
-                        break;
-                    case 'sports':
-                        if (args[0] === 'schedule' && args[1]) await sportsSchedule(args.slice(1).join(' '));
-                        else if (args[0] === 'scores' && args[1]) await sportsScores(args.slice(1).join(' '));
-                        else if (args[0] === 'table' && args[1]) await sportsTable(args.slice(1).join(' '));
-                        else if (args[0] === 'team' && args[1]) await sportsTeam(args.slice(1).join(' '));
-                        else add('Usage: sports <schedule|scores|table|team> <league/team>', 'err');
-                        break;
-                    case 'games':
-                        if (args[0] === 'deals') await gameDeals();
-                        else add('Usage: games deals', 'err');
-                        break;
-                    case 'time':
-                        worldClock();
-                        break;
-                    case 'date':
-                        add(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long',
-                            day: 'numeric' }), 'ok');
-                        break;
-                    case 'calc':
-                    case 'math':
-                        if (!args.length) { add('Usage: calc <expression>', 'err'); break; }
-                        try { const res = safeCalc(args.join(''));
-                            add(args.join('') + ' = ' + res, 'ok'); } catch { add('Invalid expression.', 'err'); }
-                        break;
-                    case 'genpass':
-                        genPass(args[0] ? parseInt(args[0]) : 12);
-                        break;
-                    case 'reverse':
-                        if (!args.length) add('Usage: reverse <text>', 'err');
-                        else reverseText(args.join(' '));
-                        break;
-                    case 'upper':
-                        if (!args.length) add('Usage: upper <text>', 'err');
-                        else upperText(args.join(' '));
-                        break;
-                    case 'lower':
-                        if (!args.length) add('Usage: lower <text>', 'err');
-                        else lowerText(args.join(' '));
-                        break;
-                    case 'len':
-                        if (!args.length) add('Usage: len <text>', 'err');
-                        else lenText(args.join(' '));
-                        break;
-                    case 'echo':
-                        if (!args.length) add('Usage: echo <text>', 'err');
-                        else echoText(args.join(' '));
-                        break;
-                    case 'fact':
-                        await randomFact();
-                        break;
-                    case 'wiki':
-                        if (!args[0]) add('Usage: wiki <search term>', 'err');
-                        else await wikiSearch(args.join(' '));
-                        break;
-                    case 'define':
-                        if (!args[0]) add('Usage: define <word>', 'err');
-                        else await defineWord(args[0]);
-                        break;
-                    case 'qr':
-                        if (!args[0]) add('Usage: qr <text>', 'err');
-                        else qrCode(args.join(' '));
-                        break;
-                    case 'randomuser':
-                        await randomUser();
-                        break;
-                    case 'bored':
-                        await boredActivity();
-                        break;
-                    case 'catfact':
-                        await catFact();
-                        break;
-                    case 'dog':
-                        await dogImage();
-                        break;
-                    case 'reddit':
-                        await reddit(args[0] || 'all', args[1] || 5);
-                        break;
-                    case 'stocks':
-                        await stocks(args[0] || 'AAPL');
-                        break;
-                    case 'translate':
-                        if (args.length < 2) { add('Usage: translate <text> <target>', 'err'); } else { const target =
-                                args.pop();
-                            await translate(args.join(' '), target); }
-                        break;
-                    case 'fs':
-                        if (args[0] === 'ls' || args[0] === 'list') fsList();
-                        else if (args[0] === 'create' && args[1]) fsCreate(args[1], args.slice(2).join(' '));
-                        else if (args[0] === 'read' && args[1]) fsRead(args[1]);
-                        else if (args[0] === 'delete' && args[1]) fsDelete(args[1]);
-                        else if (args[0] === 'search' && args[1]) fsSearch(args[1]);
-                        else add('Usage: fs <ls|create|read|delete|search> ...', 'err');
-                        break;
-                    case 'vault':
-                        if (args[0] === 'setpass' && args[1]) vaultSetPassword(args[1]);
-                        else if (args[0] === 'unlock' && args[1]) vaultUnlock(args[1]);
-                        else if (args[0] === 'add' && args.slice(1).join(' ')) vaultAdd(args.slice(1).join(' '));
-                        else if (args[0] === 'list') vaultList();
-                        else if (args[0] === 'delete' && args[1]) vaultDelete(parseInt(args[1]));
-                        else if (args[0] === 'lock') vaultLock();
-                        else add('Usage: vault <setpass|unlock|add|list|delete|lock> [args]', 'err');
-                        break;
-                    case 'alias':
-                        if (args[0] === 'list') listAliases();
-                        else if (args[0] === 'remove' && args[1]) removeAlias(args[1]);
-                        else if (args.length >= 2) addAlias(args[0], args.slice(1).join(' '));
-                        else add('Usage: alias <name> <command> or alias list or alias remove <name>', 'err');
-                        break;
-                    case 'theme':
-                        if (args[0] && themes[args[0]]) { applyTheme(args[0]);
-                            add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(themes)
-                            .join(', '), 'info');
-                        break;
-                    case 'cache':
-                        if (args[0] === 'clear') { cacheClear();
-                            add('Cache cleared.', 'ok'); } else add('Usage: cache clear', 'err');
-                        break;
-                    case 'nick':
-                        if (args.length === 0) { add('Usage: nick <name>', 'err'); break; }
-                        myAlias = args.join(' ').trim();
-                        if (currentRoomRef) {
-                            try {
-                                currentRoomRef.get('presence').get(myUserId).put({ alias: myAlias, lastSeen: Date
-                                        .now() });
-                            } catch (e) { /* ignore */ }
-                        }
-                        add(`Nickname set to ${esc(myAlias)}.`, 'ok');
-                        break;
-                    case 'room':
-                        if (args[0] === 'create') {
-                            const name = args[1] || null;
-                            const description = args[2] || null;
-                            const password = args[3] || null;
-                            const temporary = args[4] === 'temp' || args[4] === 'temporary' || args[4] === 't';
-                            const ttl = temporary ? '604800000' : null;
-                            await createRoom(name, description, password, temporary, ttl);
-                        } else if (args[0] === 'join') {
-                            const id = args[1];
-                            const password = args[2] || null;
-                            if (!id) { add('Usage: room join <id> [password]', 'err'); break; }
-                            await joinRoom(id, password);
-                        } else if (args[0] === 'leave') {
-                            leaveRoom();
-                        } else if (args[0] === 'list') {
-                            await listAllRooms();
-                        } else if (args[0] === 'search') {
-                            await searchRooms(args.slice(1).join(' '));
-                        } else if (args[0] === 'info') {
-                            await getRoomInfo(args[1] || currentRoomId);
-                        } else if (args[0] === 'users') {
-                            if (!currentRoomId) { add('Not in a room.', 'err'); break; }
-                            const users = Object.values(roomUsers).filter(u => u && u.alias);
-                            if (users.length === 0) { add('No other users online.', 'info'); } else {
-                                add('<strong>👥 Online users:</strong>', 'highlight');
-                                users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' 👑' : ''}`, 'ok'));
+                    switch (main) {
+                        case 'help':
+                            add('<strong>=== All Commands (click to load) ===</strong>', 'highlight');
+                            const cmds = [
+                                ['WEATHER <city>', 'weather'],
+                                ['JOKE [count]', 'joke'],
+                                ['CRYPTO [coins]', 'crypto'],
+                                ['NEWS', 'news'],
+                                ['IP', 'ip'],
+                                ['DNS <domain>', 'dns'],
+                                ['CURRENCY <from> <to> [amount]', 'currency'],
+                                ['GITHUB <user>', 'github'],
+                                ['SPACEX', 'spacex'],
+                                ['QUOTE', 'quote'],
+                                ['SPORTS schedule <league>', 'sports schedule'],
+                                ['SPORTS scores <league>', 'sports scores'],
+                                ['SPORTS table <league>', 'sports table'],
+                                ['SPORTS team <name>', 'sports team'],
+                                ['GAMES deals', 'games deals'],
+                                ['TIME', 'time'],
+                                ['DATE', 'date'],
+                                ['CALC <expression>', 'calc'],
+                                ['GENPASS [length]', 'genpass'],
+                                ['REVERSE <text>', 'reverse'],
+                                ['UPPER <text>', 'upper'],
+                                ['LOWER <text>', 'lower'],
+                                ['LEN <text>', 'len'],
+                                ['ECHO <text>', 'echo'],
+                                ['FACT', 'fact'],
+                                ['WIKI <term>', 'wiki'],
+                                ['DEFINE <word>', 'define'],
+                                ['QR <text>', 'qr'],
+                                ['RANDOMUSER', 'randomuser'],
+                                ['BORED', 'bored'],
+                                ['CATFACT', 'catfact'],
+                                ['DOG', 'dog'],
+                                ['REDDIT <subreddit> [limit]', 'reddit'],
+                                ['STOCKS <symbol>', 'stocks'],
+                                ['TRANSLATE <text> <target>', 'translate'],
+                                ['FS ls|create|read|delete|search', 'fs'],
+                                ['VAULT setpass|unlock|add|list|delete|lock', 'vault'],
+                                ['ALIAS <name> <command>', 'alias'],
+                                ['ALIAS list', 'alias list'],
+                                ['ALIAS remove <name>', 'alias remove'],
+                                ['THEME <name>', 'theme'],
+                                ['CACHE clear', 'cache clear'],
+                                ['CLEAR', 'clear'],
+                                ['NICK <name>', 'nick'],
+                                ['ROOM create [name] [description] [password] [temporary]', 'room create'],
+                                ['ROOM join <id> [password]', 'room join'],
+                                ['ROOM leave', 'room leave'],
+                                ['ROOM list', 'room list'],
+                                ['ROOM search <query>', 'room search'],
+                                ['ROOM info <id>', 'room info'],
+                                ['ROOM users', 'room users'],
+                                ['ROOM invite', 'room invite'],
+                                ['ROOM delete', 'room delete'],
+                                ['CHAT <message>', 'chat'],
+                                ['ABOUT', 'about']
+                            ];
+                            cmds.forEach(function(item) {
+                                add('<span class="clickable-cmd" data-cmd="' + esc(item[1]) + '">' + esc(item[0]) +
+                                    '</span>', 'info');
+                            });
+                            break;
+                        case 'weather':
+                            if (!args[0]) add('Usage: weather <city>', 'err');
+                            else await weather(args.join(' '));
+                            break;
+                        case 'joke':
+                            await joke(args[0] ? Math.min(parseInt(args[0]), 10) : 1);
+                            break;
+                        case 'crypto':
+                            await crypto(args.join(',') || 'bitcoin,ethereum');
+                            break;
+                        case 'news':
+                            await news();
+                            break;
+                        case 'ip':
+                            await ipInfo();
+                            break;
+                        case 'dns':
+                            if (!args[0]) add('Usage: dns <domain>', 'err');
+                            else await dnsLookup(args[0]);
+                            break;
+                        case 'currency':
+                            await currency(args[0] || 'USD', args[1] || 'EUR', args[2] ? parseFloat(args[2]) : 1);
+                            break;
+                        case 'github':
+                            if (!args[0]) add('Usage: github <user>', 'err');
+                            else await github(args[0]);
+                            break;
+                        case 'spacex':
+                            await spacex();
+                            break;
+                        case 'quote':
+                            await quote();
+                            break;
+                        case 'sports':
+                            if (args[0] === 'schedule' && args[1]) await sportsSchedule(args.slice(1).join(' '));
+                            else if (args[0] === 'scores' && args[1]) await sportsScores(args.slice(1).join(' '));
+                            else if (args[0] === 'table' && args[1]) await sportsTable(args.slice(1).join(' '));
+                            else if (args[0] === 'team' && args[1]) await sportsTeam(args.slice(1).join(' '));
+                            else add('Usage: sports <schedule|scores|table|team> <league/team>', 'err');
+                            break;
+                        case 'games':
+                            if (args[0] === 'deals') await gameDeals();
+                            else add('Usage: games deals', 'err');
+                            break;
+                        case 'time':
+                            worldClock();
+                            break;
+                        case 'date':
+                            add(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long',
+                                day: 'numeric' }), 'ok');
+                            break;
+                        case 'calc':
+                        case 'math':
+                            if (!args.length) { add('Usage: calc <expression>', 'err'); break; }
+                            try { const res = safeCalc(args.join(''));
+                                add(args.join('') + ' = ' + res, 'ok'); } catch { add('Invalid expression.', 'err'); }
+                            break;
+                        case 'genpass':
+                            genPass(args[0] ? parseInt(args[0]) : 12);
+                            break;
+                        case 'reverse':
+                            if (!args.length) add('Usage: reverse <text>', 'err');
+                            else reverseText(args.join(' '));
+                            break;
+                        case 'upper':
+                            if (!args.length) add('Usage: upper <text>', 'err');
+                            else upperText(args.join(' '));
+                            break;
+                        case 'lower':
+                            if (!args.length) add('Usage: lower <text>', 'err');
+                            else lowerText(args.join(' '));
+                            break;
+                        case 'len':
+                            if (!args.length) add('Usage: len <text>', 'err');
+                            else lenText(args.join(' '));
+                            break;
+                        case 'echo':
+                            if (!args.length) add('Usage: echo <text>', 'err');
+                            else echoText(args.join(' '));
+                            break;
+                        case 'fact':
+                            await randomFact();
+                            break;
+                        case 'wiki':
+                            if (!args[0]) add('Usage: wiki <search term>', 'err');
+                            else await wikiSearch(args.join(' '));
+                            break;
+                        case 'define':
+                            if (!args[0]) add('Usage: define <word>', 'err');
+                            else await defineWord(args[0]);
+                            break;
+                        case 'qr':
+                            if (!args[0]) add('Usage: qr <text>', 'err');
+                            else qrCode(args.join(' '));
+                            break;
+                        case 'randomuser':
+                            await randomUser();
+                            break;
+                        case 'bored':
+                            await boredActivity();
+                            break;
+                        case 'catfact':
+                            await catFact();
+                            break;
+                        case 'dog':
+                            await dogImage();
+                            break;
+                        case 'reddit':
+                            await reddit(args[0] || 'all', args[1] || 5);
+                            break;
+                        case 'stocks':
+                            await stocks(args[0] || 'AAPL');
+                            break;
+                        case 'translate':
+                            if (args.length < 2) { add('Usage: translate <text> <target>', 'err'); } else { const target =
+                                    args.pop();
+                                await translate(args.join(' '), target); }
+                            break;
+                        case 'fs':
+                            if (args[0] === 'ls' || args[0] === 'list') fsList();
+                            else if (args[0] === 'create' && args[1]) fsCreate(args[1], args.slice(2).join(' '));
+                            else if (args[0] === 'read' && args[1]) fsRead(args[1]);
+                            else if (args[0] === 'delete' && args[1]) fsDelete(args[1]);
+                            else if (args[0] === 'search' && args[1]) fsSearch(args[1]);
+                            else add('Usage: fs <ls|create|read|delete|search> ...', 'err');
+                            break;
+                        case 'vault':
+                            if (args[0] === 'setpass' && args[1]) vaultSetPassword(args[1]);
+                            else if (args[0] === 'unlock' && args[1]) vaultUnlock(args[1]);
+                            else if (args[0] === 'add' && args.slice(1).join(' ')) vaultAdd(args.slice(1).join(' '));
+                            else if (args[0] === 'list') vaultList();
+                            else if (args[0] === 'delete' && args[1]) vaultDelete(parseInt(args[1]));
+                            else if (args[0] === 'lock') vaultLock();
+                            else add('Usage: vault <setpass|unlock|add|list|delete|lock> [args]', 'err');
+                            break;
+                        case 'alias':
+                            if (args[0] === 'list') listAliases();
+                            else if (args[0] === 'remove' && args[1]) removeAlias(args[1]);
+                            else if (args.length >= 2) addAlias(args[0], args.slice(1).join(' '));
+                            else add('Usage: alias <name> <command> or alias list or alias remove <name>', 'err');
+                            break;
+                        case 'theme':
+                            if (args[0] && themes[args[0]]) { applyTheme(args[0]);
+                                add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(themes)
+                                .join(', '), 'info');
+                            break;
+                        case 'cache':
+                            if (args[0] === 'clear') { cacheClear();
+                                add('Cache cleared.', 'ok'); } else add('Usage: cache clear', 'err');
+                            break;
+                        case 'nick':
+                            if (args.length === 0) { add('Usage: nick <name>', 'err'); break; }
+                            myAlias = args.join(' ').trim();
+                            if (currentRoomRef) {
+                                try {
+                                    currentRoomRef.get('presence').get(myUserId).put({ alias: myAlias, lastSeen: Date
+                                            .now() });
+                                } catch (e) { /* ignore */ }
                             }
-                        } else if (args[0] === 'invite') {
-                            getRoomInvite();
-                        } else if (args[0] === 'delete') {
-                            await deleteRoom();
-                        } else {
+                            add(`Nickname set to ${esc(myAlias)}.`, 'ok');
+                            break;
+                        case 'room':
+                            if (args[0] === 'create') {
+                                const name = args[1] || null;
+                                const description = args[2] || null;
+                                const password = args[3] || null;
+                                const temporary = args[4] === 'temp' || args[4] === 'temporary' || args[4] === 't';
+                                const ttl = temporary ? '604800000' : null;
+                                await createRoom(name, description, password, temporary, ttl);
+                            } else if (args[0] === 'join') {
+                                const id = args[1];
+                                const password = args[2] || null;
+                                if (!id) { add('Usage: room join <id> [password]', 'err'); break; }
+                                await joinRoom(id, password);
+                            } else if (args[0] === 'leave') {
+                                leaveRoom();
+                            } else if (args[0] === 'list') {
+                                await listAllRooms();
+                            } else if (args[0] === 'search') {
+                                await searchRooms(args.slice(1).join(' '));
+                            } else if (args[0] === 'info') {
+                                await getRoomInfo(args[1] || currentRoomId);
+                            } else if (args[0] === 'users') {
+                                if (!currentRoomId) { add('Not in a room.', 'err'); break; }
+                                const users = Object.values(roomUsers).filter(u => u && u.alias);
+                                if (users.length === 0) { add('No other users online.', 'info'); } else {
+                                    add('<strong>Online users:</strong>', 'highlight');
+                                    users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}`,
+                                    'ok'));
+                                }
+                            } else if (args[0] === 'invite') {
+                                getRoomInvite();
+                            } else if (args[0] === 'delete') {
+                                await deleteRoom();
+                            } else {
+                                add(
+                                    'Usage: room <create|join|leave|list|search|info|users|invite|delete> [args]',
+                                    'err');
+                            }
+                            break;
+                        case 'chat':
+                            if (args.length === 0) { add('Usage: chat <message>', 'err'); break; }
+                            sendChatMessage(args.join(' '));
+                            break;
+                        case 'clear':
+                            output.innerHTML = '';
+                            outputLines = [];
+                            add('Terminal cleared.', 'info');
+                            break;
+                        case 'about':
                             add(
-                                'Usage: room <create|join|leave|list|search|info|users|invite|delete> [args]',
-                                'err');
-                        }
-                        break;
-                    case 'chat':
-                        if (args.length === 0) { add('Usage: chat <message>', 'err'); break; }
-                        sendChatMessage(args.join(' '));
-                        break;
-                    case 'clear':
-                        output.innerHTML = '';
-                        outputLines = [];
-                        add('Terminal cleared.', 'info');
-                        break;
-                    case 'about':
-                        add(
-                            '<div class="block"><strong>Nexus Terminal Pro v6.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
-                            'ok');
-                        break;
-                    default:
-                        add('Unknown command: ' + esc(main) +
-                            '. Type <span class="clickable-cmd" data-cmd="help">help</span>.', 'err');
+                                '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
+                                'ok');
+                            break;
+                        default:
+                            add('Unknown command: ' + esc(main) +
+                                '. Type <span class="clickable-cmd" data-cmd="help">help</span>.', 'err');
+                    }
+                } finally {
+                    add = originalAdd;
                 }
 
-                add = originalAdd;
                 if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room' && main !== 'help') {
                     sendMessageToRoom(raw, capturedHTML);
                 }
@@ -3435,7 +3774,8 @@
                 if (!cmdEl) return;
                 const cmd = cmdEl.dataset.cmd;
                 if (cmd) { input.value = cmd;
-                    input.focus(); }
+                    input.focus();
+                    suggestionsEl.classList.remove('active'); }
             });
 
             execBtn.addEventListener('click', function() { execute(input.value);
@@ -3445,9 +3785,11 @@
                     input.value = ''; } });
             input.addEventListener('keydown', function(e) {
                 if (e.key === 'ArrowUp') { e.preventDefault(); if (histIdx > 0) { histIdx--;
-                        input.value = history[histIdx]; } } else if (e.key === 'ArrowDown') { e.preventDefault(); if (
-                        histIdx < history.length - 1) { histIdx++;
-                        input.value = history[histIdx]; } else { histIdx = history.length;
+                        input.value = history[histIdx];
+                        suggestionsEl.classList.remove('active'); } } else if (e.key === 'ArrowDown') { e
+                    .preventDefault(); if (histIdx < history.length - 1) { histIdx++;
+                        input.value = history[histIdx];
+                        suggestionsEl.classList.remove('active'); } else { histIdx = history.length;
                         input.value = ''; } }
             });
             document.getElementById('clearBtn').addEventListener('click', function() { output.innerHTML = '';
@@ -3510,7 +3852,7 @@
                 copyToClipboard(currentRoomId).then(() => {
                     const tempSpan = document.createElement('span');
                     tempSpan.className = 'room-badge';
-                    tempSpan.textContent = '✅ Copied!';
+                    tempSpan.textContent = 'Copied!';
                     roomBadgeContainer.innerHTML = '';
                     roomBadgeContainer.appendChild(tempSpan);
                     setTimeout(() => updateRoomBadge(roomMeta), 1500);
@@ -3566,14 +3908,14 @@
             const gunReady = initGun();
             if (gunReady) {
                 add(
-                    '⚡ Collaboration engine ready. Type <span class="clickable-cmd" data-cmd="help">help</span> to see room and chat commands.',
+                    'Collaboration engine ready. Type <span class="clickable-cmd" data-cmd="help">help</span> to see room and chat commands.',
                     'info');
             }
 
             add(
-                '<div class="block"><strong>🚀 Nexus Terminal Pro v6.0</strong><br>Enhanced room search by name, ID, or description! Type <span class="clickable-cmd" data-cmd="help">help</span> to see all commands.</div>',
+                '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Type any command to see detailed output with clickable links and options. Start typing to see command suggestions.</div>',
                 'ok');
-            add('Ready.', 'info');
+            add('Ready. Type <span class="clickable-cmd" data-cmd="help">help</span> for all commands.', 'info');
             input.focus();
             updateRoomStatusDisplay();
         })();
