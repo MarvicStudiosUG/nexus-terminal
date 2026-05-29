@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#080c14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Nexus Terminal | Marvic Studios UG</title>
+
+  <!-- Content Security Policy – makes the app resilient to XSS -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    connect-src https://geocoding-api.open-meteo.com https://api.open-meteo.com https://icanhazdadjoke.com https://api.coingecko.com https://hacker-news.firebaseio.com https://ipapi.co https://dns.google https://api.exchangerate-api.com;
+    frame-src 'none';
+    base-uri 'self';
+    form-action 'none';
+  ">
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg-deep:#080c14; --surface:rgba(10,18,30,0.9); --glass-border:rgba(0,255,200,0.15);
+      --neon-cyan:#00ffcc; --neon-blue:#0088ff; --text:#e0e8ff; --dim:#6b7f99;
+      --error:#ff5370; --success:#4cff8f; --scroll-thumb:#00ffcc;
+      font-family:'JetBrains Mono','Fira Code','Courier New',monospace;
+    }
+    body {
+      background:radial-gradient(ellipse at 30% 20%, #0a1424, #050810);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem;
+    }
+    .terminal {
+      width:100%; max-width:960px; height:90vh; max-height:860px;
+      background:var(--surface); backdrop-filter:blur(24px); border:1px solid var(--glass-border);
+      border-radius:1.8rem; box-shadow:0 25px 50px rgba(0,0,0,0.7), 0 0 30px rgba(0,255,200,0.25);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .header {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:0.7rem 1.5rem; background:rgba(0,10,20,0.7);
+      border-bottom:1px solid var(--glass-border); backdrop-filter:blur(10px);
+    }
+    .dots { display:flex; gap:0.6rem; }
+    .dot { width:12px; height:12px; border-radius:50%; box-shadow:0 0 6px currentColor; }
+    .dot.red { background:#ff5f57; color:#ff5f57; }
+    .dot.yellow { background:#febc2e; color:#febc2e; }
+    .dot.green { background:#28c840; color:#28c840; }
+    .status { display:flex; gap:1.2rem; font-size:0.75rem; color:var(--dim); align-items:center; }
+    .led { width:8px; height:8px; background:var(--success); border-radius:50%; display:inline-block; margin-right:5px; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    .body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .output {
+      flex:1; overflow-y:auto; padding:1rem 1.4rem; font-size:0.85rem;
+      line-height:1.6; color:var(--text); background:rgba(0,0,0,0.15);
+    }
+    .output::-webkit-scrollbar { width:5px; }
+    .output::-webkit-scrollbar-thumb { background:var(--scroll-thumb); border-radius:10px; }
+    .line { margin-bottom:0.2rem; animation:fade 0.2s; }
+    @keyframes fade { from{opacity:0;transform:translateY(-4px);} }
+    .cmd { color:var(--neon-cyan); }
+    .cmd::before { content:"> "; }
+    .err { color:var(--error); }
+    .ok { color:var(--success); }
+    .info { color:var(--dim); }
+    .highlight { color:var(--neon-cyan); font-weight:bold; }
+    .block {
+      background:rgba(0,255,200,0.04); border-left:3px solid var(--neon-cyan);
+      padding:0.5rem 1rem; margin:0.3rem 0; border-radius:0 6px 6px 0;
+    }
+    .quickbar {
+      display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.4rem 1.4rem;
+      border-top:1px solid var(--glass-border); background:rgba(0,0,0,0.1);
+    }
+    .qbtn {
+      background:rgba(0,255,200,0.05); border:1px solid var(--glass-border);
+      color:var(--neon-cyan); padding:0.3rem 0.9rem; border-radius:2rem;
+      font-size:0.7rem; cursor:pointer; transition:0.2s; white-space:nowrap;
+    }
+    .qbtn:hover { background:rgba(0,255,200,0.18); box-shadow:0 0 12px rgba(0,255,200,0.4); }
+    .inputline {
+      display:flex; padding:0.6rem 1.4rem; border-top:1px solid var(--glass-border);
+      background:rgba(5,12,22,0.8); backdrop-filter:blur(10px);
+    }
+    #cmdInput {
+      flex:1; background:none; border:none; color:var(--text); font-family:inherit;
+      font-size:0.9rem; outline:none; caret-color:var(--neon-cyan);
+    }
+    #cmdInput::placeholder { color:rgba(255,255,255,0.25); }
+    #execBtn {
+      background:linear-gradient(135deg, #00ffcc, #0088ff); border:none;
+      color:#050810; font-weight:bold; padding:0.5rem 1.4rem; border-radius:2rem;
+      margin-left:0.7rem; cursor:pointer; box-shadow:0 0 18px rgba(0,255,200,0.5); transition:0.2s;
+    }
+    .settings-panel {
+      display:none; position:absolute; top:60px; right:20px;
+      background:var(--surface); border:1px solid var(--glass-border);
+      border-radius:1rem; padding:1rem; width:260px; z-index:10;
+      backdrop-filter:blur(20px);
+    }
+    .settings-panel.active { display:block; }
+    .settings-btn {
+      background:none; border:1px solid var(--glass-border); color:var(--dim);
+      padding:0.2rem 0.8rem; border-radius:1rem; cursor:pointer; font-size:0.8rem;
+    }
+    .vault-btn {
+      width:100%; margin-top:0.4rem; background:rgba(0,255,200,0.1);
+      border:1px solid var(--neon-cyan); color:var(--neon-cyan);
+      padding:0.3rem; border-radius:0.5rem; cursor:pointer; font-size:0.8rem;
+    }
+    .vault-btn.lock {
+      background:rgba(255,83,112,0.2); border-color:var(--error); color:var(--error);
+    }
+    .vault-warning {
+      color:#ffb86c; font-size:0.7rem; margin-top:0.5rem;
+      padding:0.4rem; background:rgba(255,184,108,0.1); border-radius:0.4rem;
+    }
+    @media (max-width:600px) {
+      .terminal { height:100vh; max-height:none; border-radius:0; }
+    }
+  </style>
+</head>
+<body>
+<div class="terminal" id="app">
+  <div class="header">
+    <div class="dots">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+    </div>
+    <div class="status">
+      <span><span class="led"></span> ONLINE</span>
+      <span id="liveClock">--:--:--</span>
+      <button class="settings-btn" id="settingsToggle">Settings</button>
+    </div>
+  </div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <div style="color:var(--neon-cyan); margin-bottom:0.8rem;">THEME</div>
+    <select id="themeSelect" style="width:100%; background:#0a121f; border:1px solid var(--glass-border); color:var(--text); padding:0.3rem;">
+      <option value="default">Cyber</option>
+      <option value="ocean">Deep Ocean</option>
+      <option value="mono">Monochrome</option>
+    </select>
+    <div style="margin-top:1rem; color:var(--neon-cyan);">VAULT</div>
+    <button class="vault-btn" id="setPassBtn">Set Vault Password</button>
+    <button class="vault-btn lock" id="lockVaultBtn">Lock Vault</button>
+    <div id="vaultSecureWarning" class="vault-warning" style="display:none;">
+      Vault requires HTTPS. You are on an insecure origin.
+    </div>
+    <div style="margin-top:1rem; font-size:0.7rem; color:var(--dim);">Nexus Terminal by Marvic Studios UG</div>
+  </div>
+
+  <div class="body">
+    <div class="output" id="outputContainer"></div>
+    <div class="quickbar">
+      <button class="qbtn" data-cmd="weather London">WEATHER London</button>
+      <button class="qbtn" data-cmd="joke">JOKE</button>
+      <button class="qbtn" data-cmd="crypto">CRYPTO</button>
+      <button class="qbtn" data-cmd="news">NEWS</button>
+      <button class="qbtn" data-cmd="ip">MY IP</button>
+      <button class="qbtn" data-cmd="dns nexus-terminal.io">DNS nexus-terminal.io</button>
+      <button class="qbtn" data-cmd="currency USD EUR 100">USD to EUR</button>
+      <button class="qbtn" data-cmd="fs ls">FILE SYSTEM</button>
+      <button class="qbtn" data-cmd="vault list">VAULT</button>
+    </div>
+    <div class="inputline">
+      <span style="color:var(--neon-cyan); font-weight:bold; margin-right:0.5rem;">></span>
+      <input type="text" id="cmdInput" placeholder="type command..." autofocus autocomplete="off">
+      <button id="execBtn">EXEC</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const output = document.getElementById('outputContainer');
+    const input = document.getElementById('cmdInput');
+    const execBtn = document.getElementById('execBtn');
+    const clockEl = document.getElementById('liveClock');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const themeSelect = document.getElementById('themeSelect');
+    const vaultWarning = document.getElementById('vaultSecureWarning');
+
+    let history = [], histIdx = -1;
+    let vaultKey = null; // CryptoKey for AES-GCM
+
+    // Check secure context for Web Crypto (required by GitHub Pages)
+    const isSecure = window.isSecureContext && window.crypto && window.crypto.subtle;
+    if (!isSecure) {
+      vaultWarning.style.display = 'block';
+    }
+
+    // ========== SECURE HELPERS ==========
+    function esc(s) {
+      return String(s).replace(/[&<>"]/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
+      })[m]);
+    }
+
+    function add(html, cls='') {
+      const d = document.createElement('div');
+      d.className = `line ${cls}`;
+      // safe: html is already escaped by the caller, or generated by us
+      d.innerHTML = html;
+      output.appendChild(d);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function cmdEcho(t) { add(`<span class="cmd">${esc(t)}</span>`); }
+    function loader(msg) { const id='l'+Date.now(); add(`<span id="${id}" class="info">[...] ${esc(msg)}</span>`); return id; }
+    function unloader(id) { const el=document.getElementById(id); if(el) el.remove(); }
+    function tick() { clockEl.textContent = new Date().toLocaleTimeString('en-GB',{hour12:false}); }
+    setInterval(tick,1000); tick();
+
+    // ========== API LAYER (all real, all secure) ==========
+    async function weather(city) {
+      const lid=loader(`Loading weather for ${city}...`);
+      try {
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+        if(!geoRes.ok) throw new Error('City not found');
+        const geo = await geoRes.json();
+        if(!geo.results?.length) throw new Error('City not found');
+        const {latitude, longitude, name, country, admin1} = geo.results[0];
+        const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+        if(!wRes.ok) throw new Error('Weather service error');
+        const w = await wRes.json();
+        unloader(lid);
+        add(`<div class="block"><strong>${esc(name)}, ${esc(admin1||'')} ${esc(country||'')}</strong><br>Temperature: ${w.current_weather.temperature}°C<br>Wind: ${w.current_weather.windspeed} km/h</div>`, 'ok');
+      } catch(e) { unloader(lid); add(`Error: ${esc(e.message)}`, 'err'); }
+    }
+
+    async function joke(count=1) {
+      const lid=loader(`Fetching ${count} joke(s)...`);
+      try {
+        const jokes = await Promise.all(Array.from({length:count}, ()=>fetch('https://icanhazdadjoke.com/',{headers:{Accept:'application/json'}}).then(r=>r.json()).then(d=>d.joke)));
+        unloader(lid);
+        jokes.forEach((j,i)=> add(`<div class="block"><strong>#${i+1}</strong><br>${esc(j)}</div>`, 'ok'));
+      } catch { unloader(lid); add('Joke service unavailable.', 'err'); }
+    }
+
+    async function crypto(coins='bitcoin,ethereum') {
+      const lid=loader('Fetching crypto prices...');
+      try {
+        const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coins}&vs_currencies=usd&include_24hr_change=true`);
+        if(!r.ok) throw new Error('API error');
+        const d = await r.json();
+        unloader(lid);
+        add('<strong>Live Prices:</strong>','highlight');
+        Object.entries(d).forEach(([coin,val])=> add(`${coin.toUpperCase()}: $${val.usd} (24h: ${val.usd_24h_change?.toFixed(2)??'N/A'}%)`,'ok'));
+      } catch(e) { unloader(lid); add('Crypto data unavailable.','err'); }
+    }
+
+    async function news() {
+      const lid=loader('Loading top stories...');
+      try {
+        const ids = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(r=>r.json());
+        const items = await Promise.all(ids.slice(0,5).map(id=>fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r=>r.json())));
+        unloader(lid);
+        add('<strong>Top Tech Headlines:</strong>','highlight');
+        items.forEach((it,i)=> add(`<div class="block">${i+1}. <a href="${esc(it.url||'#')}" target="_blank" rel="noopener noreferrer" style="color:#00ffcc;">${esc(it.title)}</a> (${it.score} pts)</div>`, 'ok'));
+      } catch { unloader(lid); add('News unavailable.','err'); }
+    }
+
+    async function ipInfo() {
+      const lid=loader('Looking up IP...');
+      try {
+        const d = await fetch('https://ipapi.co/json/').then(r=>r.json());
+        unloader(lid);
+        add(`<div class="block">IP: ${esc(d.ip)}<br>Location: ${esc(d.city)}, ${esc(d.region)} ${esc(d.country_name)}<br>ISP: ${esc(d.org)}</div>`, 'ok');
+      } catch { unloader(lid); add('IP lookup failed.','err'); }
+    }
+
+    async function dnsLookup(domain) {
+      const lid=loader(`DNS A records for ${domain}...`);
+      try {
+        const d = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`).then(r=>r.json());
+        unloader(lid);
+        if(d.Answer) d.Answer.forEach(r=> add(`${r.type}: ${esc(r.data)}`,'ok'));
+        else add('No A records found.','err');
+      } catch { unloader(lid); add('DNS query failed.','err'); }
+    }
+
+    async function currency(from,to,amount=1) {
+      const lid=loader(`Converting ${amount} ${from} to ${to}...`);
+      try {
+        const d = await fetch(`https://api.exchangerate-api.com/v4/latest/${from.toUpperCase()}`).then(r=>r.json());
+        const rate = d.rates[to.toUpperCase()];
+        if(!rate) throw new Error('Invalid currency');
+        unloader(lid);
+        add(`<div class="block">${amount} ${from.toUpperCase()} = <strong>${(amount*rate).toFixed(2)} ${to.toUpperCase()}</strong> (rate: ${rate})</div>`, 'ok');
+      } catch(e) { unloader(lid); add(`Currency error: ${esc(e.message)}`,'err'); }
+    }
+
+    function worldTime() {
+      const zones = [
+        {n:'New York',tz:'America/New_York'},{n:'London',tz:'Europe/London'},{n:'Tokyo',tz:'Asia/Tokyo'},
+        {n:'Dubai',tz:'Asia/Dubai'},{n:'Sydney',tz:'Australia/Sydney'}
+      ];
+      add('<strong>World Clock:</strong>','highlight');
+      const now = new Date();
+      zones.forEach(z=> add(`${z.n}: ${now.toLocaleTimeString('en-US',{timeZone:z.tz,hour12:true})}`, 'ok'));
+    }
+
+    // ========== VIRTUAL FILE SYSTEM (localStorage) ==========
+    function fsList() {
+      const files = JSON.parse(localStorage.getItem('nexus_fs')||'{}');
+      const names = Object.keys(files);
+      if(names.length===0) add('File system empty.','info');
+      else names.forEach(n=> add(`${esc(n)} (${files[n].length} bytes)`,'ok'));
+    }
+    function fsCreate(name, content='') {
+      const files = JSON.parse(localStorage.getItem('nexus_fs')||'{}');
+      if(files[name]) { add(`File "${esc(name)}" already exists.`,'err'); return; }
+      files[name] = content;
+      localStorage.setItem('nexus_fs', JSON.stringify(files));
+      add(`Created file "${esc(name)}".`,'ok');
+    }
+    function fsRead(name) {
+      const files = JSON.parse(localStorage.getItem('nexus_fs')||'{}');
+      if(!files[name]) { add(`File not found: ${esc(name)}`,'err'); return; }
+      add(`<div class="block"><strong>${esc(name)}</strong><br>${esc(files[name])}</div>`, 'ok');
+    }
+    function fsDelete(name) {
+      const files = JSON.parse(localStorage.getItem('nexus_fs')||'{}');
+      if(!files[name]) { add(`File not found: ${esc(name)}`,'err'); return; }
+      delete files[name];
+      localStorage.setItem('nexus_fs', JSON.stringify(files));
+      add(`Deleted "${esc(name)}".`,'ok');
+    }
+
+    // ========== ENCRYPTED VAULT (AES-256-GCM) ==========
+    function bufToHex(buf) { return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+    function hexToBuf(hex) { return new Uint8Array(hex.match(/.{1,2}/g).map(b=>parseInt(b,16))); }
+
+    async function deriveKey(password) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey(
+        {name:'PBKDF2', salt:enc.encode('nexus-salt'), iterations:100000, hash:'SHA-256'},
+        keyMaterial,
+        {name:'AES-GCM', length:256},
+        false,
+        ['encrypt','decrypt']
+      );
+    }
+
+    async function vaultSetPassword(password) {
+      if (!isSecure) { add('Vault requires a secure context (HTTPS).', 'err'); return; }
+      if (!password) { add('Password cannot be empty.', 'err'); return; }
+      try {
+        const key = await deriveKey(password);
+        const enc = new TextEncoder();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const testData = enc.encode('nexus-vault-test');
+        const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, testData);
+        const testEntry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
+        localStorage.setItem('nexus_vault_test', JSON.stringify(testEntry));
+        localStorage.removeItem('nexus_vault'); // clear old entries on new password
+        vaultKey = key;
+        add('Vault password set and vault unlocked (AES-256).', 'ok');
+      } catch (e) {
+        console.error(e);
+        add('Failed to set vault password.', 'err');
+      }
+    }
+
+    async function vaultUnlock(password) {
+      if (!isSecure) { add('Vault requires a secure context (HTTPS).', 'err'); return; }
+      const testStr = localStorage.getItem('nexus_vault_test');
+      if (!testStr) {
+        add('No vault password set. Use "vault setpass <password>".', 'err');
+        return;
+      }
+      try {
+        const key = await deriveKey(password);
+        const testEntry = JSON.parse(testStr);
+        const iv = hexToBuf(testEntry.iv);
+        const data = hexToBuf(testEntry.data);
+        await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
+        vaultKey = key;
+        add('Vault unlocked (AES-256).', 'ok');
+      } catch {
+        add('Invalid password.', 'err');
+        vaultKey = null;
+      }
+    }
+
+    function vaultLock() {
+      vaultKey = null;
+      add('Vault locked.', 'ok');
+    }
+
+    async function vaultAdd(text) {
+      if (!isSecure) { add('Vault requires a secure context.', 'err'); return; }
+      if(!vaultKey) { add('Vault is locked. Unlock first with "vault unlock <password>".', 'err'); return; }
+      const enc = new TextEncoder();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, vaultKey, enc.encode(text));
+      const entry = { iv: bufToHex(iv), data: bufToHex(new Uint8Array(encrypted)) };
+      const vault = JSON.parse(localStorage.getItem('nexus_vault')||'[]');
+      vault.push(entry);
+      localStorage.setItem('nexus_vault', JSON.stringify(vault));
+      add('Added to encrypted vault.', 'ok');
+    }
+
+    async function vaultList() {
+      if (!isSecure) { add('Vault requires a secure context.', 'err'); return; }
+      if(!vaultKey) { add('Vault is locked.', 'err'); return; }
+      const vault = JSON.parse(localStorage.getItem('nexus_vault')||'[]');
+      if(vault.length===0) { add('Vault empty.', 'info'); return; }
+      add('<strong>Vault entries:</strong>','highlight');
+      for(let i=0;i<vault.length;i++) {
+        try {
+          const iv = hexToBuf(vault[i].iv);
+          const data = hexToBuf(vault[i].data);
+          const decrypted = await crypto.subtle.decrypt({name:'AES-GCM', iv}, vaultKey, data);
+          add(`#${i+1}: ${esc(new TextDecoder().decode(decrypted))}`,'ok');
+        } catch { add(`#${i+1}: (decryption failed)`,'err'); }
+      }
+    }
+
+    // Settings panel vault buttons
+    document.getElementById('setPassBtn').addEventListener('click', ()=>{
+      const pw = prompt('Enter a new vault password:');
+      if (pw !== null) vaultSetPassword(pw);
+    });
+    document.getElementById('lockVaultBtn').addEventListener('click', ()=>{
+      vaultLock();
+    });
+
+    // ========== THEME ==========
+    function applyTheme(name) {
+      const root = document.documentElement;
+      if(name==='ocean') {
+        root.style.setProperty('--neon-cyan','#4dc9f6');
+        root.style.setProperty('--neon-blue','#0277bd');
+        root.style.setProperty('--scroll-thumb','#4dc9f6');
+      } else if(name==='mono') {
+        root.style.setProperty('--neon-cyan','#aaaaaa');
+        root.style.setProperty('--neon-blue','#666666');
+        root.style.setProperty('--scroll-thumb','#aaaaaa');
+      } else {
+        root.style.setProperty('--neon-cyan','#00ffcc');
+        root.style.setProperty('--neon-blue','#0088ff');
+        root.style.setProperty('--scroll-thumb','#00ffcc');
+      }
+      localStorage.setItem('nexus_theme', name);
+    }
+    themeSelect.addEventListener('change', (e)=> applyTheme(e.target.value));
+    (function initTheme() {
+      const saved = localStorage.getItem('nexus_theme')||'default';
+      themeSelect.value = saved;
+      applyTheme(saved);
+    })();
+
+    // ========== COMMAND ROUTER ==========
+    async function execute(cmd) {
+      if(!cmd.trim()) return;
+      cmdEcho(cmd);
+      history.push(cmd); histIdx=history.length;
+      const parts = cmd.trim().split(/\s+/);
+      const main = parts[0].toLowerCase();
+      const args = parts.slice(1);
+
+      switch(main) {
+        case 'help':
+          add('<strong>Commands:</strong>','highlight');
+          add('weather <city> - current weather','info');
+          add('joke [count] - random joke(s)','info');
+          add('crypto [coins] - live prices','info');
+          add('news - top tech headlines','info');
+          add('ip - your public IP & location','info');
+          add('dns <domain> - DNS A records','info');
+          add('currency <from> <to> [amount] - convert','info');
+          add('time - world clock','info');
+          add('fs ls / create / read / delete - virtual file system','info');
+          add('vault setpass <pass> - set vault password','info');
+          add('vault unlock <pass> - unlock vault','info');
+          add('vault add <text> - add encrypted entry','info');
+          add('vault list - list entries (must be unlocked)','info');
+          add('vault lock - lock vault','info');
+          add('theme <name> - switch theme (default, ocean, mono)','info');
+          add('clear - clear screen','info');
+          add('about - about this terminal','info');
+          break;
+        case 'weather': if(!args[0]) add('Usage: weather <city>','err'); else await weather(args.join(' ')); break;
+        case 'joke': await joke(args[0]?Math.min(parseInt(args[0]),20):1); break;
+        case 'crypto': await crypto(args.join(',')||'bitcoin,ethereum'); break;
+        case 'news': await news(); break;
+        case 'ip': await ipInfo(); break;
+        case 'dns': if(!args[0]) add('Usage: dns <domain>','err'); else await dnsLookup(args[0]); break;
+        case 'currency': await currency(args[0]||'USD', args[1]||'EUR', args[2]?parseFloat(args[2]):1); break;
+        case 'time': worldTime(); break;
+        case 'fs':
+          if(args[0]==='ls'||args[0]==='list') fsList();
+          else if(args[0]==='create'&&args[1]) fsCreate(args[1], args.slice(2).join(' '));
+          else if(args[0]==='read'&&args[1]) fsRead(args[1]);
+          else if(args[0]==='delete'&&args[1]) fsDelete(args[1]);
+          else add('Usage: fs <ls|create|read|delete> [name] [content]','err');
+          break;
+        case 'vault':
+          if (!isSecure) { add('Vault requires HTTPS.', 'err'); }
+          else if(args[0]==='setpass' && args[1]) await vaultSetPassword(args[1]);
+          else if(args[0]==='unlock' && args[1]) await vaultUnlock(args[1]);
+          else if(args[0]==='add' && args.slice(1).join(' ')) await vaultAdd(args.slice(1).join(' '));
+          else if(args[0]==='list') await vaultList();
+          else if(args[0]==='lock') vaultLock();
+          else add('Usage: vault <setpass|unlock|add|list|lock> [args]','err');
+          break;
+        case 'theme': if(args[0]){ applyTheme(args[0]); add(`Theme set to ${args[0]}.`,'ok'); } else add('Current theme: '+(localStorage.getItem('nexus_theme')||'default'),'info'); break;
+        case 'clear': output.innerHTML=''; add('Terminal cleared.','info'); break;
+        case 'about':
+          add('<strong>Nexus Terminal</strong>','highlight');
+          add('A professional command hub with real-time data, encrypted vault, and virtual file system.','info');
+          add('Developed by <strong>Marvic Studios UG</strong>. All rights reserved.','info');
+          break;
+        default: add(`Unknown command: ${main}. Type help.`,'err');
+      }
+    }
+
+    // ========== EVENTS ==========
+    execBtn.addEventListener('click', ()=>{ execute(input.value); input.value=''; input.focus(); });
+    input.addEventListener('keypress', e=>{ if(e.key==='Enter'){ execute(input.value); input.value=''; } });
+    input.addEventListener('keydown', e=>{
+      if(e.key==='ArrowUp'){ e.preventDefault(); if(histIdx>0){ histIdx--; input.value=history[histIdx]; } }
+      else if(e.key==='ArrowDown'){ e.preventDefault(); if(histIdx<history.length-1){ histIdx++; input.value=history[histIdx]; } else { histIdx=history.length; input.value=''; } }
+    });
+    document.querySelectorAll('.qbtn').forEach(b=> b.addEventListener('click', ()=>{
+      const c = b.dataset.cmd; input.value=c; execute(c); input.value=''; input.focus();
+    }));
+    document.getElementById('settingsToggle').addEventListener('click', ()=> settingsPanel.classList.toggle('active'));
+    document.querySelector('.terminal').addEventListener('click', e=>{ if(e.target.tagName!=='INPUT'&&e.target.tagName!=='BUTTON') input.focus(); });
+
+    // Start
+    add('<strong>Nexus Terminal</strong> by Marvic Studios UG ready.','ok');
+    if (!isSecure) {
+      add('Warning: Secure context required for vault. This origin is insecure.', 'err');
+    }
+    add('Type <span class="cmd">help</span> to see available commands.','info');
+    input.focus();
+  })();
+</script>
+</body>
+</html>
