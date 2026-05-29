@@ -1,6 +1,4 @@
-// ============================================================
-//  vault.js - Encrypted vault with Web Crypto API (AES-GCM)
-// ============================================================
+// vault.js - Encrypted vault with Web Crypto API (AES-GCM)
 
 import { add, esc } from './ui.js';
 
