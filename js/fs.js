@@ -1,6 +1,4 @@
-// ============================================================
-//  fs.js - Virtual file system with path validation
-// ============================================================
+// fs.js - Virtual file system with path validation
 
 import { add, esc } from './ui.js';
 
