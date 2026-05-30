@@ -1630,31 +1630,38 @@
                         break;
                     }
 
-                    // ✅ FIX: When a room is created, automatically join it
                     case 'room_created': {
                         const data = msg.data;
                         addSystemMsg('New room created: ' + (data.name || 'Unnamed') + ' (' + data.id + ')');
-                        // Auto-join the created room
                         currentRoomId = data.id;
-                        // Request room info to get meta and members
                         ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
                         add('✅ You are now in the created room: ' + esc(data.id), 'ok');
                         showToast('Room created and joined!', 'success');
                         break;
                     }
 
-                    // ✅ FIX: Handle join for the current user
+                    case 'join_success': {
+                        const data = msg.data;
+                        currentRoomId = data.roomId;
+                        updateRoomHeaderBadge({ name: currentRoomId, temporary: false, passwordProtected: false });
+                        updateRoomStatusDisplay();
+                        updateRoomUsersUI();
+                        ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
+                        add('✅ Successfully joined room: ' + esc(currentRoomId), 'ok');
+                        showToast('Successfully joined room!', 'success');
+                        break;
+                    }
+
                     case 'room_joined': {
                         const data = msg.data;
-                        // If this is the current user joining
                         if (data.userId === myUserId) {
                             currentRoomId = data.id;
-                            // Request room info to get meta and members
+                            updateRoomHeaderBadge({ name: currentRoomId, temporary: false, passwordProtected: false });
+                            updateRoomStatusDisplay();
                             ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
                             add('✅ Successfully joined room: ' + esc(data.id), 'ok');
                             showToast('Successfully joined room!', 'success');
                         } else if (currentRoomId && data.id === currentRoomId) {
-                            // Another user joined the current room
                             if (!roomUsers[data.userId]) {
                                 roomUsers[data.userId] = { alias: data.alias || data.userId, lastSeen: Date.now(),
                                     role: data.role || 'member' };
@@ -1666,22 +1673,10 @@
                         break;
                     }
 
-                    // ✅ FIX: Handle join_success (alternative message from server)
-                    case 'join_success': {
-                        const data = msg.data;
-                        currentRoomId = data.roomId;
-                        // Request room info to get meta and members
-                        ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
-                        add('✅ Successfully joined room: ' + esc(currentRoomId), 'ok');
-                        showToast('Successfully joined room!', 'success');
-                        break;
-                    }
-
                     case 'room_info_result': {
                         const { id, meta, members } = msg.data;
                         if (id === currentRoomId) {
                             roomMeta = meta;
-                            // Populate roomUsers
                             roomUsers = {};
                             for (const [uid, data] of Object.entries(members || {})) {
                                 roomUsers[uid] = data;
@@ -1691,7 +1686,6 @@
                             updateRoomStatusDisplay();
                             updateRoomUsersUI();
                             updateMemberCount();
-                            // Notify that the user is in the room
                             const displayName = meta?.name || id;
                             add(`[SYS] You are now in room: ${esc(displayName)} (${esc(id)})`, 'system-msg');
                         }
@@ -1701,10 +1695,7 @@
                     case 'room_left': {
                         const data = msg.data;
                         if (currentRoomId && data.id === currentRoomId) {
-                            if (data.userId === myUserId) {
-                                // This is me leaving (handled separately)
-                                return;
-                            }
+                            if (data.userId === myUserId) return;
                             if (roomUsers[data.userId]) {
                                 const alias = roomUsers[data.userId].alias;
                                 delete roomUsers[data.userId];
@@ -1736,28 +1727,6 @@
                                     `<strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
                                 output.appendChild(line);
                                 outputLines.push(line);
-                                limitOutputLines();
-                                output.scrollTop = output.scrollHeight;
-                            }
-                        }
-                        break;
-                    }
-
-                    case 'command_executed': {
-                        const data = msg.data;
-                        if (currentRoomId && data.roomId === currentRoomId && !processedLogIds.has(data.msgId)) {
-                            processedLogIds.add(data.msgId);
-                            if (data.senderId !== myUserId) {
-                                const line = document.createElement('div');
-                                line.className = 'line';
-                                line.innerHTML =
-                                    `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
-                                output.appendChild(line);
-                                const outLine = document.createElement('div');
-                                outLine.className = 'line';
-                                outLine.innerHTML = data.outputHTML || '';
-                                output.appendChild(outLine);
-                                outputLines.push(line, outLine);
                                 limitOutputLines();
                                 output.scrollTop = output.scrollHeight;
                             }
@@ -1863,7 +1832,6 @@
                     return;
                 }
                 sendToServer('leave_room', {});
-                // Clear local state immediately
                 const oldId = currentRoomId;
                 currentRoomId = null;
                 roomMeta = null;
@@ -1925,11 +1893,6 @@
                 outputLines.push(line);
                 limitOutputLines();
                 output.scrollTop = output.scrollHeight;
-            }
-
-            function sendMessageToRoom(cmd, outputHTML) {
-                if (!currentRoomId) return;
-                sendToServer('command_executed', { cmd, outputHTML });
             }
 
             function addSystemMsg(text) {
@@ -2322,9 +2285,7 @@
             function cacheClear() { apiCache.clear(); }
 
             // ─── API FUNCTIONS ────────────────────────────────────────────
-            // (All your weather, joke, crypto, news, ip, dns, etc. functions remain exactly the same – copy them from your original file)
-            // ─── API FUNCTIONS ────────────────────────────────────────────
-
+            // (All API functions remain unchanged)
             async function weather(city) {
                 const id = loader('Fetching weather for ' + esc(city) + '...');
                 try {
@@ -2766,6 +2727,30 @@
             async function execute(raw) {
                 if (!raw || !raw.trim()) return;
 
+                // ❌ BLOCK ALL COMMANDS if currently in a room
+                if (currentRoomId) {
+                    // Only allow 'chat', 'room leave', 'room list', 'room users', 'room invite'
+                    const parts = raw.trim().split(/\s+/);
+                    const main = parts[0].toLowerCase();
+                    const allowedWhileInRoom = ['chat', 'room', 'nick', 'help', 'clear', 'about', 'theme', 'cache', 'alias'];
+                    if (main === 'room') {
+                        const sub = parts[1]?.toLowerCase();
+                        if (!['leave', 'list', 'users', 'invite', 'info', 'id'].includes(sub || '')) {
+                            add('⚠️ In a room, you can only use: room leave, room list, room users, room invite, room info, room id', 'warning');
+                            return;
+                        }
+                    } else if (!allowedWhileInRoom.includes(main)) {
+                        add('⚠️ In a room, only chat messages and allowed commands are accepted. Use <strong>chat &lt;message&gt;</strong> to send a message.', 'warning');
+                        return;
+                    }
+                    // If it's 'chat', route to sendChatMessage
+                    if (main === 'chat') {
+                        sendChatMessage(parts.slice(1).join(' '));
+                        return;
+                    }
+                }
+
+                // ─── Normal command execution (only when NOT in a room, or allowed commands) ───
                 if (awaitingConfirm) {
                     const lower = raw.trim().toLowerCase();
                     if (lower === 'yes') {
@@ -2803,7 +2788,7 @@
                     sessionCommands++;
 
                     switch (main) {
-                        // ─── New command: room id ──────────────────────
+                        // ─── Room commands ──────────────────────────────
                         case 'room':
                             if (args[0] === 'id') {
                                 if (!currentRoomId) {
@@ -2855,6 +2840,15 @@
                                     'Usage: room <create|join|leave|list|search|info|users|invite|delete|id> [args]',
                                     'err');
                             }
+                            break;
+
+                        // ─── Chat ──────────────────────────────────────
+                        case 'chat':
+                            if (!currentRoomId) {
+                                add('Not in a room. Join a room first.', 'err');
+                                break;
+                            }
+                            sendChatMessage(args.join(' '));
                             break;
 
                         // ─── All other commands ──────────────────────
@@ -3042,9 +3036,6 @@
                             outputLines = [];
                             add('Terminal cleared.', 'info');
                             break;
-                        case 'chat':
-                            sendChatMessage(args.join(' '));
-                            break;
                         case 'about':
                             add(
                                 '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
@@ -3058,10 +3049,18 @@
                     add = originalAdd;
                 }
 
-                if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room' && main !== 'help') {
+                // Only broadcast command output to room if NOT a chat message and NOT a room command
+                if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room' && main !== 'help' && main !==
+                    'clear') {
                     sendMessageToRoom(raw, capturedHTML);
                 }
                 updateRoomStatusDisplay();
+            }
+
+            // ─── Send command output to room ───────────────────────────
+            function sendMessageToRoom(cmd, outputHTML) {
+                if (!currentRoomId) return;
+                sendToServer('command_executed', { cmd, outputHTML });
             }
 
             // ─── EVENTS ────────────────────────────────────────────────
@@ -3220,4 +3219,4 @@
         })();
     </script>
 </body>
-                        </html>
+    </html>
