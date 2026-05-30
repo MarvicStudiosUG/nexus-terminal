@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#070d19" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Nexus Terminal Pro v7.0 | Marvic Studios UG</title>
+    <title>Nexus Terminal Pro v8.0 | Marvic Studios UG</title>
     <style>
         :root {
             --accent: #00f0d0;
@@ -1294,14 +1294,13 @@
         <div class="drop-overlay" id="dropOverlay">DROP FILES HERE</div>
         <div class="settings-overlay" id="settingsOverlay"></div>
 
-        <!-- HEADER -->
         <div class="header">
             <div class="dots">
                 <div class="dot red"></div>
                 <div class="dot yellow"></div>
                 <div class="dot green"></div>
             </div>
-            <div class="title text-glow">NEXUS TERMINAL PRO v7.0</div>
+            <div class="title text-glow">NEXUS TERMINAL PRO v8.0</div>
             <div class="status">
                 <span id="roomHeaderBadge"></span>
                 <span><span class="led"></span></span>
@@ -1310,11 +1309,9 @@
             </div>
         </div>
 
-        <!-- SETTINGS PANEL -->
         <div class="settings-panel" id="settingsPanel">
             <button class="settings-close" id="settingsClose">x</button>
 
-            <!-- THEME -->
             <div class="settings-section">
                 <h3>THEME</h3>
                 <select id="themeSelect">
@@ -1326,7 +1323,6 @@
                 </select>
             </div>
 
-            <!-- FONT SIZE -->
             <div class="settings-section">
                 <h3>FONT SIZE</h3>
                 <div class="range-row">
@@ -1335,7 +1331,6 @@
                 </div>
             </div>
 
-            <!-- ALIASES -->
             <div class="settings-section">
                 <h3>COMMAND ALIASES</h3>
                 <div class="input-group">
@@ -1344,14 +1339,12 @@
                 </div>
             </div>
 
-            <!-- COLLABORATION ROOM -->
             <div class="settings-section" id="roomSection">
                 <h3>COLLABORATION ROOM <span class="badge">v3</span></h3>
                 <p style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:6px;">Create or join a secure room. Chat and share terminal in real-time.</p>
 
                 <div class="room-status-display" id="roomStatusDisplay">Not in a room.</div>
 
-                <!-- CREATE ROOM -->
                 <div style="margin-bottom:8px;">
                     <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">Create Room</div>
                     <input type="text" id="roomNameInput" placeholder="Room name (optional)" autocomplete="off" spellcheck="false">
@@ -1373,7 +1366,6 @@
                     <button class="primary" id="roomCreateBtn">Create Room</button>
                 </div>
 
-                <!-- JOIN ROOM -->
                 <div style="margin-bottom:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
                     <div style="font-size:0.72rem;color:var(--accent);margin-bottom:4px;">Join Room</div>
                     <div class="input-group">
@@ -1383,7 +1375,6 @@
                     <button class="primary" id="roomJoinBtn" style="margin-top:4px;">Join Room</button>
                 </div>
 
-                <!-- ROOM ACTIONS -->
                 <div style="border-top:1px solid var(--border-subtle);padding-top:8px;">
                     <div class="btn-group">
                         <button class="secondary" id="roomLeaveBtn">Leave</button>
@@ -1393,18 +1384,16 @@
                 </div>
             </div>
 
-            <!-- SESSION STATS -->
             <div class="settings-section">
                 <h3>SESSION STATS</h3>
                 <div style="font-size:0.7rem;color:var(--text-secondary);" id="sessionStats"></div>
             </div>
 
             <div class="settings-footer">
-                Nexus Terminal Pro v7.0 - Marvic Studios UG
+                Nexus Terminal Pro v8.0 - Marvic Studios UG
             </div>
         </div>
 
-        <!-- BODY -->
         <div class="body">
             <div class="output" id="outputContainer"></div>
             <div class="inputline">
@@ -1425,10 +1414,8 @@
         (function() {
             'use strict';
 
-            // ─── CONFIG ──────────────────────────────────────────────────
-            const WS_URL = 'wss://nexus-server-1q9n.onrender.com'; 
+            const WS_URL = 'wss://nexus-server-1q9n.onrender.com';
 
-            // ─── COMMAND DEFINITIONS ──────────────────────────────────────
             const COMMAND_DEFS = [
                 { cmd: 'help', desc: 'Show all commands with descriptions' },
                 { cmd: 'weather <city>', desc: 'Get current weather for a city' },
@@ -1486,7 +1473,6 @@
                 { cmd: 'about', desc: 'Show about information' }
             ];
 
-            // ─── STATE ──────────────────────────────────────────────────
             const output = document.getElementById('outputContainer');
             const input = document.getElementById('cmdInput');
             const execBtn = document.getElementById('execBtn');
@@ -1528,10 +1514,9 @@
             let outputLines = [];
             const MAX_OUTPUT_LINES = 400;
 
-            // ─── WebSocket ──────────────────────────────────────────────
             let ws = null;
             let currentRoomId = null;
-            let pendingRoomId = null; // ✅ FIX: pending join state
+            let pendingRoomId = null;
             let roomMeta = null;
             let myUserId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             let myAlias = myUserId;
@@ -1539,10 +1524,9 @@
             let isRoomInitialized = false;
             let isDeletingRoom = false;
             let awaitingConfirm = null;
-            const processedLogIds = new Set();
-            const processedChatIds = new Set();
+            const processedMessageIds = new Set();
+            const MAX_PROCESSED_IDS = 200;
 
-            // ─── Toast Notification ────────────────────────────────────
             function showToast(message, type, duration) {
                 type = type || 'info';
                 duration = duration || 2500;
@@ -1559,7 +1543,6 @@
                 }, duration);
             }
 
-            // ─── copyToClipboard ──────────────────────────────────────
             function copyToClipboard(text) {
                 if (navigator.clipboard && window.isSecureContext) {
                     return navigator.clipboard.writeText(text);
@@ -1583,7 +1566,6 @@
                 }
             }
 
-            // ─── WebSocket Connection ──────────────────────────────────
             function connectWebSocket() {
                 try {
                     ws = new WebSocket(WS_URL);
@@ -1622,10 +1604,21 @@
                 }
             }
 
-            // ─── Handle Server Messages ───────────────────────────────
             function handleServerMessage(msg) {
-                switch (msg.type) {
+                if (!msg || !msg.type) return;
 
+                const msgId = msg.id || (msg.type + '_' + (msg.data?.roomId || msg.data?.id || '') + '_' + Date.now());
+                if (processedMessageIds.has(msgId)) {
+                    return;
+                }
+                processedMessageIds.add(msgId);
+                if (processedMessageIds.size > MAX_PROCESSED_IDS) {
+                    const arr = Array.from(processedMessageIds);
+                    processedMessageIds.clear();
+                    arr.slice(-100).forEach(id => processedMessageIds.add(id));
+                }
+
+                switch (msg.type) {
                     case 'room_list': {
                         window._roomList = msg.data;
                         break;
@@ -1634,48 +1627,60 @@
                     case 'room_created': {
                         const data = msg.data;
                         addSystemMsg('New room created: ' + (data.name || 'Unnamed') + ' (' + data.id + ')');
-                        currentRoomId = data.id;
-                        pendingRoomId = null;
-                        ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
-                        add('✅ You are now in the created room: ' + esc(data.id), 'ok');
-                        showToast('Room created and joined!', 'success');
+                        if (!currentRoomId) {
+                            currentRoomId = data.id;
+                            pendingRoomId = null;
+                            ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
+                            add('Successfully joined created room: ' + esc(data.id), 'ok');
+                            showToast('Room created and joined!', 'success');
+                        }
                         break;
                     }
 
-                    // ✅ FIX: Join success (immediate)
                     case 'join_success': {
                         const data = msg.data;
-                        currentRoomId = data.roomId;
-                        pendingRoomId = null; // Clear pending
-                        // Use room ID as temporary name
-                        roomMeta = { name: data.meta?.name || currentRoomId, temporary: data.meta?.temporary || false,
-                            passwordProtected: data.meta?.passwordProtected || false };
-                        roomUsers = {};
-                        updateRoomHeaderBadge(roomMeta);
-                        updateRoomStatusDisplay();
-                        updateRoomUsersUI();
-                        ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
-                        add('✅ Successfully joined room: ' + esc(currentRoomId), 'ok');
-                        showToast('Successfully joined room!', 'success');
+                        if (!currentRoomId) {
+                            currentRoomId = data.roomId;
+                            pendingRoomId = null;
+                            roomMeta = {
+                                name: data.meta?.name || currentRoomId,
+                                temporary: data.meta?.temporary || false,
+                                passwordProtected: data.meta?.passwordProtected || false
+                            };
+                            roomUsers = {};
+                            isRoomInitialized = false;
+                            updateRoomHeaderBadge(roomMeta);
+                            updateRoomStatusDisplay();
+                            updateRoomUsersUI();
+                            ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
+                            add('Successfully joined room: ' + esc(currentRoomId), 'ok');
+                            showToast('Successfully joined room!', 'success');
+                        }
                         break;
                     }
 
                     case 'room_joined': {
                         const data = msg.data;
                         if (data.userId === myUserId) {
-                            currentRoomId = data.id;
-                            pendingRoomId = null;
-                            roomMeta = { name: data.id, temporary: false, passwordProtected: false };
-                            roomUsers = {};
-                            updateRoomHeaderBadge(roomMeta);
-                            updateRoomStatusDisplay();
-                            ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
-                            add('✅ Successfully joined room: ' + esc(data.id), 'ok');
-                            showToast('Successfully joined room!', 'success');
+                            if (!currentRoomId) {
+                                currentRoomId = data.id;
+                                pendingRoomId = null;
+                                roomMeta = { name: data.id, temporary: false, passwordProtected: false };
+                                roomUsers = {};
+                                isRoomInitialized = false;
+                                updateRoomHeaderBadge(roomMeta);
+                                updateRoomStatusDisplay();
+                                ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
+                                add('Successfully joined room: ' + esc(data.id), 'ok');
+                                showToast('Successfully joined room!', 'success');
+                            }
                         } else if (currentRoomId && data.id === currentRoomId) {
                             if (!roomUsers[data.userId]) {
-                                roomUsers[data.userId] = { alias: data.alias || data.userId, lastSeen: Date.now(),
-                                    role: data.role || 'member' };
+                                roomUsers[data.userId] = {
+                                    alias: data.alias || data.userId,
+                                    lastSeen: Date.now(),
+                                    role: data.role || 'member'
+                                };
                                 addSystemMsg('User ' + (data.alias || data.userId) + ' joined the room.');
                                 updateRoomUsersUI();
                                 updateMemberCount();
@@ -1686,16 +1691,16 @@
 
                     case 'room_info_result': {
                         const { id, meta, members } = msg.data;
-                        if (id === currentRoomId) {
+                        if (id === currentRoomId && !isRoomInitialized) {
                             roomMeta = meta;
-                            roomUsers = members || {}; // ✅ Fix 555 bug
+                            roomUsers = members || {};
                             isRoomInitialized = true;
                             updateRoomHeaderBadge(meta);
                             updateRoomStatusDisplay();
                             updateRoomUsersUI();
                             updateMemberCount();
                             const displayName = meta?.name || id;
-                            add(`[SYS] You are now in room: ${esc(displayName)} (${esc(id)})`, 'system-msg');
+                            add('[SYS] You are now in room: ' + esc(displayName) + ' (' + esc(id) + ')', 'system-msg');
                         }
                         break;
                     }
@@ -1725,14 +1730,14 @@
 
                     case 'chat_message': {
                         const data = msg.data;
-                        if (currentRoomId && data.roomId === currentRoomId && !processedChatIds.has(data.msgId)) {
-                            processedChatIds.add(data.msgId);
+                        if (currentRoomId && data.roomId === currentRoomId) {
                             if (data.senderId !== myUserId) {
                                 const line = document.createElement('div');
                                 line.className = 'line chat-msg';
                                 const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
-                                line.innerHTML =
-                                    `<span style="color:#9ca3af;">[${time}]</span> <strong style="color:#facc15;">${esc(data.senderAlias || data.senderId)}</strong>: ${esc(data.text)}`;
+                                const senderName = data.senderAlias || data.senderId || 'Unknown';
+                                line.innerHTML = '<span style="color:#9ca3af;">[' + time + ']</span> <strong style="color:#facc15;">' +
+                                    esc(senderName) + '</strong>: ' + esc(data.text);
                                 output.appendChild(line);
                                 outputLines.push(line);
                                 limitOutputLines();
@@ -1744,13 +1749,13 @@
 
                     case 'command_executed': {
                         const data = msg.data;
-                        if (currentRoomId && data.roomId === currentRoomId && !processedLogIds.has(data.msgId)) {
-                            processedLogIds.add(data.msgId);
+                        if (currentRoomId && data.roomId === currentRoomId) {
                             if (data.senderId !== myUserId) {
                                 const line = document.createElement('div');
                                 line.className = 'line';
-                                line.innerHTML =
-                                    `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
+                                const senderName = data.senderAlias || data.senderId || 'Unknown';
+                                line.innerHTML = '<span class="remote-cmd">[' + esc(senderName) + '] ' + esc(data.cmd) +
+                                    '</span>';
                                 output.appendChild(line);
                                 const outLine = document.createElement('div');
                                 outLine.className = 'line';
@@ -1771,7 +1776,11 @@
                                 const now = Date.now();
                                 if (now - (data.lastSeen || 0) < 15000) {
                                     if (!roomUsers[data.userId]) {
-                                        roomUsers[data.userId] = { alias: data.alias, lastSeen: now, role: 'member' };
+                                        roomUsers[data.userId] = {
+                                            alias: data.alias || data.userId,
+                                            lastSeen: now,
+                                            role: 'member'
+                                        };
                                         addSystemMsg('User ' + (data.alias || data.userId) + ' joined the room.');
                                         updateRoomUsersUI();
                                         updateMemberCount();
@@ -1791,7 +1800,7 @@
                             add('No rooms found.', 'info');
                             return;
                         }
-                        add(`<strong>Found ${entries.length} room(s):</strong>`, 'highlight');
+                        add('<strong>Found ' + entries.length + ' room(s):</strong>', 'highlight');
                         entries.forEach(([id, meta]) => {
                             const name = meta.name || id;
                             const members = meta.memberCount || 0;
@@ -1799,15 +1808,18 @@
                             const creator = meta.creatorAlias || 'unknown';
                             const tempLabel = meta.temporary ? '[TEMP]' : '[PERM]';
                             add(
-                                `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | Users: ${members} | Creator: ${esc(creator)}${meta.description ? ' | Description: '+esc(meta.description) : ''}</span></div>`,
-                                'ok');
+                                '<div class="room-list-item"><span class="room-name">' + esc(name) +
+                                '</span> ' + tempLabel + ' ' + locked +
+                                '<span class="room-id">ID: ' + esc(id) + ' | Users: ' + members +
+                                ' | Creator: ' + esc(creator) +
+                                (meta.description ? ' | Description: ' + esc(meta.description) : '') +
+                                '</span></div>', 'ok');
                         });
                         break;
                     }
 
                     case 'error': {
                         if (pendingRoomId) {
-                            // Join failed – reset pending
                             pendingRoomId = null;
                             updateRoomHeaderBadge(null);
                             updateRoomStatusDisplay();
@@ -1822,9 +1834,10 @@
                         const data = msg.data;
                         if (currentRoomId && data.roomId === currentRoomId) {
                             if (roomUsers[data.userId]) {
+                                const oldAlias = roomUsers[data.userId].alias || data.userId;
                                 roomUsers[data.userId].alias = data.newAlias;
                                 updateRoomUsersUI();
-                                addSystemMsg(`User ${data.oldAlias} is now known as ${data.newAlias}`);
+                                addSystemMsg('User ' + oldAlias + ' is now known as ' + data.newAlias);
                             }
                         }
                         break;
@@ -1832,13 +1845,12 @@
 
                     case 'nick_set': {
                         const data = msg.data;
-                        add(`Nickname set to ${esc(data.alias)}.`, 'ok');
+                        add('Nickname set to ' + esc(data.alias) + '.', 'ok');
                         break;
                     }
                 }
             }
 
-            // ─── Send to Server ────────────────────────────────────────
             function sendToServer(type, data) {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({ type, data }));
@@ -1848,7 +1860,6 @@
                 }
             }
 
-            // ─── Room Functions ────────────────────────────────────────
             function createRoom(name, description, password, temporary, ttl) {
                 if (currentRoomId) {
                     add('Already in a room. Leave first.', 'err');
@@ -1856,9 +1867,9 @@
                     return;
                 }
                 sendToServer('create_room', {
-                    name,
-                    description,
-                    password,
+                    name: name || null,
+                    description: description || null,
+                    password: password || null,
                     temporary: !!temporary,
                     ttl: ttl || '604800000'
                 });
@@ -1877,7 +1888,6 @@
                     return;
                 }
 
-                // ✅ FIX: Set pending state immediately
                 pendingRoomId = id.trim();
                 updateRoomHeaderBadge({ name: pendingRoomId, temporary: false, passwordProtected: false });
                 updateRoomStatusDisplay();
@@ -1951,16 +1961,12 @@
                 if (!text.trim()) return;
                 sendToServer('chat_message', { text: text.trim() });
 
-                // Enhanced chat display
                 const now = new Date();
                 const time = now.toLocaleTimeString();
                 const line = document.createElement('div');
                 line.className = 'line chat-msg';
-                line.innerHTML = `
-                    <span style="color:#9ca3af;">[${time}]</span> 
-                    <strong style="color:#4ade80;">${esc(myAlias)}</strong> 
-                    <span style="color:#9ca3af;">(you):</span> 
-                    ${esc(text.trim())}`;
+                line.innerHTML = '<span style="color:#9ca3af;">[' + time + ']</span> <strong style="color:#4ade80;">' +
+                    esc(myAlias) + '</strong> <span style="color:#9ca3af;">(you):</span> ' + esc(text.trim());
                 output.appendChild(line);
                 outputLines.push(line);
                 limitOutputLines();
@@ -1984,16 +1990,14 @@
                 }
                 const displayName = meta.name || currentRoomId;
                 const isLocked = meta.passwordProtected;
-                // ✅ Fix 555 bug: ensure valid count
                 const userCount = Math.max(0, Object.keys(roomUsers || {}).length);
                 const statusClass = isLocked ? 'locked' : '';
-                roomHeaderBadge.innerHTML =
-                    `<div class="room-header-badge" title="Click to copy Room ID">
-                                <span class="room-dot ${statusClass}"></span>
-                                <span class="room-label">${isLocked ? 'LOCKED' : 'OPEN'}</span>
-                                <span class="room-name-display">${esc(displayName)}</span>
-                                <span style="opacity:0.6;font-size:0.55rem;">${userCount} user${userCount !== 1 ? 's' : ''}</span>
-                            </div>`;
+                roomHeaderBadge.innerHTML = '<div class="room-header-badge" title="Click to copy Room ID">' +
+                    '<span class="room-dot ' + statusClass + '"></span>' +
+                    '<span class="room-label">' + (isLocked ? 'LOCKED' : 'OPEN') + '</span>' +
+                    '<span class="room-name-display">' + esc(displayName) + '</span>' +
+                    '<span style="opacity:0.6;font-size:0.55rem;">' + userCount + ' user' + (userCount !== 1 ? 's' : '') +
+                    '</span></div>';
             }
 
             function updateRoomStatusDisplay() {
@@ -2004,15 +2008,19 @@
                 const displayName = roomMeta?.name || currentRoomId;
                 const members = Object.keys(roomUsers || {}).length;
                 const tempLabel = roomMeta?.temporary ? 'Temporary' : 'Permanent';
-                roomStatusDisplay.innerHTML =
-                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | Users: ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' [Password Protected]' : ''}`;
+                roomStatusDisplay.innerHTML = '<strong>' + esc(displayName) + '</strong> (' + esc(currentRoomId) +
+                    ') | Users: ' + members + ' | ' + tempLabel +
+                    (roomMeta?.passwordProtected ? ' [Password Protected]' : '');
             }
 
             function updateRoomUsersUI() {
                 const users = Object.values(roomUsers || {})
                     .filter(u => u && u.alias)
-                    .map(u => ({ alias: u.alias, role: u.role || 'member', id: Object.keys(roomUsers).find(k => roomUsers[
-                            k] === u) }));
+                    .map(u => ({
+                        alias: u.alias,
+                        role: u.role || 'member',
+                        id: Object.keys(roomUsers).find(k => roomUsers[k] === u)
+                    }));
                 if (users.length === 0) {
                     roomUsersList.innerHTML = 'No other users online.';
                     return;
@@ -2023,9 +2031,8 @@
                     return a.alias.localeCompare(b.alias);
                 });
                 roomUsersList.innerHTML = '<strong>Online users:</strong><br>' +
-                    users.map(u =>
-                        `<span class="room-user">${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}</span>`
-                    ).join('');
+                    users.map(u => '<span class="room-user">' + esc(u.alias) + (u.role === 'admin' ? ' (admin)' : '') +
+                        '</span>').join('');
             }
 
             function updateMemberCount() {}
@@ -2060,9 +2067,9 @@
                 }
                 const inviteLink = window.location.origin + window.location.pathname + '#join=' + currentRoomId;
                 copyToClipboard(inviteLink).then(() => {
-                    add('✅ Invite link copied: ' + esc(inviteLink), 'ok');
+                    add('Invite link copied: ' + esc(inviteLink), 'ok');
                 }).catch(() => {
-                    add('📋 Copy manually: ' + esc(inviteLink), 'info');
+                    add('Copy manually: ' + esc(inviteLink), 'info');
                 });
             }
 
@@ -2075,7 +2082,6 @@
                 sendToServer('set_nick', { alias: myAlias });
             }
 
-            // ─── UTILITY ────────────────────────────────────────────────
             function esc(s) {
                 return String(s).replace(/[&<>"]/g, function(m) {
                     return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[m];
@@ -2136,7 +2142,6 @@
                 localStorage.setItem('nexus_cmdfreq', JSON.stringify(cmdFrequency));
             }
 
-            // ─── THEME ──────────────────────────────────────────────────
             const themes = {
                 default: { accent: '#00f0d0', accentSecondary: '#5b8cff', accentGlow: 'rgba(0,240,208,0.25)',
                     bgDeep: '#070d19', bgSurface: '#0c1526', bgElevated: '#111d33' },
@@ -2163,7 +2168,6 @@
                 themeSelect.value = name;
             }
 
-            // ─── SAFE CALC ──────────────────────────────────────────────
             function safeCalc(expr) {
                 expr = expr.replace(/\s/g, '');
                 if (!/^[0-9+\-*/().%]+$/.test(expr)) throw new Error('Invalid characters');
@@ -2199,16 +2203,17 @@
                 function parseTerm(pos) {
                     let result = parseFactor(pos);
                     let p = result.pos;
-                    while (p < tokens.length && (tokens[p].value === '*' || tokens[p].value === '/' || tokens[p].value === '%')) {
+                    while (p < tokens.length && (tokens[p].value === '*' || tokens[p].value === '/' || tokens[p].value ===
+                            '%')) {
                         const op = tokens[p].value;
                         p++;
                         const right = parseFactor(p);
                         p = right.pos;
                         if (op === '*') result.value *= right.value;
-                        else if (op === '/') { if (right.value === 0) throw new Error('Division by zero'); result.value /= right
-                                .value; }
-                        else if (op === '%') { if (right.value === 0) throw new Error('Modulo by zero'); result.value %= right
-                                .value; }
+                        else if (op === '/') { if (right.value === 0) throw new Error('Division by zero');
+                            result.value /= right.value; } else if (op === '%') { if (right.value === 0) throw new Error(
+                                'Modulo by zero');
+                            result.value %= right.value; }
                     }
                     return { value: result.value, pos: p };
                 }
@@ -2232,15 +2237,14 @@
                 return result.value;
             }
 
-            // ─── VAULT ──────────────────────────────────────────────────
             function getVaultData() { return JSON.parse(localStorage.getItem('nexus_vault2') || '[]'); }
 
             function setVaultData(data) { localStorage.setItem('nexus_vault2', JSON.stringify(data)); }
 
             function simpleEncrypt(text, password) {
                 let cipher = '';
-                for (let i = 0; i < text.length; i++) cipher += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(
-                    i % password.length));
+                for (let i = 0; i < text.length; i++) cipher += String.fromCharCode(text.charCodeAt(i) ^ password
+                    .charCodeAt(i % password.length));
                 return btoa(cipher);
             }
 
@@ -2285,7 +2289,6 @@
                 add('Vault locked.', 'ok'); }
             (function() { const saved = localStorage.getItem('nexus_vault_pass'); if (saved) vaultPassword = saved; })();
 
-            // ─── FS ─────────────────────────────────────────────────────
             function fsList() { const files = JSON.parse(localStorage.getItem('nexus_fs') || '{}'); const names = Object.keys(
                     files); if (!names.length) { add('FS empty.', 'info'); } else { names.forEach(function(n) { add(esc(
                         n) + ' (' + files[n].length + ' bytes)', 'ok'); }); } }
@@ -2315,7 +2318,6 @@
                         'No matches.', 'info'); } else { add('<strong>Search results:</strong>', 'highlight');
                     results.forEach(function(n) { add(esc(n), 'ok'); }); } }
 
-            // ─── ALIAS ──────────────────────────────────────────────────
             function addAlias(alias, command) { if (!alias || !command) { add('Usage: alias <name> <command>', 'err'); return; }
                 alias = alias.trim();
                 command = command.trim(); if (alias.includes(' ') || alias.includes('=')) { add(
@@ -2337,7 +2339,6 @@
             function resolveAlias(cmd) { const parts = cmd.trim().split(/\s+/); const first = parts[0]; if (aliases[first]) { const rest =
                     parts.slice(1).join(' '); return aliases[first] + (rest ? ' ' + rest : ''); } return cmd; }
 
-            // ─── API CACHE ──────────────────────────────────────────────
             const apiCache = new Map();
 
             function cacheGet(key) { const entry = apiCache.get(key); if (!entry) return null; if (Date.now() > entry.expiry) {
@@ -2347,8 +2348,6 @@
 
             function cacheClear() { apiCache.clear(); }
 
-            // ─── API FUNCTIONS ────────────────────────────────────────────
-            // (All API functions remain unchanged – you can copy them from previous code)
             async function weather(city) {
                 const id = loader('Fetching weather for ' + esc(city) + '...');
                 try {
@@ -2377,7 +2376,7 @@
                         results.push(data.joke);
                     }
                     unloader(id);
-                    results.forEach(function(j) { add('😂 ' + esc(j), 'ok'); });
+                    results.forEach(function(j) { add('Joke: ' + esc(j), 'ok'); });
                 } catch (e) { unloader(id);
                     add('Joke error: ' + esc(e.message), 'err'); }
             }
@@ -2393,7 +2392,7 @@
                     unloader(id);
                     Object.keys(data).forEach(function(coin) {
                         const p = data[coin];
-                        add(esc(coin.toUpperCase()) + ' — $' + (p.usd || '?') + ' | €' + (p.eur || '?') + ' | £' + (p
+                        add(esc(coin.toUpperCase()) + ' -- $' + (p.usd || '?') + ' | €' + (p.eur || '?') + ' | £' + (p
                             .gbp || '?'), 'ok');
                     });
                 } catch (e) { unloader(id);
@@ -2447,7 +2446,7 @@
                     if (data.Answer && data.Answer.length) {
                         add('<strong>DNS records for ' + esc(domain) + ':</strong>', 'highlight');
                         data.Answer.forEach(function(rec) {
-                            add('  ' + esc(rec.type) + ' → ' + esc(rec.data), 'ok');
+                            add('  ' + esc(rec.type) + ' -> ' + esc(rec.data), 'ok');
                         });
                     } else {
                         add('No DNS records found for ' + esc(domain), 'info');
@@ -2480,9 +2479,9 @@
                     const data = await r.json();
                     unloader(id);
                     add('<div class="block"><strong>' + esc(data.login) + '</strong> (' + esc(data.name || '') +
-                        ')<br>📝 ' + esc(data.bio || 'No bio') + '<br>📦 Repos: ' + (data.public_repos || 0) +
-                        ' | 👥 Followers: ' + (data.followers || 0) + ' | Following: ' + (data.following || 0) +
-                        '<br>🔗 <a href="' + esc(data.html_url) + '" target="_blank">' + esc(data.html_url) +
+                        ')<br> Repos: ' + (data.public_repos || 0) + ' | Followers: ' + (data.followers || 0) +
+                        ' | Following: ' + (data.following || 0) +
+                        '<br><a href="' + esc(data.html_url) + '" target="_blank">' + esc(data.html_url) +
                         '</a></div>', 'ok');
                 } catch (e) { unloader(id);
                     add('GitHub error: ' + esc(e.message), 'err'); }
@@ -2495,9 +2494,9 @@
                     if (!r.ok) throw new Error('SpaceX fetch failed');
                     const data = await r.json();
                     unloader(id);
-                    add('<div class="block"><strong>' + esc(data.name) + '</strong><br>🚀 Rocket: ' + esc(data.rocket ||
-                        'Unknown') + '<br>📅 Launch: ' + esc(new Date(data.date_utc).toLocaleString()) +
-                        '<br>✅ Success: ' + (data.success ? 'Yes' : 'No') + '<br>🌍 Details: ' + esc(data.details ||
+                    add('<div class="block"><strong>' + esc(data.name) + '</strong><br>Rocket: ' + esc(data.rocket ||
+                        'Unknown') + '<br>Launch: ' + esc(new Date(data.date_utc).toLocaleString()) +
+                        '<br>Success: ' + (data.success ? 'Yes' : 'No') + '<br>Details: ' + esc(data.details ||
                         'No details available') + '</div>', 'ok');
                 } catch (e) { unloader(id);
                     add('SpaceX error: ' + esc(e.message), 'err'); }
@@ -2512,8 +2511,7 @@
                     unloader(id);
                     add('<strong>Game Deals under $15</strong>', 'highlight');
                     data.slice(0, 10).forEach(function(deal) {
-                        add('🎮 ' + esc(deal.title) + ' — $' + deal.salePrice + ' (was $' + deal.normalPrice +
-                            ') <span class="info">' + deal.dealID + '</span>', 'ok');
+                        add(esc(deal.title) + ' -- $' + deal.salePrice + ' (was $' + deal.normalPrice + ')', 'ok');
                     });
                 } catch (e) { unloader(id);
                     add('Game deals error: ' + esc(e.message), 'err'); }
@@ -2526,7 +2524,7 @@
                 cities.forEach(function(city) {
                     const time = now.toLocaleString('en-US', { timeZone: city.replace(' ', '_'), hour12: true,
                         hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    add('🕐 ' + esc(city) + ': ' + esc(time), 'ok');
+                    add(city + ': ' + time, 'ok');
                 });
             }
 
@@ -2535,27 +2533,27 @@
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
                 let pass = '';
                 for (let i = 0; i < length; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
-                add('🔑 <span class="highlight">' + esc(pass) + '</span> (' + length + ' chars)', 'ok');
+                add('<span class="highlight">' + esc(pass) + '</span> (' + length + ' chars)', 'ok');
             }
 
             function reverseText(text) {
-                add('🔀 ' + esc(text.split('').reverse().join('')), 'ok');
+                add(esc(text.split('').reverse().join('')), 'ok');
             }
 
             function upperText(text) {
-                add('⬆ ' + esc(text.toUpperCase()), 'ok');
+                add(esc(text.toUpperCase()), 'ok');
             }
 
             function lowerText(text) {
-                add('⬇ ' + esc(text.toLowerCase()), 'ok');
+                add(esc(text.toLowerCase()), 'ok');
             }
 
             function lenText(text) {
-                add('📏 Length: ' + text.length + ' characters', 'ok');
+                add('Length: ' + text.length + ' characters', 'ok');
             }
 
             function echoText(text) {
-                add('🔊 ' + esc(text), 'ok');
+                add(esc(text), 'ok');
             }
 
             async function wikiSearch(term) {
@@ -2590,7 +2588,7 @@
                             add('  ' + esc(meaning.partOfSpeech) + ': ' + esc(meaning.definitions[0].definition),
                                 'ok');
                             if (meaning.definitions[0].example) {
-                                add('    📝 ' + esc(meaning.definitions[0].example), 'info');
+                                add('    ' + esc(meaning.definitions[0].example), 'info');
                             }
                         });
                     } else {
@@ -2602,7 +2600,7 @@
 
             function qrCode(text) {
                 if (!text) { add('Usage: qr <text>', 'err'); return; }
-                add('📱 QR Code for "' + esc(text) + '":', 'info');
+                add('QR Code for "' + esc(text) + '":', 'info');
                 add('<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(text) +
                     '" alt="QR Code" />', 'ok');
             }
@@ -2637,7 +2635,7 @@
                     const data = await r.json();
                     unloader(id);
                     if (data.responseData && data.responseData.translatedText) {
-                        add('🌍 ' + esc(data.responseData.translatedText), 'ok');
+                        add(esc(data.responseData.translatedText), 'ok');
                     } else {
                         add('Translation failed. Check target language code.', 'err');
                     }
@@ -2645,13 +2643,12 @@
                     add('Translation error: ' + esc(e.message), 'err'); }
             }
 
-            // ─── SETTINGS PANEL ────────────────────────────────────────
             function openSettings() { settingsPanel.classList.add('active');
                 settingsOverlay.classList.add('active'); }
+
             function closeSettings() { settingsPanel.classList.remove('active');
                 settingsOverlay.classList.remove('active'); }
 
-            // ─── AUTOCOMPLETE ──────────────────────────────────────────
             function getSuggestions(partial) {
                 if (!partial.trim()) return [];
                 const lower = partial.toLowerCase();
@@ -2686,10 +2683,9 @@
                         const after = esc(def.cmd.substring(idx + partial.length));
                         display = before + '<span class="suggestion-cmd">' + match + '</span>' + after;
                     }
-                    return `<div class="suggestion" data-cmd="${esc(def.cmd)}">
-                                <span>${display}</span>
-                                <span class="suggestion-desc">${esc(def.desc)}</span>
-                            </div>`;
+                    return '<div class="suggestion" data-cmd="' + esc(def.cmd) + '">' +
+                        '<span>' + display + '</span>' +
+                        '<span class="suggestion-desc">' + esc(def.desc) + '</span></div>';
                 }).join('');
                 suggestionsEl.classList.add('active');
             }
@@ -2786,11 +2782,9 @@
                 }
             });
 
-            // ─── EXECUTE ────────────────────────────────────────────────
             async function execute(raw) {
                 if (!raw || !raw.trim()) return;
 
-                // ✅ BARE TEXT CHAT: If in a room and not a reserved command
                 if (currentRoomId && !raw.trim().startsWith('/') && !raw.trim().startsWith('.')) {
                     const firstWord = raw.trim().split(/\s+/)[0].toLowerCase();
                     const reserved = ['room', 'nick', 'help', 'clear', 'theme', 'cache', 'alias', 'about', 'exit', 'chat'];
@@ -2801,9 +2795,8 @@
                     }
                 }
 
-                // Allow pending room chat to be queued
                 if (pendingRoomId) {
-                    add('⏳ Currently joining room: ' + esc(pendingRoomId) + '. Please wait...', 'info');
+                    add('Currently joining room: ' + esc(pendingRoomId) + '. Please wait...', 'info');
                     return;
                 }
 
@@ -2851,7 +2844,7 @@
                                     break;
                                 }
                                 copyToClipboard(currentRoomId).then(() => {
-                                    add('📋 Room ID copied to clipboard: <span class="highlight">' + esc(
+                                    add('Room ID copied to clipboard: <span class="highlight">' + esc(
                                         currentRoomId) + '</span>', 'ok');
                                     showToast('Room ID copied!', 'success');
                                 }).catch(() => {
@@ -2883,7 +2876,7 @@
                                 const users = Object.values(roomUsers).filter(u => u && u.alias);
                                 if (users.length === 0) { add('No other users online.', 'info'); } else {
                                     add('<strong>Online users:</strong>', 'highlight');
-                                    users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}`),
+                                    users.forEach(u => add(esc(u.alias) + (u.role === 'admin' ? ' (admin)' : '')),
                                         'ok');
                                 }
                             } else if (args[0] === 'invite') {
@@ -3091,7 +3084,7 @@
                             break;
                         case 'about':
                             add(
-                                '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
+                                '<div class="block"><strong>Nexus Terminal Pro v8.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
                                 'ok');
                             break;
                         default:
@@ -3109,13 +3102,11 @@
                 updateRoomStatusDisplay();
             }
 
-            // ─── Send command output to room ───────────────────────────
             function sendMessageToRoom(cmd, outputHTML) {
                 if (!currentRoomId) return;
                 sendToServer('command_executed', { cmd, outputHTML });
             }
 
-            // ─── EVENTS ────────────────────────────────────────────────
             output.addEventListener('click', function(e) {
                 const cmdEl = e.target.closest('.clickable-cmd');
                 if (!cmdEl) return;
@@ -3203,7 +3194,6 @@
                 });
             });
 
-            // ─── DRAG & DROP ──────────────────────────────────────────────
             let dragCounter = 0;
             const terminalEl = document.getElementById('app');
             terminalEl.addEventListener('dragenter', function(e) { e.preventDefault();
@@ -3234,7 +3224,6 @@
                 }
             });
 
-            // ─── INIT ──────────────────────────────────────────────────────
             const savedTheme = localStorage.getItem('nexus_theme') || 'default';
             themeSelect.value = savedTheme;
             applyTheme(savedTheme);
@@ -3243,12 +3232,11 @@
             document.documentElement.style.fontSize = savedFont + 'px';
             document.getElementById('fontSizeValue').textContent = savedFont + 'px';
 
-            // Auto-join from URL hash
             const hash = window.location.hash;
             if (hash.startsWith('#join=')) {
                 const roomId = hash.replace('#join=', '');
                 setTimeout(() => {
-                    input.value = `room join ${roomId}`;
+                    input.value = 'room join ' + roomId;
                     execute(input.value);
                 }, 1000);
             }
@@ -3256,20 +3244,18 @@
             connectWebSocket();
 
             add(
-                '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Type any command to see detailed output with clickable links and options. Start typing to see command suggestions.</div>',
+                '<div class="block"><strong>Nexus Terminal Pro v8.0</strong><br>Type any command to see detailed output with clickable links and options. Start typing to see command suggestions.</div>',
                 'ok');
             add('Ready. Type <span class="clickable-cmd" data-cmd="help">help</span> for all commands.', 'info');
             input.focus();
             updateRoomStatusDisplay();
 
-            // Auto-refresh room list every 10 seconds
             setInterval(() => {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({ type: 'list_rooms', data: {} }));
                 }
             }, 10000);
 
-            // Cleanup
             window.addEventListener('beforeunload', function() {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     if (currentRoomId) {
@@ -3281,7 +3267,4 @@
         })();
     </script>
 </body>
-</html>;
-    </script>
-</body>
-</html>
+    </html>
