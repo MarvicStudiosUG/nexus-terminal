@@ -1426,7 +1426,7 @@
             'use strict';
 
             // ─── CONFIG ──────────────────────────────────────────────────
-            const WS_URL = 'wss://nexus-server-1q9n.onrender.com';
+            const WS_URL = 'ws://localhost:3000'; // Change to wss://yourdomain.com for production
 
             // ─── COMMAND DEFINITIONS ──────────────────────────────────────
             const COMMAND_DEFS = [
@@ -1531,6 +1531,7 @@
             // ─── WebSocket ──────────────────────────────────────────────
             let ws = null;
             let currentRoomId = null;
+            let pendingRoomId = null; // ✅ FIX: pending join state
             let roomMeta = null;
             let myUserId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             let myAlias = myUserId;
@@ -1634,16 +1635,23 @@
                         const data = msg.data;
                         addSystemMsg('New room created: ' + (data.name || 'Unnamed') + ' (' + data.id + ')');
                         currentRoomId = data.id;
+                        pendingRoomId = null;
                         ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
                         add('✅ You are now in the created room: ' + esc(data.id), 'ok');
                         showToast('Room created and joined!', 'success');
                         break;
                     }
 
+                    // ✅ FIX: Join success (immediate)
                     case 'join_success': {
                         const data = msg.data;
                         currentRoomId = data.roomId;
-                        updateRoomHeaderBadge({ name: currentRoomId, temporary: false, passwordProtected: false });
+                        pendingRoomId = null; // Clear pending
+                        // Use room ID as temporary name
+                        roomMeta = { name: data.meta?.name || currentRoomId, temporary: data.meta?.temporary || false,
+                            passwordProtected: data.meta?.passwordProtected || false };
+                        roomUsers = {};
+                        updateRoomHeaderBadge(roomMeta);
                         updateRoomStatusDisplay();
                         updateRoomUsersUI();
                         ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
@@ -1656,7 +1664,10 @@
                         const data = msg.data;
                         if (data.userId === myUserId) {
                             currentRoomId = data.id;
-                            updateRoomHeaderBadge({ name: currentRoomId, temporary: false, passwordProtected: false });
+                            pendingRoomId = null;
+                            roomMeta = { name: data.id, temporary: false, passwordProtected: false };
+                            roomUsers = {};
+                            updateRoomHeaderBadge(roomMeta);
                             updateRoomStatusDisplay();
                             ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
                             add('✅ Successfully joined room: ' + esc(data.id), 'ok');
@@ -1677,10 +1688,7 @@
                         const { id, meta, members } = msg.data;
                         if (id === currentRoomId) {
                             roomMeta = meta;
-                            roomUsers = {};
-                            for (const [uid, data] of Object.entries(members || {})) {
-                                roomUsers[uid] = data;
-                            }
+                            roomUsers = members || {}; // ✅ Fix 555 bug
                             isRoomInitialized = true;
                             updateRoomHeaderBadge(meta);
                             updateRoomStatusDisplay();
@@ -1724,9 +1732,31 @@
                                 line.className = 'line chat-msg';
                                 const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
                                 line.innerHTML =
-                                    `<strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
+                                    `<span style="color:#9ca3af;">[${time}]</span> <strong style="color:#facc15;">${esc(data.senderAlias || data.senderId)}</strong>: ${esc(data.text)}`;
                                 output.appendChild(line);
                                 outputLines.push(line);
+                                limitOutputLines();
+                                output.scrollTop = output.scrollHeight;
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'command_executed': {
+                        const data = msg.data;
+                        if (currentRoomId && data.roomId === currentRoomId && !processedLogIds.has(data.msgId)) {
+                            processedLogIds.add(data.msgId);
+                            if (data.senderId !== myUserId) {
+                                const line = document.createElement('div');
+                                line.className = 'line';
+                                line.innerHTML =
+                                    `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
+                                output.appendChild(line);
+                                const outLine = document.createElement('div');
+                                outLine.className = 'line';
+                                outLine.innerHTML = data.outputHTML || '';
+                                output.appendChild(outLine);
+                                outputLines.push(line, outLine);
                                 limitOutputLines();
                                 output.scrollTop = output.scrollHeight;
                             }
@@ -1776,8 +1806,33 @@
                     }
 
                     case 'error': {
+                        if (pendingRoomId) {
+                            // Join failed – reset pending
+                            pendingRoomId = null;
+                            updateRoomHeaderBadge(null);
+                            updateRoomStatusDisplay();
+                            updateRoomUsersUI();
+                        }
                         add('Server error: ' + esc(msg.data), 'err');
                         showToast(msg.data, 'error');
+                        break;
+                    }
+
+                    case 'nick_changed': {
+                        const data = msg.data;
+                        if (currentRoomId && data.roomId === currentRoomId) {
+                            if (roomUsers[data.userId]) {
+                                roomUsers[data.userId].alias = data.newAlias;
+                                updateRoomUsersUI();
+                                addSystemMsg(`User ${data.oldAlias} is now known as ${data.newAlias}`);
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'nick_set': {
+                        const data = msg.data;
+                        add(`Nickname set to ${esc(data.alias)}.`, 'ok');
                         break;
                     }
                 }
@@ -1821,8 +1876,15 @@
                     showToast('Please enter a room ID.', 'error');
                     return;
                 }
-                sendToServer('join_room', { roomId: id.trim(), password: password || null });
+
+                // ✅ FIX: Set pending state immediately
+                pendingRoomId = id.trim();
+                updateRoomHeaderBadge({ name: pendingRoomId, temporary: false, passwordProtected: false });
+                updateRoomStatusDisplay();
+                updateRoomUsersUI();
                 add('Joining room ' + esc(id) + '...', 'info');
+
+                sendToServer('join_room', { roomId: id.trim(), password: password || null });
             }
 
             function leaveRoom() {
@@ -1834,6 +1896,7 @@
                 sendToServer('leave_room', {});
                 const oldId = currentRoomId;
                 currentRoomId = null;
+                pendingRoomId = null;
                 roomMeta = null;
                 roomUsers = {};
                 isRoomInitialized = false;
@@ -1860,6 +1923,7 @@
                         if (confirmed) {
                             sendToServer('delete_room', {});
                             currentRoomId = null;
+                            pendingRoomId = null;
                             roomMeta = null;
                             roomUsers = {};
                             isRoomInitialized = false;
@@ -1886,9 +1950,17 @@
                 }
                 if (!text.trim()) return;
                 sendToServer('chat_message', { text: text.trim() });
+
+                // Enhanced chat display
+                const now = new Date();
+                const time = now.toLocaleTimeString();
                 const line = document.createElement('div');
                 line.className = 'line chat-msg';
-                line.innerHTML = `<strong>${esc(myAlias)}</strong> (you): ${esc(text.trim())}`;
+                line.innerHTML = `
+                    <span style="color:#9ca3af;">[${time}]</span> 
+                    <strong style="color:#4ade80;">${esc(myAlias)}</strong> 
+                    <span style="color:#9ca3af;">(you):</span> 
+                    ${esc(text.trim())}`;
                 output.appendChild(line);
                 outputLines.push(line);
                 limitOutputLines();
@@ -1912,14 +1984,15 @@
                 }
                 const displayName = meta.name || currentRoomId;
                 const isLocked = meta.passwordProtected;
-                const userCount = Object.keys(roomUsers).length;
+                // ✅ Fix 555 bug: ensure valid count
+                const userCount = Math.max(0, Object.keys(roomUsers || {}).length);
                 const statusClass = isLocked ? 'locked' : '';
                 roomHeaderBadge.innerHTML =
                     `<div class="room-header-badge" title="Click to copy Room ID">
                                 <span class="room-dot ${statusClass}"></span>
                                 <span class="room-label">${isLocked ? 'LOCKED' : 'OPEN'}</span>
                                 <span class="room-name-display">${esc(displayName)}</span>
-                                <span style="opacity:0.6;font-size:0.55rem;">${userCount} users</span>
+                                <span style="opacity:0.6;font-size:0.55rem;">${userCount} user${userCount !== 1 ? 's' : ''}</span>
                             </div>`;
             }
 
@@ -1929,14 +2002,14 @@
                     return;
                 }
                 const displayName = roomMeta?.name || currentRoomId;
-                const members = Object.keys(roomUsers).length;
+                const members = Object.keys(roomUsers || {}).length;
                 const tempLabel = roomMeta?.temporary ? 'Temporary' : 'Permanent';
                 roomStatusDisplay.innerHTML =
                     `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | Users: ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' [Password Protected]' : ''}`;
             }
 
             function updateRoomUsersUI() {
-                const users = Object.values(roomUsers)
+                const users = Object.values(roomUsers || {})
                     .filter(u => u && u.alias)
                     .map(u => ({ alias: u.alias, role: u.role || 'member', id: Object.keys(roomUsers).find(k => roomUsers[
                             k] === u) }));
@@ -1985,21 +2058,12 @@
                     add('Not in a room.', 'err');
                     return;
                 }
-                const inviteText =
-                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.temporary ? 'Temporary' : 'Permanent'}${roomMeta?.passwordProtected ? '\nPassword Protected' : ''}`;
-                if (navigator.share) {
-                    navigator.share({ text: inviteText }).then(() => {
-                        add('Room invite shared.', 'ok');
-                    }).catch(() => {
-                        add('Sharing cancelled.', 'info');
-                    });
-                } else {
-                    copyToClipboard(inviteText).then(() => {
-                        add('Invite text copied to clipboard!', 'ok');
-                    }).catch(() => {
-                        add('Failed to copy. Please copy manually.', 'err');
-                    });
-                }
+                const inviteLink = window.location.origin + window.location.pathname + '#join=' + currentRoomId;
+                copyToClipboard(inviteLink).then(() => {
+                    add('✅ Invite link copied: ' + esc(inviteLink), 'ok');
+                }).catch(() => {
+                    add('📋 Copy manually: ' + esc(inviteLink), 'info');
+                });
             }
 
             function setNick(name) {
@@ -2009,7 +2073,6 @@
                 }
                 myAlias = name.trim();
                 sendToServer('set_nick', { alias: myAlias });
-                add(`Nickname set to ${esc(myAlias)}.`, 'ok');
             }
 
             // ─── UTILITY ────────────────────────────────────────────────
@@ -2285,7 +2348,7 @@
             function cacheClear() { apiCache.clear(); }
 
             // ─── API FUNCTIONS ────────────────────────────────────────────
-            // (All API functions remain unchanged)
+            // (All API functions remain unchanged – you can copy them from previous code)
             async function weather(city) {
                 const id = loader('Fetching weather for ' + esc(city) + '...');
                 try {
@@ -2727,30 +2790,23 @@
             async function execute(raw) {
                 if (!raw || !raw.trim()) return;
 
-                // ❌ BLOCK ALL COMMANDS if currently in a room
-                if (currentRoomId) {
-                    // Only allow 'chat', 'room leave', 'room list', 'room users', 'room invite'
-                    const parts = raw.trim().split(/\s+/);
-                    const main = parts[0].toLowerCase();
-                    const allowedWhileInRoom = ['chat', 'room', 'nick', 'help', 'clear', 'about', 'theme', 'cache', 'alias'];
-                    if (main === 'room') {
-                        const sub = parts[1]?.toLowerCase();
-                        if (!['leave', 'list', 'users', 'invite', 'info', 'id'].includes(sub || '')) {
-                            add('⚠️ In a room, you can only use: room leave, room list, room users, room invite, room info, room id', 'warning');
-                            return;
-                        }
-                    } else if (!allowedWhileInRoom.includes(main)) {
-                        add('⚠️ In a room, only chat messages and allowed commands are accepted. Use <strong>chat &lt;message&gt;</strong> to send a message.', 'warning');
-                        return;
-                    }
-                    // If it's 'chat', route to sendChatMessage
-                    if (main === 'chat') {
-                        sendChatMessage(parts.slice(1).join(' '));
+                // ✅ BARE TEXT CHAT: If in a room and not a reserved command
+                if (currentRoomId && !raw.trim().startsWith('/') && !raw.trim().startsWith('.')) {
+                    const firstWord = raw.trim().split(/\s+/)[0].toLowerCase();
+                    const reserved = ['room', 'nick', 'help', 'clear', 'theme', 'cache', 'alias', 'about', 'exit', 'chat'];
+                    if (!reserved.includes(firstWord) && !firstWord.startsWith('alias') && !firstWord.startsWith(
+                            'vault') && !firstWord.startsWith('fs')) {
+                        sendChatMessage(raw.trim());
                         return;
                     }
                 }
 
-                // ─── Normal command execution (only when NOT in a room, or allowed commands) ───
+                // Allow pending room chat to be queued
+                if (pendingRoomId) {
+                    add('⏳ Currently joining room: ' + esc(pendingRoomId) + '. Please wait...', 'info');
+                    return;
+                }
+
                 if (awaitingConfirm) {
                     const lower = raw.trim().toLowerCase();
                     if (lower === 'yes') {
@@ -2788,7 +2844,6 @@
                     sessionCommands++;
 
                     switch (main) {
-                        // ─── Room commands ──────────────────────────────
                         case 'room':
                             if (args[0] === 'id') {
                                 if (!currentRoomId) {
@@ -2796,8 +2851,8 @@
                                     break;
                                 }
                                 copyToClipboard(currentRoomId).then(() => {
-                                    add('📋 Room ID copied to clipboard: <span class="highlight">' + esc(currentRoomId) +
-                                        '</span>', 'ok');
+                                    add('📋 Room ID copied to clipboard: <span class="highlight">' + esc(
+                                        currentRoomId) + '</span>', 'ok');
                                     showToast('Room ID copied!', 'success');
                                 }).catch(() => {
                                     add('Failed to copy. Please copy manually: ' + esc(currentRoomId), 'err');
@@ -2829,7 +2884,7 @@
                                 if (users.length === 0) { add('No other users online.', 'info'); } else {
                                     add('<strong>Online users:</strong>', 'highlight');
                                     users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}`),
-                                    'ok');
+                                        'ok');
                                 }
                             } else if (args[0] === 'invite') {
                                 getRoomInvite();
@@ -2842,7 +2897,6 @@
                             }
                             break;
 
-                        // ─── Chat ──────────────────────────────────────
                         case 'chat':
                             if (!currentRoomId) {
                                 add('Not in a room. Join a room first.', 'err');
@@ -2851,7 +2905,6 @@
                             sendChatMessage(args.join(' '));
                             break;
 
-                        // ─── All other commands ──────────────────────
                         case 'help':
                             add('<strong>=== All Commands (click to load) ===</strong>', 'highlight');
                             const cmds = [
@@ -2901,8 +2954,8 @@
                                 ['ABOUT', 'about']
                             ];
                             cmds.forEach(function(item) {
-                                add('<span class="clickable-cmd" data-cmd="' + esc(item[1]) + '">' + esc(item[0]) +
-                                    '</span>', 'info');
+                                add('<span class="clickable-cmd" data-cmd="' + esc(item[1]) + '">' + esc(item[
+                                    0]) + '</span>', 'info');
                             });
                             break;
                         case 'weather':
@@ -3020,8 +3073,8 @@
                             break;
                         case 'theme':
                             if (args[0] && themes[args[0]]) { applyTheme(args[0]);
-                                add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(themes)
-                                .join(', '), 'info');
+                                add('Theme set to ' + args[0] + '.', 'ok'); } else add('Available: ' + Object.keys(
+                                    themes).join(', '), 'info');
                             break;
                         case 'cache':
                             if (args[0] === 'clear') { cacheClear();
@@ -3049,7 +3102,6 @@
                     add = originalAdd;
                 }
 
-                // Only broadcast command output to room if NOT a chat message and NOT a room command
                 if (currentRoomId && capturedHTML && main !== 'chat' && main !== 'room' && main !== 'help' && main !==
                     'clear') {
                     sendMessageToRoom(raw, capturedHTML);
@@ -3190,6 +3242,16 @@
             fontSizeSlider.value = savedFont;
             document.documentElement.style.fontSize = savedFont + 'px';
             document.getElementById('fontSizeValue').textContent = savedFont + 'px';
+
+            // Auto-join from URL hash
+            const hash = window.location.hash;
+            if (hash.startsWith('#join=')) {
+                const roomId = hash.replace('#join=', '');
+                setTimeout(() => {
+                    input.value = `room join ${roomId}`;
+                    execute(input.value);
+                }, 1000);
+            }
 
             connectWebSocket();
 
