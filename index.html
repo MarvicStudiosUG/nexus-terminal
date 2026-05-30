@@ -920,7 +920,6 @@
             margin-left: 8px;
         }
 
-        /* Toast notification */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -1625,22 +1624,41 @@
             // ─── Handle Server Messages ───────────────────────────────
             function handleServerMessage(msg) {
                 switch (msg.type) {
+
                     case 'room_list': {
                         window._roomList = msg.data;
                         break;
                     }
 
+                    // ✅ FIX: When a room is created, automatically join it
                     case 'room_created': {
-                        addSystemMsg('New room created: ' + (msg.data.name || 'Unnamed') + ' (' + msg.data.id + ')');
+                        const data = msg.data;
+                        addSystemMsg('New room created: ' + (data.name || 'Unnamed') + ' (' + data.id + ')');
+                        // Auto-join the created room
+                        currentRoomId = data.id;
+                        // Request room info to get meta and members
+                        ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
+                        add('✅ You are now in the created room: ' + esc(data.id), 'ok');
+                        showToast('Room created and joined!', 'success');
                         break;
                     }
 
+                    // ✅ FIX: Handle join for the current user
                     case 'room_joined': {
-                        if (currentRoomId && msg.data.id === currentRoomId) {
-                            if (msg.data.userId !== myUserId) {
-                                addSystemMsg('User ' + (msg.data.alias || msg.data.userId) + ' joined the room.');
-                                roomUsers[msg.data.userId] = { alias: msg.data.alias || msg.data.userId,
-                                    lastSeen: Date.now(), role: msg.data.role || 'member' };
+                        const data = msg.data;
+                        // If this is the current user joining
+                        if (data.userId === myUserId) {
+                            currentRoomId = data.id;
+                            // Request room info to get meta and members
+                            ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
+                            add('✅ Successfully joined room: ' + esc(data.id), 'ok');
+                            showToast('Successfully joined room!', 'success');
+                        } else if (currentRoomId && data.id === currentRoomId) {
+                            // Another user joined the current room
+                            if (!roomUsers[data.userId]) {
+                                roomUsers[data.userId] = { alias: data.alias || data.userId, lastSeen: Date.now(),
+                                    role: data.role || 'member' };
+                                addSystemMsg('User ' + (data.alias || data.userId) + ' joined the room.');
                                 updateRoomUsersUI();
                                 updateMemberCount();
                             }
@@ -1648,31 +1666,9 @@
                         break;
                     }
 
-                    case 'room_left': {
-                        if (currentRoomId && msg.data.id === currentRoomId) {
-                            if (roomUsers[msg.data.userId]) {
-                                const alias = roomUsers[msg.data.userId].alias;
-                                delete roomUsers[msg.data.userId];
-                                addSystemMsg('User ' + alias + ' left the room.');
-                                updateRoomUsersUI();
-                                updateMemberCount();
-                            }
-                        }
-                        break;
-                    }
-
-                    case 'room_deleted': {
-                        if (currentRoomId && msg.data.id === currentRoomId) {
-                            addSystemMsg('Room has been deleted by the creator.');
-                            leaveRoom();
-                        }
-                        break;
-                    }
-
-                    // ✅ FIX: Handle join success
+                    // ✅ FIX: Handle join_success (alternative message from server)
                     case 'join_success': {
                         const data = msg.data;
-                        // Set the room as joined
                         currentRoomId = data.roomId;
                         // Request room info to get meta and members
                         ws.send(JSON.stringify({ type: 'room_info', data: { roomId: currentRoomId } }));
@@ -1695,8 +1691,35 @@
                             updateRoomStatusDisplay();
                             updateRoomUsersUI();
                             updateMemberCount();
-                            // Notify that the user has joined
-                            add(`[SYS] You are now in room: ${esc(meta.name || id)}`, 'system-msg');
+                            // Notify that the user is in the room
+                            const displayName = meta?.name || id;
+                            add(`[SYS] You are now in room: ${esc(displayName)} (${esc(id)})`, 'system-msg');
+                        }
+                        break;
+                    }
+
+                    case 'room_left': {
+                        const data = msg.data;
+                        if (currentRoomId && data.id === currentRoomId) {
+                            if (data.userId === myUserId) {
+                                // This is me leaving (handled separately)
+                                return;
+                            }
+                            if (roomUsers[data.userId]) {
+                                const alias = roomUsers[data.userId].alias;
+                                delete roomUsers[data.userId];
+                                addSystemMsg('User ' + alias + ' left the room.');
+                                updateRoomUsersUI();
+                                updateMemberCount();
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'room_deleted': {
+                        if (currentRoomId && msg.data.id === currentRoomId) {
+                            addSystemMsg('Room has been deleted by the creator.');
+                            leaveRoom();
                         }
                         break;
                     }
@@ -1840,6 +1863,8 @@
                     return;
                 }
                 sendToServer('leave_room', {});
+                // Clear local state immediately
+                const oldId = currentRoomId;
                 currentRoomId = null;
                 roomMeta = null;
                 roomUsers = {};
@@ -1847,7 +1872,7 @@
                 updateRoomHeaderBadge(null);
                 updateRoomStatusDisplay();
                 updateRoomUsersUI();
-                add('Left the room.', 'ok');
+                add('Left the room: ' + esc(oldId), 'ok');
                 showToast('Left the room.', 'info');
             }
 
@@ -2182,7 +2207,6 @@
             }
 
             // ─── VAULT ──────────────────────────────────────────────────
-            // (Keep your existing vault functions – they're unchanged)
             function getVaultData() { return JSON.parse(localStorage.getItem('nexus_vault2') || '[]'); }
 
             function setVaultData(data) { localStorage.setItem('nexus_vault2', JSON.stringify(data)); }
@@ -2236,7 +2260,6 @@
             (function() { const saved = localStorage.getItem('nexus_vault_pass'); if (saved) vaultPassword = saved; })();
 
             // ─── FS ─────────────────────────────────────────────────────
-            // (Keep your existing FS functions)
             function fsList() { const files = JSON.parse(localStorage.getItem('nexus_fs') || '{}'); const names = Object.keys(
                     files); if (!names.length) { add('FS empty.', 'info'); } else { names.forEach(function(n) { add(esc(
                         n) + ' (' + files[n].length + ' bytes)', 'ok'); }); } }
@@ -2267,7 +2290,6 @@
                     results.forEach(function(n) { add(esc(n), 'ok'); }); } }
 
             // ─── ALIAS ──────────────────────────────────────────────────
-            // (Keep your existing alias functions)
             function addAlias(alias, command) { if (!alias || !command) { add('Usage: alias <name> <command>', 'err'); return; }
                 alias = alias.trim();
                 command = command.trim(); if (alias.includes(' ') || alias.includes('=')) { add(
@@ -2301,6 +2323,303 @@
 
             // ─── API FUNCTIONS ────────────────────────────────────────────
             // (All your weather, joke, crypto, news, ip, dns, etc. functions remain exactly the same – copy them from your original file)
+            // ─── API FUNCTIONS ────────────────────────────────────────────
+
+            async function weather(city) {
+                const id = loader('Fetching weather for ' + esc(city) + '...');
+                try {
+                    const cached = cacheGet('weather_' + city);
+                    if (cached) { unloader(id);
+                        add(cached, 'ok'); return; }
+                    const r = await fetch('https://wttr.in/' + encodeURIComponent(city) + '?format=%C+%t+%w+%h');
+                    if (!r.ok) throw new Error('Weather fetch failed');
+                    const data = await r.text();
+                    cacheSet('weather_' + city, data, 600000);
+                    unloader(id);
+                    add('<span class="highlight">' + esc(city) + ':</span> ' + esc(data), 'ok');
+                } catch (e) { unloader(id);
+                    add('Weather error: ' + esc(e.message), 'err'); }
+            }
+
+            async function joke(count) {
+                count = Math.min(Math.max(1, count || 1), 10);
+                const id = loader('Fetching ' + count + ' joke(s)...');
+                try {
+                    const results = [];
+                    for (let i = 0; i < count; i++) {
+                        const r = await fetch('https://icanhazdadjoke.com/', { headers: { 'Accept': 'application/json' } });
+                        if (!r.ok) throw new Error('Joke fetch failed');
+                        const data = await r.json();
+                        results.push(data.joke);
+                    }
+                    unloader(id);
+                    results.forEach(function(j) { add('😂 ' + esc(j), 'ok'); });
+                } catch (e) { unloader(id);
+                    add('Joke error: ' + esc(e.message), 'err'); }
+            }
+
+            async function crypto(coins) {
+                const id = loader('Fetching crypto prices for ' + esc(coins) + '...');
+                try {
+                    const list = coins.split(',').map(c => c.trim().toLowerCase()).join(',');
+                    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + encodeURIComponent(list) +
+                        '&vs_currencies=usd,eur,gbp');
+                    if (!r.ok) throw new Error('Crypto fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    Object.keys(data).forEach(function(coin) {
+                        const p = data[coin];
+                        add(esc(coin.toUpperCase()) + ' — $' + (p.usd || '?') + ' | €' + (p.eur || '?') + ' | £' + (p
+                            .gbp || '?'), 'ok');
+                    });
+                } catch (e) { unloader(id);
+                    add('Crypto error: ' + esc(e.message), 'err'); }
+            }
+
+            async function news() {
+                const id = loader('Fetching Hacker News...');
+                try {
+                    const r = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+                    if (!r.ok) throw new Error('News fetch failed');
+                    const ids = await r.json();
+                    const top = ids.slice(0, 10);
+                    const stories = [];
+                    for (const id of top) {
+                        const r2 = await fetch('https://hacker-news.firebaseio.com/v0/item/' + id + '.json');
+                        const data = await r2.json();
+                        stories.push(data);
+                    }
+                    unloader(id);
+                    add('<strong>Top 10 Hacker News</strong>', 'highlight');
+                    stories.forEach(function(s, i) {
+                        add('#' + (i + 1) + ' <a href="' + esc(s.url || '') + '" target="_blank">' + esc(s.title) +
+                            '</a> <span class="info">(' + (s.score || 0) + ' pts)</span>', 'ok');
+                    });
+                } catch (e) { unloader(id);
+                    add('News error: ' + esc(e.message), 'err'); }
+            }
+
+            async function ipInfo() {
+                const id = loader('Fetching IP info...');
+                try {
+                    const r = await fetch('https://ipapi.co/json/');
+                    if (!r.ok) throw new Error('IP fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    add('<div class="block"><strong>IP:</strong> ' + esc(data.ip) + '<br><strong>Location:</strong> ' + esc(
+                        data.city || '') + ', ' + esc(data.region || '') + ', ' + esc(data.country_name || '') +
+                        '<br><strong>ISP:</strong> ' + esc(data.org || '') + '</div>', 'ok');
+                } catch (e) { unloader(id);
+                    add('IP error: ' + esc(e.message), 'err'); }
+            }
+
+            async function dnsLookup(domain) {
+                const id = loader('Looking up DNS for ' + esc(domain) + '...');
+                try {
+                    const r = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) + '&type=A');
+                    if (!r.ok) throw new Error('DNS fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    if (data.Answer && data.Answer.length) {
+                        add('<strong>DNS records for ' + esc(domain) + ':</strong>', 'highlight');
+                        data.Answer.forEach(function(rec) {
+                            add('  ' + esc(rec.type) + ' → ' + esc(rec.data), 'ok');
+                        });
+                    } else {
+                        add('No DNS records found for ' + esc(domain), 'info');
+                    }
+                } catch (e) { unloader(id);
+                    add('DNS error: ' + esc(e.message), 'err'); }
+            }
+
+            async function currency(from, to, amount) {
+                if (!from || !to) { add('Usage: currency <from> <to> [amount]', 'err'); return; }
+                const id = loader('Converting ' + amount + ' ' + from.toUpperCase() + ' to ' + to.toUpperCase() + '...');
+                try {
+                    const r = await fetch('https://api.exchangerate-api.com/v4/latest/' + from.toUpperCase());
+                    if (!r.ok) throw new Error('Currency fetch failed');
+                    const data = await r.json();
+                    const rate = data.rates[to.toUpperCase()];
+                    if (!rate) throw new Error('Currency not found');
+                    const result = amount * rate;
+                    unloader(id);
+                    add(amount + ' ' + from.toUpperCase() + ' = ' + result.toFixed(4) + ' ' + to.toUpperCase(), 'ok');
+                } catch (e) { unloader(id);
+                    add('Currency error: ' + esc(e.message), 'err'); }
+            }
+
+            async function github(user) {
+                const id = loader('Fetching GitHub data for ' + esc(user) + '...');
+                try {
+                    const r = await fetch('https://api.github.com/users/' + encodeURIComponent(user));
+                    if (!r.ok) throw new Error('GitHub fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    add('<div class="block"><strong>' + esc(data.login) + '</strong> (' + esc(data.name || '') +
+                        ')<br>📝 ' + esc(data.bio || 'No bio') + '<br>📦 Repos: ' + (data.public_repos || 0) +
+                        ' | 👥 Followers: ' + (data.followers || 0) + ' | Following: ' + (data.following || 0) +
+                        '<br>🔗 <a href="' + esc(data.html_url) + '" target="_blank">' + esc(data.html_url) +
+                        '</a></div>', 'ok');
+                } catch (e) { unloader(id);
+                    add('GitHub error: ' + esc(e.message), 'err'); }
+            }
+
+            async function spacex() {
+                const id = loader('Fetching latest SpaceX launch...');
+                try {
+                    const r = await fetch('https://api.spacexdata.com/v5/launches/latest');
+                    if (!r.ok) throw new Error('SpaceX fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    add('<div class="block"><strong>' + esc(data.name) + '</strong><br>🚀 Rocket: ' + esc(data.rocket ||
+                        'Unknown') + '<br>📅 Launch: ' + esc(new Date(data.date_utc).toLocaleString()) +
+                        '<br>✅ Success: ' + (data.success ? 'Yes' : 'No') + '<br>🌍 Details: ' + esc(data.details ||
+                        'No details available') + '</div>', 'ok');
+                } catch (e) { unloader(id);
+                    add('SpaceX error: ' + esc(e.message), 'err'); }
+            }
+
+            async function gameDeals() {
+                const id = loader('Fetching game deals under $15...');
+                try {
+                    const r = await fetch('https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15');
+                    if (!r.ok) throw new Error('Game deals fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    add('<strong>Game Deals under $15</strong>', 'highlight');
+                    data.slice(0, 10).forEach(function(deal) {
+                        add('🎮 ' + esc(deal.title) + ' — $' + deal.salePrice + ' (was $' + deal.normalPrice +
+                            ') <span class="info">' + deal.dealID + '</span>', 'ok');
+                    });
+                } catch (e) { unloader(id);
+                    add('Game deals error: ' + esc(e.message), 'err'); }
+            }
+
+            function worldClock() {
+                const cities = ['New York', 'London', 'Tokyo', 'Sydney', 'Paris', 'Dubai', 'Singapore', 'Los Angeles'];
+                const now = new Date();
+                add('<strong>World Clock</strong>', 'highlight');
+                cities.forEach(function(city) {
+                    const time = now.toLocaleString('en-US', { timeZone: city.replace(' ', '_'), hour12: true,
+                        hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    add('🕐 ' + esc(city) + ': ' + esc(time), 'ok');
+                });
+            }
+
+            function genPass(length) {
+                length = Math.min(Math.max(4, length || 12), 64);
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
+                let pass = '';
+                for (let i = 0; i < length; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+                add('🔑 <span class="highlight">' + esc(pass) + '</span> (' + length + ' chars)', 'ok');
+            }
+
+            function reverseText(text) {
+                add('🔀 ' + esc(text.split('').reverse().join('')), 'ok');
+            }
+
+            function upperText(text) {
+                add('⬆ ' + esc(text.toUpperCase()), 'ok');
+            }
+
+            function lowerText(text) {
+                add('⬇ ' + esc(text.toLowerCase()), 'ok');
+            }
+
+            function lenText(text) {
+                add('📏 Length: ' + text.length + ' characters', 'ok');
+            }
+
+            function echoText(text) {
+                add('🔊 ' + esc(text), 'ok');
+            }
+
+            async function wikiSearch(term) {
+                const id = loader('Searching Wikipedia for "' + esc(term) + '"...');
+                try {
+                    const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(term));
+                    if (!r.ok) throw new Error('Wikipedia fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    if (data.extract) {
+                        add('<div class="block"><strong>' + esc(data.title) + '</strong><br>' + esc(data.extract) +
+                            '<br><a href="' + esc(data.content_urls?.desktop?.page || '') +
+                            '" target="_blank">Read more</a></div>', 'ok');
+                    } else {
+                        add('No Wikipedia entry found for "' + esc(term) + '".', 'info');
+                    }
+                } catch (e) { unloader(id);
+                    add('Wikipedia error: ' + esc(e.message), 'err'); }
+            }
+
+            async function defineWord(word) {
+                const id = loader('Looking up "' + esc(word) + '"...');
+                try {
+                    const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
+                    if (!r.ok) throw new Error('Dictionary fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    const entry = data[0];
+                    if (entry && entry.meanings) {
+                        add('<strong>' + esc(entry.word) + '</strong>', 'highlight');
+                        entry.meanings.forEach(function(meaning) {
+                            add('  ' + esc(meaning.partOfSpeech) + ': ' + esc(meaning.definitions[0].definition),
+                                'ok');
+                            if (meaning.definitions[0].example) {
+                                add('    📝 ' + esc(meaning.definitions[0].example), 'info');
+                            }
+                        });
+                    } else {
+                        add('No definition found for "' + esc(word) + '".', 'info');
+                    }
+                } catch (e) { unloader(id);
+                    add('Dictionary error: ' + esc(e.message), 'err'); }
+            }
+
+            function qrCode(text) {
+                if (!text) { add('Usage: qr <text>', 'err'); return; }
+                add('📱 QR Code for "' + esc(text) + '":', 'info');
+                add('<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(text) +
+                    '" alt="QR Code" />', 'ok');
+            }
+
+            async function reddit(subreddit, limit) {
+                limit = Math.min(Math.max(1, limit || 5), 10);
+                const id = loader('Fetching top posts from r/' + esc(subreddit) + '...');
+                try {
+                    const r = await fetch('https://www.reddit.com/r/' + encodeURIComponent(subreddit) +
+                        '/top.json?limit=' + limit);
+                    if (!r.ok) throw new Error('Reddit fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    add('<strong>Top posts from r/' + esc(subreddit) + '</strong>', 'highlight');
+                    data.data.children.forEach(function(child, i) {
+                        const post = child.data;
+                        add('#' + (i + 1) + ' ' + esc(post.title) + ' <span class="info">(' + post.score +
+                            ' pts) | <a href="https://reddit.com' + esc(post.permalink) +
+                            '" target="_blank">link</a></span>', 'ok');
+                    });
+                } catch (e) { unloader(id);
+                    add('Reddit error: ' + esc(e.message), 'err'); }
+            }
+
+            async function translate(text, target) {
+                if (!text || !target) { add('Usage: translate <text> <target>', 'err'); return; }
+                const id = loader('Translating to ' + target + '...');
+                try {
+                    const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) +
+                        '&langpair=en|' + encodeURIComponent(target));
+                    if (!r.ok) throw new Error('Translation fetch failed');
+                    const data = await r.json();
+                    unloader(id);
+                    if (data.responseData && data.responseData.translatedText) {
+                        add('🌍 ' + esc(data.responseData.translatedText), 'ok');
+                    } else {
+                        add('Translation failed. Check target language code.', 'err');
+                    }
+                } catch (e) { unloader(id);
+                    add('Translation error: ' + esc(e.message), 'err'); }
+            }
 
             // ─── SETTINGS PANEL ────────────────────────────────────────
             function openSettings() { settingsPanel.classList.add('active');
@@ -2723,6 +3042,9 @@
                             outputLines = [];
                             add('Terminal cleared.', 'info');
                             break;
+                        case 'chat':
+                            sendChatMessage(args.join(' '));
+                            break;
                         case 'about':
                             add(
                                 '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Professional command hub with real-time APIs, vault, tools, and multiplayer collaboration with password protection and chat.<br>Marvic Studios UG</div>',
@@ -2898,4 +3220,4 @@
         })();
     </script>
 </body>
-    </html>
+                        </html>
