@@ -1580,6 +1580,7 @@
 
             let presenceInterval = null;
             let cleanupInterval = null;
+            let isDeletingRoom = false;
 
             async function sha256(text) {
                 if (crypto && crypto.subtle) {
@@ -1668,6 +1669,15 @@
                 roomMeta = null;
                 currentRoomId = null;
                 roomPassword = null;
+                if (presenceInterval) {
+                    clearInterval(presenceInterval);
+                    presenceInterval = null;
+                }
+                if (cleanupInterval) {
+                    clearInterval(cleanupInterval);
+                    cleanupInterval = null;
+                }
+                isDeletingRoom = false;
             }
 
             async function isRoomExpired(meta) {
@@ -1751,6 +1761,7 @@
                 }
             }
 
+            // ─── JOIN ROOM WITH RETRY LOGIC ──────────────────────────────
             async function joinRoom(id, password) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
@@ -1770,30 +1781,53 @@
                 }
 
                 id = id.trim();
-                try {
-                    const metaRef = gun.get('nexus_rooms').get(id).get('meta');
-                    const meta = await new Promise((resolve) => {
-                        let resolved = false;
-                        metaRef.once((data) => {
-                            if (!resolved) {
-                                resolved = true;
-                                resolve(data);
-                            }
+                let meta = null;
+                const maxRetries = 12;
+                let attempts = 0;
+
+                // ─── RETRY LOOP ──────────────────────────────────────────
+                while (attempts < maxRetries) {
+                    try {
+                        const metaRef = gun.get('nexus_rooms').get(id).get('meta');
+                        meta = await new Promise((resolve) => {
+                            let resolved = false;
+                            metaRef.once((data) => {
+                                if (!resolved) {
+                                    resolved = true;
+                                    resolve(data);
+                                }
+                            });
+                            setTimeout(() => {
+                                if (!resolved) {
+                                    resolved = true;
+                                    resolve(null);
+                                }
+                            }, 3000);
                         });
-                        setTimeout(() => {
-                            if (!resolved) {
-                                resolved = true;
-                                resolve(null);
+
+                        if (meta && meta.created) {
+                            break;
+                        } else {
+                            attempts++;
+                            if (attempts >= maxRetries) {
+                                throw new Error('Room not found or meta missing (timed out after ' + maxRetries +
+                                    ' attempts).');
                             }
-                        }, 5000);
-                    });
-
-                    if (!meta || !meta.created) {
-                        add('Room not found or meta missing.', 'err');
-                        showToast('Room not found.', 'error');
-                        return;
+                            await new Promise(r => setTimeout(r, 600));
+                        }
+                    } catch (err) {
+                        attempts++;
+                        if (attempts >= maxRetries) {
+                            add('Error joining room: ' + esc(err.message), 'err');
+                            showToast('Error joining room: ' + err.message, 'error');
+                            return;
+                        }
+                        await new Promise(r => setTimeout(r, 600));
                     }
+                }
+                // ─── END RETRY LOOP ──────────────────────────────────────
 
+                try {
                     if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
                         add('This room has expired and is no longer available.', 'err');
                         showToast('This room has expired.', 'error');
@@ -2044,44 +2078,77 @@
                     showToast('Only the room creator can delete this room.', 'error');
                     return;
                 }
+                if (isDeletingRoom) {
+                    add('Room deletion already in progress.', 'warning');
+                    return;
+                }
 
-                const line = add('<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>',
-                'warning');
-                const confirmHandler = async function(e) {
-                    const cmd = e.target.value.trim().toLowerCase();
+                isDeletingRoom = true;
+                const confirmMsg = add(
+                    '<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
+
+                const confirmHandler = function(e) {
+                    if (e.key !== 'Enter') return;
+                    const cmd = input.value.trim().toLowerCase();
                     if (cmd === 'yes') {
-                        try {
-                            if (currentRoomRef) {
-                                try {
-                                    currentRoomRef.off();
-                                    currentRoomRef.put(null);
-                                } catch (e) { /* ignore */ }
-                            }
-                            createdRooms = createdRooms.filter(id => id !== currentRoomId);
-                            localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
-                            add('Room deleted.', 'ok');
-                            showToast('Room deleted.', 'success');
-
-                            if (cleanupInterval) {
-                                clearInterval(cleanupInterval);
-                                cleanupInterval = null;
-                            }
-                            cleanupRoomListeners();
-                            updateRoomHeaderBadge(null);
-                            updateRoomUsersUI();
-                            updateRoomStatusDisplay();
-                        } catch (e) {
-                            add('Error deleting room: ' + esc(e.message), 'err');
-                            showToast('Error deleting room: ' + e.message, 'error');
-                        }
-                        input.removeEventListener('keypress', confirmHandler);
+                        input.value = '';
+                        confirmHandler.cleanup();
+                        performDelete();
                     } else if (cmd) {
+                        input.value = '';
                         add('Room deletion cancelled.', 'info');
                         showToast('Room deletion cancelled.', 'info');
-                        input.removeEventListener('keypress', confirmHandler);
+                        confirmHandler.cleanup();
                     }
                 };
+
+                confirmHandler.cleanup = function() {
+                    if (confirmMsg && confirmMsg.parentNode) {
+                        try { confirmMsg.parentNode.removeChild(confirmMsg); } catch (e) { /* ignore */ }
+                    }
+                    input.removeEventListener('keypress', confirmHandler);
+                    isDeletingRoom = false;
+                };
+
                 input.addEventListener('keypress', confirmHandler);
+
+                // Auto-cleanup after 30 seconds if no response
+                setTimeout(() => {
+                    if (isDeletingRoom) {
+                        confirmHandler.cleanup();
+                        add('Room deletion timed out.', 'info');
+                        showToast('Room deletion timed out.', 'info');
+                    }
+                }, 30000);
+            }
+
+            async function performDelete() {
+                try {
+                    if (currentRoomRef) {
+                        try {
+                            currentRoomRef.off();
+                            currentRoomRef.put(null);
+                        } catch (e) { /* ignore */ }
+                    }
+                    createdRooms = createdRooms.filter(id => id !== currentRoomId);
+                    localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
+                    add('Room deleted.', 'ok');
+                    showToast('Room deleted.', 'success');
+
+                    if (cleanupInterval) {
+                        clearInterval(cleanupInterval);
+                        cleanupInterval = null;
+                    }
+                    cleanupRoomListeners();
+                    updateRoomHeaderBadge(null);
+                    updateRoomUsersUI();
+                    updateRoomStatusDisplay();
+                } catch (e) {
+                    add('Error deleting room: ' + esc(e.message), 'err');
+                    showToast('Error deleting room: ' + e.message, 'error');
+                } finally {
+                    isDeletingRoom = false;
+                }
             }
 
             function sendChatMessage(text) {
