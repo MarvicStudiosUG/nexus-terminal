@@ -849,7 +849,6 @@
             border-radius: var(--radius-xs);
         }
 
-        /* Autocomplete dropdown */
         .autocomplete-container {
             position: relative;
             flex: 1;
@@ -920,6 +919,49 @@
             font-size: 0.65rem;
             color: var(--text-dim);
             margin-left: 8px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-md);
+            padding: 10px 20px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            animation: toastIn 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .toast.info {
+            border-color: var(--accent);
+        }
+        .toast.success {
+            border-color: var(--success);
+        }
+        .toast.error {
+            border-color: var(--error);
+        }
+        .toast.warning {
+            border-color: var(--warning);
+        }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.94);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
         }
 
         @media (max-width: 600px) {
@@ -1205,6 +1247,48 @@
             font-weight: 700;
             letter-spacing: 0.3px;
         }
+
+        .room-header-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 240, 208, 0.06);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-full);
+            padding: 2px 10px 2px 6px;
+            font-size: 0.6rem;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+        .room-header-badge:hover {
+            background: rgba(0, 240, 208, 0.12);
+        }
+        .room-header-badge .room-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            flex-shrink: 0;
+            animation: pulse 2.5s infinite ease-in-out;
+        }
+        .room-header-badge .room-dot.locked {
+            background: var(--warning);
+        }
+        .room-header-badge .room-label {
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .room-header-badge .room-name-display {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80px;
+        }
     </style>
 </head>
 <body>
@@ -1221,7 +1305,7 @@
             </div>
             <div class="title text-glow">NEXUS TERMINAL PRO v7.0</div>
             <div class="status">
-                <span id="roomBadgeContainer"></span>
+                <span id="roomHeaderBadge"></span>
                 <span><span class="led"></span></span>
                 <span id="liveClock">--:--:--</span>
                 <button class="settings-btn" id="settingsToggle">SET</button>
@@ -1347,6 +1431,25 @@
             'use strict';
 
             // ============================================================
+            //  TOAST NOTIFICATION SYSTEM
+            // ============================================================
+            function showToast(message, type, duration) {
+                type = type || 'info';
+                duration = duration || 2500;
+                const existing = document.querySelector('.toast');
+                if (existing) existing.remove();
+
+                const toast = document.createElement('div');
+                toast.className = 'toast ' + type;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(function() {
+                    if (toast.parentNode) toast.remove();
+                }, duration);
+            }
+
+            // ============================================================
             //  COMMAND DEFINITIONS FOR AUTOCOMPLETE
             // ============================================================
             const COMMAND_DEFS = [
@@ -1360,11 +1463,6 @@
                 { cmd: 'currency <from> <to> [amount]', desc: 'Convert currency (default amount: 1)' },
                 { cmd: 'github <user>', desc: 'Get GitHub user info and top repositories' },
                 { cmd: 'spacex', desc: 'Get latest SpaceX launch information' },
-                { cmd: 'quote', desc: 'Get a random inspirational quote' },
-                { cmd: 'sports schedule <league>', desc: 'Get upcoming matches for a league' },
-                { cmd: 'sports scores <league>', desc: 'Get recent scores for a league' },
-                { cmd: 'sports table <league>', desc: 'Get league standings table' },
-                { cmd: 'sports team <name>', desc: 'Get information about a sports team' },
                 { cmd: 'games deals', desc: 'Get current game deals under $15' },
                 { cmd: 'time', desc: 'Show current time in major world cities' },
                 { cmd: 'date', desc: 'Show current date and time' },
@@ -1375,16 +1473,10 @@
                 { cmd: 'lower <text>', desc: 'Convert text to lowercase' },
                 { cmd: 'len <text>', desc: 'Get the length of a text string' },
                 { cmd: 'echo <text>', desc: 'Echo text back to the terminal' },
-                { cmd: 'fact', desc: 'Get a random trivia fact' },
                 { cmd: 'wiki <term>', desc: 'Search Wikipedia for a term' },
                 { cmd: 'define <word>', desc: 'Get dictionary definition of a word' },
                 { cmd: 'qr <text>', desc: 'Generate a QR code for a text' },
-                { cmd: 'randomuser', desc: 'Get a random user profile' },
-                { cmd: 'bored', desc: 'Get a random activity suggestion' },
-                { cmd: 'catfact', desc: 'Get a random cat fact' },
-                { cmd: 'dog', desc: 'Get a random dog image' },
                 { cmd: 'reddit <subreddit> [limit]', desc: 'Get top posts from a subreddit' },
-                { cmd: 'stocks <symbol>', desc: 'Get stock price and change' },
                 { cmd: 'translate <text> <target>', desc: 'Translate text to a target language' },
                 { cmd: 'fs ls', desc: 'List files in the virtual filesystem' },
                 { cmd: 'fs create <name> <content>', desc: 'Create a file in the virtual filesystem' },
@@ -1418,38 +1510,6 @@
             ];
 
             // ============================================================
-            //  SHARED SPORTS LEAGUE MAP
-            // ============================================================
-            const SPORTS_LEAGUE_MAP = {
-                "english premier league": "4328",
-                "premier league": "4328",
-                "epl": "4328",
-                "la liga": "4335",
-                "bundesliga": "4331",
-                "serie a": "4332",
-                "ligue 1": "4334",
-                "uefa champions league": "4480"
-            };
-
-            function getLeagueId(name) {
-                return SPORTS_LEAGUE_MAP[name.toLowerCase()] || null;
-            }
-
-            async function resolveLeagueId(league) {
-                let leagueId = getLeagueId(league);
-                if (!leagueId) {
-                    try {
-                        const res = await fetch(
-                            'https://www.thesportsdb.com/api/v1/json/1/search_all_leagues.php?l=' +
-                            encodeURIComponent(league));
-                        const data = await res.json();
-                        if (data.leagues && data.leagues.length) leagueId = data.leagues[0].idLeague;
-                    } catch { /* ignore */ }
-                }
-                return leagueId;
-            }
-
-            // ============================================================
             //  STATE
             // ============================================================
             const output = document.getElementById('outputContainer');
@@ -1466,7 +1526,7 @@
             const fontSizeSlider = document.getElementById('fontSizeSlider');
             const settingsClose = document.getElementById('settingsClose');
             const settingsToggle = document.getElementById('settingsToggle');
-            const roomBadgeContainer = document.getElementById('roomBadgeContainer');
+            const roomHeaderBadge = document.getElementById('roomHeaderBadge');
             const roomNameInput = document.getElementById('roomNameInput');
             const roomDescInput = document.getElementById('roomDescInput');
             const roomCreatePassInput = document.getElementById('roomCreatePassInput');
@@ -1493,7 +1553,6 @@
             let outputLines = [];
             const MAX_OUTPUT_LINES = 400;
 
-            // Created rooms list (persisted)
             let createdRooms = JSON.parse(localStorage.getItem('nexus_created_rooms') || '[]');
 
             // ============================================================
@@ -1619,11 +1678,13 @@
             async function createRoom(name, description, password, temporary, ttl) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    showToast('Gun not initialized. Please reload the page.', 'error');
                     return;
                 }
                 if (currentRoomId) {
                     add('Already in a room. Leave first using <span class="clickable-cmd" data-cmd="room leave">room leave</span>.',
                         'err');
+                    showToast('Already in a room. Leave first.', 'error');
                     return;
                 }
 
@@ -1667,6 +1728,7 @@
                     const joinSuccess = await joinRoomInternal(roomId, meta);
                     if (!joinSuccess) {
                         add('Failed to join the newly created room.', 'err');
+                        showToast('Failed to join the newly created room.', 'error');
                         return;
                     }
 
@@ -1680,25 +1742,30 @@
                     add(
                         `<div class="block"><strong>Room created successfully!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)} | ${tempLabel}${meta.passwordProtected ? ' [Password Protected]' : ''}</div>`,
                         'ok');
-                    updateRoomBadge(meta);
+                    updateRoomHeaderBadge(meta);
                     updateRoomStatusDisplay();
+                    showToast('Room created successfully: ' + meta.name, 'success');
                 } catch (e) {
                     add('Error creating room: ' + esc(e.message), 'err');
+                    showToast('Error creating room: ' + e.message, 'error');
                 }
             }
 
             async function joinRoom(id, password) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
+                    showToast('Gun not initialized. Please reload the page.', 'error');
                     return;
                 }
                 if (currentRoomId) {
                     add('Already in a room. Leave first using <span class="clickable-cmd" data-cmd="room leave">room leave</span>.',
                         'err');
+                    showToast('Already in a room. Leave first.', 'error');
                     return;
                 }
                 if (!id) {
                     add('Please enter a room ID.', 'err');
+                    showToast('Please enter a room ID.', 'error');
                     return;
                 }
 
@@ -1723,22 +1790,26 @@
 
                     if (!meta || !meta.created) {
                         add('Room not found or meta missing.', 'err');
+                        showToast('Room not found.', 'error');
                         return;
                     }
 
                     if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
                         add('This room has expired and is no longer available.', 'err');
+                        showToast('This room has expired.', 'error');
                         return;
                     }
 
                     if (meta.passwordProtected) {
                         if (!password) {
                             add('This room requires a password.', 'err');
+                            showToast('This room requires a password.', 'error');
                             return;
                         }
                         const hash = await sha256(password);
                         if (hash !== meta.passwordHash) {
                             add('Incorrect password.', 'err');
+                            showToast('Incorrect password.', 'error');
                             return;
                         }
                         roomPassword = password;
@@ -1756,6 +1827,7 @@
                     const joinSuccess = await joinRoomInternal(id, meta);
                     if (!joinSuccess) {
                         add('Failed to join the room.', 'err');
+                        showToast('Failed to join the room.', 'error');
                         return;
                     }
 
@@ -1763,10 +1835,12 @@
                     add(
                         `<div class="block"><strong>Joined room:</strong> ${esc(meta.name)} (${esc(id)}) | ${tempLabel}${meta.passwordProtected ? ' [Password Protected]' : ''}</div>`,
                         'ok');
-                    updateRoomBadge(meta);
+                    updateRoomHeaderBadge(meta);
                     updateRoomStatusDisplay();
+                    showToast('Joined room: ' + meta.name, 'success');
                 } catch (e) {
                     add('Error joining room: ' + esc(e.message), 'err');
+                    showToast('Error joining room: ' + e.message, 'error');
                 }
             }
 
@@ -1931,6 +2005,7 @@
             function leaveRoom() {
                 if (!currentRoomId || !gun) {
                     add('Not in a room.', 'err');
+                    showToast('Not in a room.', 'error');
                     return;
                 }
                 try {
@@ -1951,19 +2026,22 @@
                 }
 
                 cleanupRoomListeners();
-                updateRoomBadge(null);
+                updateRoomHeaderBadge(null);
                 updateRoomUsersUI();
                 updateRoomStatusDisplay();
                 add('Left the room.', 'ok');
+                showToast('Left the room.', 'info');
             }
 
             async function deleteRoom() {
                 if (!currentRoomId || !gun) {
                     add('Not in a room.', 'err');
+                    showToast('Not in a room.', 'error');
                     return;
                 }
                 if (!roomMeta || roomMeta.creator !== myUserId) {
                     add('Only the room creator can delete this room.', 'err');
+                    showToast('Only the room creator can delete this room.', 'error');
                     return;
                 }
 
@@ -1982,21 +2060,24 @@
                             createdRooms = createdRooms.filter(id => id !== currentRoomId);
                             localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
                             add('Room deleted.', 'ok');
+                            showToast('Room deleted.', 'success');
 
                             if (cleanupInterval) {
                                 clearInterval(cleanupInterval);
                                 cleanupInterval = null;
                             }
                             cleanupRoomListeners();
-                            updateRoomBadge(null);
+                            updateRoomHeaderBadge(null);
                             updateRoomUsersUI();
                             updateRoomStatusDisplay();
                         } catch (e) {
                             add('Error deleting room: ' + esc(e.message), 'err');
+                            showToast('Error deleting room: ' + e.message, 'error');
                         }
                         input.removeEventListener('keypress', confirmHandler);
                     } else if (cmd) {
                         add('Room deletion cancelled.', 'info');
+                        showToast('Room deletion cancelled.', 'info');
                         input.removeEventListener('keypress', confirmHandler);
                     }
                 };
@@ -2060,16 +2141,22 @@
                 output.scrollTop = output.scrollHeight;
             }
 
-            function updateRoomBadge(meta) {
-                if (!currentRoomId) {
-                    roomBadgeContainer.innerHTML = '';
+            function updateRoomHeaderBadge(meta) {
+                if (!currentRoomId || !meta) {
+                    roomHeaderBadge.innerHTML = '';
                     return;
                 }
-                let lockedClass = meta?.passwordProtected ? ' locked' : '';
-                const displayName = meta?.name || currentRoomId;
-                const tempIcon = meta?.temporary ? 'TEMP' : 'PERM';
-                roomBadgeContainer.innerHTML =
-                    `<span class="room-badge${lockedClass}" title="Click to copy Room ID">${tempIcon} ${esc(displayName)}</span>`;
+                const displayName = meta.name || currentRoomId;
+                const isLocked = meta.passwordProtected;
+                const userCount = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
+                const statusClass = isLocked ? 'locked' : '';
+                roomHeaderBadge.innerHTML =
+                    `<div class="room-header-badge" title="Click to copy Room ID">
+                                <span class="room-dot ${statusClass}"></span>
+                                <span class="room-label">${isLocked ? 'LOCKED' : 'OPEN'}</span>
+                                <span class="room-name-display">${esc(displayName)}</span>
+                                <span style="opacity:0.6;font-size:0.55rem;">${userCount} users</span>
+                            </div>`;
             }
 
             function updateRoomStatusDisplay() {
@@ -2868,108 +2955,6 @@
                     add('SpaceX API error.', 'err'); }
             }
 
-            async function quote() {
-                const key = 'quote';
-                const cached = cacheGet(key);
-                if (cached) {
-                    add(
-                        `<div class="block">"${esc(cached.content)}"<br><span style="color:var(--text-dim);">-- ${esc(cached.author)}</span><br>${formatLink('More quotes on Quotable', 'https://quotable.io/')}</div>`,
-                        'ok');
-                    return;
-                }
-                const lid = loader('Fetching quote...');
-                try {
-                    const d = await fetch('https://api.quotable.io/random').then(r => r.json());
-                    cacheSet(key, d, 600000);
-                    unloader(lid);
-                    add(
-                        `<div class="block">"${esc(d.content)}"<br><span style="color:var(--text-dim);">-- ${esc(d.author)}</span><br>${formatLink('More quotes on Quotable', 'https://quotable.io/')}</div>`,
-                        'ok');
-                } catch { unloader(lid);
-                    add('Quote API error.', 'err'); }
-            }
-
-            async function sportsSchedule(league) {
-                const lid = loader('Fetching schedule for ' + league + '...');
-                const leagueId = await resolveLeagueId(league);
-                if (!leagueId) { unloader(lid);
-                    add('League not found (try EPL, La Liga, Bundesliga, Serie A, Ligue 1, UEFA Champions League).',
-                        'err'); return; }
-                try {
-                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/eventsnextleague.php?id=' +
-                        leagueId);
-                    const data = await res.json();
-                    unloader(lid);
-                    if (!data.events || !data.events.length) { add('No upcoming events found.', 'info'); return; }
-                    add('<strong>Upcoming matches:</strong>', 'highlight');
-                    data.events.slice(0, 10).forEach(function(e) {
-                        add(esc(e.strEvent) + ': ' + esc(e.strHomeTeam) + ' vs ' + esc(e.strAwayTeam) + ' (' + e
-                            .dateEvent + ')', 'ok');
-                    });
-                    add('Data from ' + formatLink('The Sports DB', 'https://www.thesportsdb.com/'), 'info');
-                } catch { unloader(lid);
-                    add('Schedule API error.', 'err'); }
-            }
-
-            async function sportsScores(league) {
-                const lid = loader('Fetching scores for ' + league + '...');
-                const leagueId = await resolveLeagueId(league);
-                if (!leagueId) { unloader(lid);
-                    add('League not found.', 'err'); return; }
-                try {
-                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/eventspastleague.php?id=' +
-                        leagueId);
-                    const data = await res.json();
-                    unloader(lid);
-                    if (!data.events || !data.events.length) { add('No recent results found.', 'info'); return; }
-                    add('<strong>Recent results:</strong>', 'highlight');
-                    data.events.slice(0, 10).forEach(function(e) {
-                        const score = (e.intHomeScore != null) ? e.intHomeScore + '-' + e.intAwayScore : '?';
-                        add(esc(e.strHomeTeam) + ' ' + score + ' ' + esc(e.strAwayTeam) + ' (' + e.dateEvent +
-                            ')', 'ok');
-                    });
-                    add('Data from ' + formatLink('The Sports DB', 'https://www.thesportsdb.com/'), 'info');
-                } catch { unloader(lid);
-                    add('Scores API error.', 'err'); }
-            }
-
-            async function sportsTable(league) {
-                const lid = loader('Fetching standings for ' + league + '...');
-                const leagueId = await resolveLeagueId(league);
-                if (!leagueId) { unloader(lid);
-                    add('League not found.', 'err'); return; }
-                try {
-                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/lookuptable.php?id=' + leagueId +
-                        '&s=2024-2025');
-                    const data = await res.json();
-                    unloader(lid);
-                    if (!data.table || !data.table.length) { add('No standings available.', 'info'); return; }
-                    add('<strong>League Table:</strong>', 'highlight');
-                    data.table.slice(0, 10).forEach(function(t) {
-                        add(t.intRank + '. ' + esc(t.strTeam) + ' - P:' + t.intPlayed + ' W:' + t.intWin +
-                            ' D:' + t.intDraw + ' L:' + t.intLoss + ' Pts:' + t.intPoints, 'ok');
-                    });
-                    add('Data from ' + formatLink('The Sports DB', 'https://www.thesportsdb.com/'), 'info');
-                } catch { unloader(lid);
-                    add('Standings API error.', 'err'); }
-            }
-
-            async function sportsTeam(name) {
-                const lid = loader('Fetching team info: ' + name + '...');
-                try {
-                    const res = await fetch('https://www.thesportsdb.com/api/v1/json/1/searchteams.php?t=' +
-                        encodeURIComponent(name));
-                    const data = await res.json();
-                    unloader(lid);
-                    if (!data.teams || !data.teams.length) { add('Team not found.', 'err'); return; }
-                    const t = data.teams[0];
-                    add(
-                        `<div class="block"><strong>${esc(t.strTeam)}</strong> (${esc(t.strLeague || 'Unknown')})<br>Stadium: ${esc(t.strStadium || 'N/A')}<br>${esc((t.strDescriptionEN || '').substring(0, 150))}...<br>${formatLink('View more on The Sports DB', 'https://www.thesportsdb.com/team/'+t.idTeam)}</div>`,
-                        'ok');
-                } catch { unloader(lid);
-                    add('Team API error.', 'err'); }
-            }
-
             async function gameDeals() {
                 const key = 'gamedeals';
                 const cached = cacheGet(key);
@@ -3033,36 +3018,6 @@
                     add('Reddit API error: ' + esc(e.message), 'err'); }
             }
 
-            async function stocks(symbol) {
-                symbol = (symbol || 'AAPL').toUpperCase();
-                const key = 'stocks_' + symbol;
-                const cached = cacheGet(key);
-                if (cached) {
-                    add(
-                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${cached.price} | Change: ${cached.change}%<br>${formatLink('View on Alpha Vantage', 'https://www.alphavantage.co/')}</div>`,
-                        'ok');
-                    return;
-                }
-                const lid = loader('Fetching stock data for ' + symbol + '...');
-                try {
-                    const res = await fetch(
-                        'https://api.alpha-vantage.co/query?function=GLOBAL_QUOTE&symbol=' + encodeURIComponent(
-                            symbol) + '&apikey=demo');
-                    const data = await res.json();
-                    if (!data['Global Quote'] || !data['Global Quote']['05. price']) throw new Error(
-                        'Stock not found or API limit reached');
-                    const q = data['Global Quote'];
-                    const result = { price: parseFloat(q['05. price']), change: parseFloat(q['10. change percent']) };
-                    cacheSet(key, result, 300000);
-                    unloader(lid);
-                    add(
-                        `<div class="block"><strong>${esc(symbol)}</strong><br>Price: $${result.price} | Change: ${result.change}%<br>${formatLink('View on Alpha Vantage', 'https://www.alphavantage.co/')}</div>`,
-                        'ok');
-                } catch (e) { unloader(lid);
-                    add('Stocks API error: ' + esc(e.message) +
-                        ' (use demo symbols like AAPL, MSFT, GOOGL)', 'err'); }
-            }
-
             async function translate(text, target) {
                 target = target || 'es';
                 const key = 'translate_' + text + '_' + target;
@@ -3088,23 +3043,6 @@
                         'ok');
                 } catch (e) { unloader(lid);
                     add('Translation error: ' + esc(e.message), 'err'); }
-            }
-
-            async function randomFact() {
-                const key = 'fact';
-                const cached = cacheGet(key);
-                if (cached) { add(`<div class="block">${esc(cached)}<br>${formatLink('More facts on NumbersAPI', 'https://numbersapi.com/')}</div>`,
-                        'ok'); return; }
-                const lid = loader('Fetching random fact...');
-                try {
-                    const res = await fetch('https://numbersapi.com/random/trivia');
-                    const fact = await res.text();
-                    cacheSet(key, fact, 600000);
-                    unloader(lid);
-                    add(`<div class="block">${esc(fact)}<br>${formatLink('More facts on NumbersAPI', 'https://numbersapi.com/')}</div>`,
-                        'ok');
-                } catch { unloader(lid);
-                    add('Fact API unavailable.', 'err'); }
             }
 
             async function wikiSearch(term) {
@@ -3179,91 +3117,6 @@
                     'ok');
             }
 
-            async function randomUser() {
-                const key = 'randomuser';
-                const cached = cacheGet(key);
-                if (cached) {
-                    add(
-                        `<div class="block"><strong>${esc(cached.name.first)} ${esc(cached.name.last)}</strong><br>Email: ${esc(cached.email)}<br>Location: ${esc(cached.location.city)}, ${esc(cached.location.country)}<br>${formatLink('View more on RandomUser', 'https://randomuser.me/')}</div>`,
-                        'ok');
-                    return;
-                }
-                const lid = loader('Fetching random user...');
-                try {
-                    const res = await fetch('https://randomuser.me/api/');
-                    const data = await res.json();
-                    const u = data.results[0];
-                    cacheSet(key, u, 600000);
-                    unloader(lid);
-                    add(
-                        `<div class="block"><strong>${esc(u.name.first)} ${esc(u.name.last)}</strong><br>Email: ${esc(u.email)}<br>Location: ${esc(u.location.city)}, ${esc(u.location.country)}<br>${formatLink('View more on RandomUser', 'https://randomuser.me/')}</div>`,
-                        'ok');
-                } catch { unloader(lid);
-                    add('Random user API error.', 'err'); }
-            }
-
-            async function boredActivity() {
-                const key = 'bored';
-                const cached = cacheGet(key);
-                if (cached) {
-                    add(
-                        `<div class="block"><strong>Activity:</strong> ${esc(cached.activity)}<br>Type: ${esc(cached.type)} | Participants: ${cached.participants}<br>${formatLink('Find more on BoredAPI', 'https://www.boredapi.com/')}</div>`,
-                        'ok');
-                    return;
-                }
-                const lid = loader('Fetching activity suggestion...');
-                try {
-                    const res = await fetch('https://www.boredapi.com/api/activity');
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const data = await res.json();
-                    cacheSet(key, data, 600000);
-                    unloader(lid);
-                    add(
-                        `<div class="block"><strong>Activity:</strong> ${esc(data.activity)}<br>Type: ${esc(data.type)} | Participants: ${data.participants}<br>${formatLink('Find more on BoredAPI', 'https://www.boredapi.com/')}</div>`,
-                        'ok');
-                } catch (e) { unloader(lid);
-                    add('Activity API error: ' + esc(e.message), 'err'); }
-            }
-
-            async function catFact() {
-                const key = 'catfact';
-                const cached = cacheGet(key);
-                if (cached) { add(`<div class="block">${esc(cached)}<br>${formatLink('More cat facts', 'https://catfact.ninja/')}</div>`,
-                        'ok'); return; }
-                const lid = loader('Fetching cat fact...');
-                try {
-                    const res = await fetch('https://catfact.ninja/fact');
-                    const data = await res.json();
-                    cacheSet(key, data.fact, 600000);
-                    unloader(lid);
-                    add(`<div class="block">${esc(data.fact)}<br>${formatLink('More cat facts', 'https://catfact.ninja/')}</div>`,
-                        'ok');
-                } catch { unloader(lid);
-                    add('Cat fact API error.', 'err'); }
-            }
-
-            async function dogImage() {
-                const key = 'dog';
-                const cached = cacheGet(key);
-                if (cached) {
-                    add(
-                        `<img src="${cached}" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;"><br>${formatLink('More dog images', 'https://dog.ceo/')}`,
-                        'ok');
-                    return;
-                }
-                const lid = loader('Fetching dog image...');
-                try {
-                    const res = await fetch('https://dog.ceo/api/breeds/image/random');
-                    const data = await res.json();
-                    cacheSet(key, data.message, 600000);
-                    unloader(lid);
-                    add(
-                        `<img src="${data.message}" alt="Dog" style="max-width:300px;border:2px solid var(--accent);border-radius:var(--radius-sm);margin-top:6px;"><br>${formatLink('More dog images', 'https://dog.ceo/')}`,
-                        'ok');
-                } catch { unloader(lid);
-                    add('Dog image API error.', 'err'); }
-            }
-
             function worldClock() {
                 const zones = [{ n: 'New York', tz: 'America/New_York' }, { n: 'London', tz: 'Europe/London' }, { n: 'Tokyo',
                         tz: 'Asia/Tokyo' }, { n: 'Dubai', tz: 'Asia/Dubai' }, { n: 'Sydney', tz: 'Australia/Sydney' }];
@@ -3315,7 +3168,6 @@
                         results.push(def);
                     }
                 }
-                // Sort by relevance: exact prefix match first
                 results.sort((a, b) => {
                     const aStarts = a.cmd.toLowerCase().startsWith(lower);
                     const bStarts = b.cmd.toLowerCase().startsWith(lower);
@@ -3415,7 +3267,6 @@
                     if (suggestionsEl.classList.contains('active')) {
                         e.preventDefault();
                         if (activeSuggestionIndex === -1) {
-                            // Select first suggestion
                             activeSuggestionIndex = 0;
                             updateActiveSuggestion();
                         }
@@ -3425,12 +3276,10 @@
                     suggestionsEl.classList.remove('active');
                     activeSuggestionIndex = -1;
                 } else {
-                    // Reset active index on typing
                     activeSuggestionIndex = -1;
                 }
             });
 
-            // Click on suggestion
             suggestionsEl.addEventListener('click', function(e) {
                 const item = e.target.closest('.suggestion');
                 if (item) {
@@ -3486,11 +3335,6 @@
                                 ['CURRENCY <from> <to> [amount]', 'currency'],
                                 ['GITHUB <user>', 'github'],
                                 ['SPACEX', 'spacex'],
-                                ['QUOTE', 'quote'],
-                                ['SPORTS schedule <league>', 'sports schedule'],
-                                ['SPORTS scores <league>', 'sports scores'],
-                                ['SPORTS table <league>', 'sports table'],
-                                ['SPORTS team <name>', 'sports team'],
                                 ['GAMES deals', 'games deals'],
                                 ['TIME', 'time'],
                                 ['DATE', 'date'],
@@ -3501,16 +3345,10 @@
                                 ['LOWER <text>', 'lower'],
                                 ['LEN <text>', 'len'],
                                 ['ECHO <text>', 'echo'],
-                                ['FACT', 'fact'],
                                 ['WIKI <term>', 'wiki'],
                                 ['DEFINE <word>', 'define'],
                                 ['QR <text>', 'qr'],
-                                ['RANDOMUSER', 'randomuser'],
-                                ['BORED', 'bored'],
-                                ['CATFACT', 'catfact'],
-                                ['DOG', 'dog'],
                                 ['REDDIT <subreddit> [limit]', 'reddit'],
-                                ['STOCKS <symbol>', 'stocks'],
                                 ['TRANSLATE <text> <target>', 'translate'],
                                 ['FS ls|create|read|delete|search', 'fs'],
                                 ['VAULT setpass|unlock|add|list|delete|lock', 'vault'],
@@ -3568,16 +3406,6 @@
                         case 'spacex':
                             await spacex();
                             break;
-                        case 'quote':
-                            await quote();
-                            break;
-                        case 'sports':
-                            if (args[0] === 'schedule' && args[1]) await sportsSchedule(args.slice(1).join(' '));
-                            else if (args[0] === 'scores' && args[1]) await sportsScores(args.slice(1).join(' '));
-                            else if (args[0] === 'table' && args[1]) await sportsTable(args.slice(1).join(' '));
-                            else if (args[0] === 'team' && args[1]) await sportsTeam(args.slice(1).join(' '));
-                            else add('Usage: sports <schedule|scores|table|team> <league/team>', 'err');
-                            break;
                         case 'games':
                             if (args[0] === 'deals') await gameDeals();
                             else add('Usage: games deals', 'err');
@@ -3618,9 +3446,6 @@
                             if (!args.length) add('Usage: echo <text>', 'err');
                             else echoText(args.join(' '));
                             break;
-                        case 'fact':
-                            await randomFact();
-                            break;
                         case 'wiki':
                             if (!args[0]) add('Usage: wiki <search term>', 'err');
                             else await wikiSearch(args.join(' '));
@@ -3633,23 +3458,8 @@
                             if (!args[0]) add('Usage: qr <text>', 'err');
                             else qrCode(args.join(' '));
                             break;
-                        case 'randomuser':
-                            await randomUser();
-                            break;
-                        case 'bored':
-                            await boredActivity();
-                            break;
-                        case 'catfact':
-                            await catFact();
-                            break;
-                        case 'dog':
-                            await dogImage();
-                            break;
                         case 'reddit':
                             await reddit(args[0] || 'all', args[1] || 5);
-                            break;
-                        case 'stocks':
-                            await stocks(args[0] || 'AAPL');
                             break;
                         case 'translate':
                             if (args.length < 2) { add('Usage: translate <text> <target>', 'err'); } else { const target =
@@ -3725,8 +3535,8 @@
                                 const users = Object.values(roomUsers).filter(u => u && u.alias);
                                 if (users.length === 0) { add('No other users online.', 'info'); } else {
                                     add('<strong>Online users:</strong>', 'highlight');
-                                    users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}`,
-                                    'ok'));
+                                    users.forEach(u => add(`${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}`),
+                                    'ok');
                                 }
                             } else if (args[0] === 'invite') {
                                 getRoomInvite();
@@ -3847,15 +3657,10 @@
             roomLeaveBtn.addEventListener('click', leaveRoom);
             roomDeleteBtn.addEventListener('click', deleteRoom);
 
-            roomBadgeContainer.addEventListener('click', function() {
+            roomHeaderBadge.addEventListener('click', function() {
                 if (!currentRoomId) return;
                 copyToClipboard(currentRoomId).then(() => {
-                    const tempSpan = document.createElement('span');
-                    tempSpan.className = 'room-badge';
-                    tempSpan.textContent = 'Copied!';
-                    roomBadgeContainer.innerHTML = '';
-                    roomBadgeContainer.appendChild(tempSpan);
-                    setTimeout(() => updateRoomBadge(roomMeta), 1500);
+                    showToast('Room ID copied to clipboard!', 'success');
                 }).catch(() => {
                     add('Failed to copy room ID. Please copy manually: ' + esc(currentRoomId), 'err');
                 });
