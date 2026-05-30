@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Nexus Terminal Pro v7.0 | Marvic Studios UG</title>
-
     <style>
         :root {
             --accent: #00f0d0;
@@ -1423,31 +1422,14 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js">
-    </script>
-
     <script>
         (function() {
             'use strict';
 
             // ============================================================
-            //  TOAST NOTIFICATION SYSTEM
+            //  CONFIG – CHANGE THIS TO YOUR RENDER URL
             // ============================================================
-            function showToast(message, type, duration) {
-                type = type || 'info';
-                duration = duration || 2500;
-                const existing = document.querySelector('.toast');
-                if (existing) existing.remove();
-
-                const toast = document.createElement('div');
-                toast.className = 'toast ' + type;
-                toast.textContent = message;
-                document.body.appendChild(toast);
-
-                setTimeout(function() {
-                    if (toast.parentNode) toast.remove();
-                }, duration);
-            }
+            const WS_URL = 'wss://nexus-server-1q9n.onrender.com';
 
             // ============================================================
             //  COMMAND DEFINITIONS FOR AUTOCOMPLETE
@@ -1553,75 +1535,463 @@
             let outputLines = [];
             const MAX_OUTPUT_LINES = 400;
 
-            let createdRooms = JSON.parse(localStorage.getItem('nexus_created_rooms') || '[]');
-
-            // ============================================================
-            //  COLLABORATION (Gun.js)
-            // ============================================================
-            const gunPeers = ['https://gun-manhattan.herokuapp.com/gun'];
-            let gun = null;
+            // ─── WebSocket ────────────────────────────────────────────────
+            let ws = null;
             let currentRoomId = null;
-            let currentRoomRef = null;
             let roomMeta = null;
             let myUserId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             let myAlias = myUserId;
-            let roomPassword = null;
+            let roomUsers = {};
+            let isRoomInitialized = false;
+            let isDeletingRoom = false;
+            let awaitingConfirm = null;
             const processedLogIds = new Set();
             const processedChatIds = new Set();
-            let knownUsers = new Set();
-            let roomUsers = {};
-            let roomMemberCount = 0;
-            let roomMembersRef = null;
-            let roomMetaRef = null;
-            let roomLogRef = null;
-            let roomChatRef = null;
-            let roomPresenceRef = null;
-            let isRoomInitialized = false;
 
-            let presenceInterval = null;
-            let cleanupInterval = null;
-            let isDeletingRoom = false;
-            let awaitingConfirm = null; // { callback: (confirmed) => {} }
+            // ─── Toast Notification ──────────────────────────────────────
+            function showToast(message, type, duration) {
+                type = type || 'info';
+                duration = duration || 2500;
+                const existing = document.querySelector('.toast');
+                if (existing) existing.remove();
 
-            async function sha256(text) {
-                if (crypto && crypto.subtle) {
-                    const encoder = new TextEncoder();
-                    const data = encoder.encode(text);
-                    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-                    const hashArray = Array.from(new Uint8Array(hashBuffer));
-                    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                } else {
-                    let hash = 0;
-                    for (let i = 0; i < text.length; i++) {
-                        const char = text.charCodeAt(i);
-                        hash = ((hash << 5) - hash) + char;
-                        hash |= 0;
-                    }
-                    return 'fallback_' + Math.abs(hash).toString(16);
+                const toast = document.createElement('div');
+                toast.className = 'toast ' + type;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(function() {
+                    if (toast.parentNode) toast.remove();
+                }, duration);
+            }
+
+            // ─── WebSocket Connection ────────────────────────────────────
+            function connectWebSocket() {
+                try {
+                    ws = new WebSocket(WS_URL);
+
+                    ws.onopen = function() {
+                        add('Connected to collaboration server.', 'info');
+                        showToast('Connected to server.', 'success');
+                        // Send initial presence
+                        ws.send(JSON.stringify({
+                            type: 'presence_update',
+                            data: { alias: myAlias, lastSeen: Date.now() }
+                        }));
+                    };
+
+                    ws.onmessage = function(event) {
+                        try {
+                            const msg = JSON.parse(event.data);
+                            handleServerMessage(msg);
+                        } catch (e) {
+                            console.error('Invalid server message:', e);
+                        }
+                    };
+
+                    ws.onclose = function() {
+                        add('Disconnected from server. Retrying in 3 seconds...', 'err');
+                        showToast('Connection lost. Reconnecting...', 'error');
+                        setTimeout(connectWebSocket, 3000);
+                    };
+
+                    ws.onerror = function(e) {
+                        console.error('WebSocket error:', e);
+                        add('WebSocket error. Check server address.', 'err');
+                    };
+                } catch (e) {
+                    add('Failed to connect to server: ' + e.message, 'err');
+                    showToast('Connection failed.', 'error');
                 }
             }
 
-            function initGun() {
-                try {
-                    if (typeof Gun === 'undefined') {
-                        add('Gun.js library not loaded. Collaboration disabled.', 'err');
-                        return false;
+            // ─── Handle Server Messages ─────────────────────────────────
+            function handleServerMessage(msg) {
+                switch (msg.type) {
+                    case 'room_list': {
+                        // Store room list locally for reference
+                        window._roomList = msg.data;
+                        break;
                     }
-                    gun = Gun({ peers: gunPeers, localStorage: false });
-                    presenceInterval = setInterval(() => {
-                        if (!currentRoomId || !gun || !currentRoomRef) return;
-                        try {
-                            currentRoomRef.get('presence').get(myUserId).put({
-                                alias: myAlias,
-                                lastSeen: Date.now()
-                            });
-                        } catch (e) { /* ignore */ }
-                    }, 5000);
-                    return true;
-                } catch (e) {
-                    add('Gun.js could not initialize: ' + esc(e.message), 'err');
-                    return false;
+
+                    case 'room_created': {
+                        addSystemMsg('New room created: ' + (msg.data.name || 'Unnamed') + ' (' + msg.data.id + ')');
+                        break;
+                    }
+
+                    case 'room_joined': {
+                        if (currentRoomId && msg.data.id === currentRoomId) {
+                            if (msg.data.userId !== myUserId) {
+                                addSystemMsg('User ' + (msg.data.alias || msg.data.userId) + ' joined the room.');
+                                roomUsers[msg.data.userId] = { alias: msg.data.alias || msg.data.userId,
+                                    lastSeen: Date.now(), role: msg.data.role || 'member' };
+                                updateRoomUsersUI();
+                                updateMemberCount();
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'room_left': {
+                        if (currentRoomId && msg.data.id === currentRoomId) {
+                            if (roomUsers[msg.data.userId]) {
+                                const alias = roomUsers[msg.data.userId].alias;
+                                delete roomUsers[msg.data.userId];
+                                addSystemMsg('User ' + alias + ' left the room.');
+                                updateRoomUsersUI();
+                                updateMemberCount();
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'room_deleted': {
+                        if (currentRoomId && msg.data.id === currentRoomId) {
+                            addSystemMsg('Room has been deleted by the creator.');
+                            leaveRoom();
+                        }
+                        break;
+                    }
+
+                    case 'chat_message': {
+                        const data = msg.data;
+                        if (currentRoomId && data.roomId === currentRoomId && !processedChatIds.has(data.msgId)) {
+                            processedChatIds.add(data.msgId);
+                            if (data.senderId !== myUserId) {
+                                const line = document.createElement('div');
+                                line.className = 'line chat-msg';
+                                const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
+                                line.innerHTML =
+                                    `<strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
+                                output.appendChild(line);
+                                outputLines.push(line);
+                                limitOutputLines();
+                                output.scrollTop = output.scrollHeight;
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'command_executed': {
+                        const data = msg.data;
+                        if (currentRoomId && data.roomId === currentRoomId && !processedLogIds.has(data.msgId)) {
+                            processedLogIds.add(data.msgId);
+                            if (data.senderId !== myUserId) {
+                                const line = document.createElement('div');
+                                line.className = 'line';
+                                line.innerHTML =
+                                    `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
+                                output.appendChild(line);
+                                const outLine = document.createElement('div');
+                                outLine.className = 'line';
+                                outLine.innerHTML = data.outputHTML || '';
+                                output.appendChild(outLine);
+                                outputLines.push(line, outLine);
+                                limitOutputLines();
+                                output.scrollTop = output.scrollHeight;
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'presence_update': {
+                        const data = msg.data;
+                        if (currentRoomId && data.roomId === currentRoomId) {
+                            if (data.userId !== myUserId) {
+                                const now = Date.now();
+                                if (now - (data.lastSeen || 0) < 15000) {
+                                    if (!roomUsers[data.userId]) {
+                                        roomUsers[data.userId] = { alias: data.alias, lastSeen: now, role: 'member' };
+                                        addSystemMsg('User ' + (data.alias || data.userId) + ' joined the room.');
+                                        updateRoomUsersUI();
+                                        updateMemberCount();
+                                    } else {
+                                        roomUsers[data.userId].lastSeen = now;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+
+                    case 'room_search_results': {
+                        const results = msg.data;
+                        const entries = Object.entries(results);
+                        if (entries.length === 0) {
+                            add('No rooms found.', 'info');
+                            return;
+                        }
+                        add(`<strong>Found ${entries.length} room(s):</strong>`, 'highlight');
+                        entries.forEach(([id, meta]) => {
+                            const name = meta.name || id;
+                            const members = meta.memberCount || 0;
+                            const locked = meta.passwordProtected ? '[LOCKED]' : '[OPEN]';
+                            const creator = meta.creatorAlias || 'unknown';
+                            const tempLabel = meta.temporary ? '[TEMP]' : '[PERM]';
+                            add(
+                                `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | Users: ${members} | Creator: ${esc(creator)}${meta.description ? ' | Description: '+esc(meta.description) : ''}</span></div>`,
+                                'ok');
+                        });
+                        break;
+                    }
+
+                    case 'room_info_result': {
+                        const { id, meta, members } = msg.data;
+                        const name = meta.name || id;
+                        const created = new Date(meta.created).toLocaleString();
+                        const memCount = Object.keys(members || {}).length;
+                        const locked = meta.passwordProtected ? 'Yes [Password Protected]' : 'No [Open]';
+                        const creator = meta.creatorAlias || meta.creator || 'unknown';
+                        const desc = meta.description || 'No description';
+                        const tempLabel = meta.temporary ? 'Temporary (expires ' + new Date(meta.expiresAt)
+                            .toLocaleString() + ')' : 'Permanent';
+                        add(
+                            `<div class="block"><strong>Room: ${esc(name)}</strong><br>ID: ${esc(id)}<br>Type: ${tempLabel}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${memCount}<br>Password Protected: ${locked}</div>`,
+                            'ok');
+                        break;
+                    }
+
+                    case 'error': {
+                        add('Server error: ' + esc(msg.data), 'err');
+                        showToast(msg.data, 'error');
+                        break;
+                    }
                 }
+            }
+
+            // ─── Send to Server ──────────────────────────────────────────
+            function sendToServer(type, data) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type, data }));
+                } else {
+                    add('Not connected to server.', 'err');
+                    showToast('Not connected to server.', 'error');
+                }
+            }
+
+            // ─── Room Functions (WebSocket version) ──────────────────────
+            function createRoom(name, description, password, temporary, ttl) {
+                if (currentRoomId) {
+                    add('Already in a room. Leave first.', 'err');
+                    showToast('Already in a room.', 'error');
+                    return;
+                }
+                sendToServer('create_room', {
+                    name,
+                    description,
+                    password,
+                    temporary: !!temporary,
+                    ttl: ttl || '604800000'
+                });
+                add('Creating room...', 'info');
+            }
+
+            function joinRoom(id, password) {
+                if (currentRoomId) {
+                    add('Already in a room. Leave first.', 'err');
+                    showToast('Already in a room.', 'error');
+                    return;
+                }
+                if (!id) {
+                    add('Please enter a room ID.', 'err');
+                    showToast('Please enter a room ID.', 'error');
+                    return;
+                }
+                sendToServer('join_room', { roomId: id.trim(), password: password || null });
+                add('Joining room ' + esc(id) + '...', 'info');
+            }
+
+            function leaveRoom() {
+                if (!currentRoomId) {
+                    add('Not in a room.', 'err');
+                    showToast('Not in a room.', 'error');
+                    return;
+                }
+                sendToServer('leave_room', {});
+                currentRoomId = null;
+                roomMeta = null;
+                roomUsers = {};
+                isRoomInitialized = false;
+                updateRoomHeaderBadge(null);
+                updateRoomStatusDisplay();
+                updateRoomUsersUI();
+                add('Left the room.', 'ok');
+                showToast('Left the room.', 'info');
+            }
+
+            function deleteRoom() {
+                if (!currentRoomId) {
+                    add('Not in a room.', 'err');
+                    showToast('Not in a room.', 'error');
+                    return;
+                }
+                if (isDeletingRoom) {
+                    add('Room deletion already in progress.', 'warning');
+                    return;
+                }
+                isDeletingRoom = true;
+                awaitingConfirm = {
+                    callback: (confirmed) => {
+                        if (confirmed) {
+                            sendToServer('delete_room', {});
+                            currentRoomId = null;
+                            roomMeta = null;
+                            roomUsers = {};
+                            isRoomInitialized = false;
+                            updateRoomHeaderBadge(null);
+                            updateRoomStatusDisplay();
+                            updateRoomUsersUI();
+                            add('Room deleted.', 'ok');
+                            showToast('Room deleted.', 'success');
+                        } else {
+                            add('Room deletion cancelled.', 'info');
+                            showToast('Deletion cancelled.', 'info');
+                        }
+                        isDeletingRoom = false;
+                        awaitingConfirm = null;
+                    }
+                };
+                add('<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
+            }
+
+            function sendChatMessage(text) {
+                if (!currentRoomId) {
+                    add('Not in a room.', 'err');
+                    return;
+                }
+                if (!text.trim()) return;
+                sendToServer('chat_message', { text: text.trim() });
+                const line = document.createElement('div');
+                line.className = 'line chat-msg';
+                line.innerHTML = `<strong>${esc(myAlias)}</strong> (you): ${esc(text.trim())}`;
+                output.appendChild(line);
+                outputLines.push(line);
+                limitOutputLines();
+                output.scrollTop = output.scrollHeight;
+            }
+
+            function sendMessageToRoom(cmd, outputHTML) {
+                if (!currentRoomId) return;
+                sendToServer('command_executed', { cmd, outputHTML });
+            }
+
+            function addSystemMsg(text) {
+                const line = document.createElement('div');
+                line.className = 'line system-msg';
+                line.textContent = text;
+                output.appendChild(line);
+                outputLines.push(line);
+                limitOutputLines();
+                output.scrollTop = output.scrollHeight;
+            }
+
+            function updateRoomHeaderBadge(meta) {
+                if (!currentRoomId || !meta) {
+                    roomHeaderBadge.innerHTML = '';
+                    return;
+                }
+                const displayName = meta.name || currentRoomId;
+                const isLocked = meta.passwordProtected;
+                const userCount = Object.keys(roomUsers).length;
+                const statusClass = isLocked ? 'locked' : '';
+                roomHeaderBadge.innerHTML =
+                    `<div class="room-header-badge" title="Click to copy Room ID">
+                                <span class="room-dot ${statusClass}"></span>
+                                <span class="room-label">${isLocked ? 'LOCKED' : 'OPEN'}</span>
+                                <span class="room-name-display">${esc(displayName)}</span>
+                                <span style="opacity:0.6;font-size:0.55rem;">${userCount} users</span>
+                            </div>`;
+            }
+
+            function updateRoomStatusDisplay() {
+                if (!currentRoomId) {
+                    roomStatusDisplay.textContent = 'Not in a room.';
+                    return;
+                }
+                const displayName = roomMeta?.name || currentRoomId;
+                const members = Object.keys(roomUsers).length;
+                const tempLabel = roomMeta?.temporary ? 'Temporary' : 'Permanent';
+                roomStatusDisplay.innerHTML =
+                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | Users: ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' [Password Protected]' : ''}`;
+            }
+
+            function updateRoomUsersUI() {
+                const users = Object.values(roomUsers)
+                    .filter(u => u && u.alias)
+                    .map(u => ({ alias: u.alias, role: u.role || 'member', id: Object.keys(roomUsers).find(k => roomUsers[
+                            k] === u) }));
+                if (users.length === 0) {
+                    roomUsersList.innerHTML = 'No other users online.';
+                    return;
+                }
+                users.sort((a, b) => {
+                    if (a.role === 'admin' && b.role !== 'admin') return -1;
+                    if (b.role === 'admin' && a.role !== 'admin') return 1;
+                    return a.alias.localeCompare(b.alias);
+                });
+                roomUsersList.innerHTML = '<strong>Online users:</strong><br>' +
+                    users.map(u =>
+                        `<span class="room-user">${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}</span>`
+                    ).join('');
+            }
+
+            function updateMemberCount() {
+                // Kept for compatibility
+            }
+
+            function listAllRooms() {
+                sendToServer('list_rooms', {});
+                add('Fetching room list...', 'info');
+            }
+
+            function searchRooms(query) {
+                if (!query) {
+                    add('Usage: room search <query>', 'err');
+                    return;
+                }
+                sendToServer('search_rooms', { query });
+                add('Searching rooms for "' + esc(query) + '"...', 'info');
+            }
+
+            function getRoomInfo(roomId) {
+                if (!roomId) {
+                    add('Usage: room info <id>', 'err');
+                    return;
+                }
+                sendToServer('room_info', { roomId: roomId.trim() });
+                add('Fetching room info...', 'info');
+            }
+
+            function getRoomInvite() {
+                if (!currentRoomId) {
+                    add('Not in a room.', 'err');
+                    return;
+                }
+                const inviteText =
+                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.temporary ? 'Temporary' : 'Permanent'}${roomMeta?.passwordProtected ? '\nPassword Protected' : ''}`;
+                if (navigator.share) {
+                    navigator.share({ text: inviteText }).then(() => {
+                        add('Room invite shared.', 'ok');
+                    }).catch(() => {
+                        add('Sharing cancelled.', 'info');
+                    });
+                } else {
+                    copyToClipboard(inviteText).then(() => {
+                        add('Invite text copied to clipboard!', 'ok');
+                    }).catch(() => {
+                        add('Failed to copy. Please copy manually.', 'err');
+                    });
+                }
+            }
+
+            function setNick(name) {
+                if (!name || !name.trim()) {
+                    add('Usage: nick <name>', 'err');
+                    return;
+                }
+                myAlias = name.trim();
+                sendToServer('set_nick', { alias: myAlias });
+                add(`Nickname set to ${esc(myAlias)}.`, 'ok');
             }
 
             function copyToClipboard(text) {
@@ -1647,804 +2017,7 @@
                 }
             }
 
-            // ============================================================
-            //  ROOM SYSTEM
-            // ============================================================
-
-            function cleanupRoomListeners() {
-                if (currentRoomRef) {
-                    try { currentRoomRef.off(); } catch (e) { /* ignore */ }
-                    currentRoomRef = null;
-                }
-                roomMetaRef = null;
-                roomLogRef = null;
-                roomChatRef = null;
-                roomPresenceRef = null;
-                roomMembersRef = null;
-                processedLogIds.clear();
-                processedChatIds.clear();
-                knownUsers.clear();
-                roomUsers = {};
-                roomMemberCount = 0;
-                isRoomInitialized = false;
-                roomMeta = null;
-                currentRoomId = null;
-                roomPassword = null;
-                if (presenceInterval) {
-                    clearInterval(presenceInterval);
-                    presenceInterval = null;
-                }
-                if (cleanupInterval) {
-                    clearInterval(cleanupInterval);
-                    cleanupInterval = null;
-                }
-                isDeletingRoom = false;
-                awaitingConfirm = null;
-            }
-
-            async function isRoomExpired(meta) {
-                if (!meta || !meta.temporary || !meta.expiresAt) return false;
-                return Date.now() > meta.expiresAt;
-            }
-
-            async function createRoom(name, description, password, temporary, ttl) {
-                if (!gun) {
-                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
-                    showToast('Gun not initialized. Please reload the page.', 'error');
-                    return;
-                }
-                if (currentRoomId) {
-                    add('Already in a room. Leave first using <span class="clickable-cmd" data-cmd="room leave">room leave</span>.',
-                        'err');
-                    showToast('Already in a room. Leave first.', 'error');
-                    return;
-                }
-
-                const roomId = 'nexus_' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 12) +
-                    Date.now().toString(36));
-                let meta = {
-                    name: name || 'Unnamed Room',
-                    description: description || '',
-                    creator: myUserId,
-                    creatorAlias: myAlias,
-                    created: Date.now(),
-                    passwordProtected: false,
-                    memberCount: 0,
-                    lastActivity: Date.now(),
-                    temporary: !!temporary,
-                    searchableName: (name || 'Unnamed Room').toLowerCase(),
-                    searchableDescription: (description || '').toLowerCase(),
-                    searchableId: roomId.toLowerCase()
-                };
-
-                if (temporary) {
-                    const ttlMs = parseInt(ttl) || 604800000; // 7 days fallback
-                    meta.expiresAt = Date.now() + ttlMs;
-                }
-
-                if (password && password.length >= 4) {
-                    meta.passwordHash = await sha256(password);
-                    meta.passwordProtected = true;
-                    roomPassword = password;
-                } else {
-                    roomPassword = null;
-                }
-
-                try {
-                    const roomRoot = gun.get('nexus_rooms').get(roomId);
-                    roomRoot.get('meta').put(meta);
-
-                    const membersObj = {};
-                    membersObj[myUserId] = { alias: myAlias, joined: Date.now(), role: 'admin' };
-                    roomRoot.get('members').put(membersObj);
-
-                    const joinSuccess = await joinRoomInternal(roomId, meta);
-                    if (!joinSuccess) {
-                        add('Failed to join the newly created room.', 'err');
-                        showToast('Failed to join the newly created room.', 'error');
-                        return;
-                    }
-
-                    if (!createdRooms.includes(roomId)) {
-                        createdRooms.push(roomId);
-                        localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
-                    }
-
-                    const tempLabel = meta.temporary ? 'Temporary (expires ' + new Date(meta.expiresAt)
-                        .toLocaleString() + ')' : 'Permanent';
-                    add(
-                        `<div class="block"><strong>Room created successfully!</strong><br>ID: <span class="highlight">${esc(roomId)}</span><br>Name: ${esc(meta.name)} | ${tempLabel}${meta.passwordProtected ? ' [Password Protected]' : ''}</div>`,
-                        'ok');
-                    updateRoomHeaderBadge(meta);
-                    updateRoomStatusDisplay();
-                    showToast('Room created successfully: ' + meta.name, 'success');
-                } catch (e) {
-                    add('Error creating room: ' + esc(e.message), 'err');
-                    showToast('Error creating room: ' + e.message, 'error');
-                }
-            }
-
-            // ─── JOIN ROOM WITH RELIABLE POLLING ──────────────────────────
-            async function joinRoom(id, password) {
-                if (!gun) {
-                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
-                    showToast('Gun not initialized. Please reload the page.', 'error');
-                    return;
-                }
-                if (currentRoomId) {
-                    add('Already in a room. Leave first using <span class="clickable-cmd" data-cmd="room leave">room leave</span>.',
-                        'err');
-                    showToast('Already in a room. Leave first.', 'error');
-                    return;
-                }
-                if (!id) {
-                    add('Please enter a room ID.', 'err');
-                    showToast('Please enter a room ID.', 'error');
-                    return;
-                }
-
-                id = id.trim();
-                let meta = null;
-                const maxAttempts = 20;
-                let attempts = 0;
-
-                // ─── POLLING LOOP ──────────────────────────────────────────
-                while (attempts < maxAttempts) {
-                    await new Promise(r => setTimeout(r, 400));
-                    try {
-                        const metaRef = gun.get('nexus_rooms').get(id).get('meta');
-                        meta = await new Promise((resolve) => {
-                            let resolved = false;
-                            metaRef.once((data) => {
-                                if (!resolved) {
-                                    resolved = true;
-                                    resolve(data);
-                                }
-                            });
-                        });
-                        if (meta && meta.created) break;
-                    } catch (e) { /* ignore, retry */ }
-                    attempts++;
-                }
-
-                if (!meta || !meta.created) {
-                    add('Error joining room: Room not found or meta missing (timed out after ' + maxAttempts +
-                        ' attempts).', 'err');
-                    showToast('Failed to join room: ID not found.', 'error');
-                    return;
-                }
-                // ─── END POLLING LOOP ──────────────────────────────────────
-
-                try {
-                    if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
-                        add('This room has expired and is no longer available.', 'err');
-                        showToast('This room has expired.', 'error');
-                        return;
-                    }
-
-                    if (meta.passwordProtected) {
-                        if (!password) {
-                            add('This room requires a password.', 'err');
-                            showToast('This room requires a password.', 'error');
-                            return;
-                        }
-                        const hash = await sha256(password);
-                        if (hash !== meta.passwordHash) {
-                            add('Incorrect password.', 'err');
-                            showToast('Incorrect password.', 'error');
-                            return;
-                        }
-                        roomPassword = password;
-                    } else {
-                        roomPassword = null;
-                    }
-
-                    const membersRef = gun.get('nexus_rooms').get(id).get('members');
-                    membersRef.get(myUserId).put({
-                        alias: myAlias,
-                        joined: Date.now(),
-                        role: 'member'
-                    });
-
-                    const joinSuccess = await joinRoomInternal(id, meta);
-                    if (!joinSuccess) {
-                        add('Failed to join the room.', 'err');
-                        showToast('Failed to join the room.', 'error');
-                        return;
-                    }
-
-                    const tempLabel = meta.temporary ? 'Temporary' : 'Permanent';
-                    add(
-                        `<div class="block"><strong>Joined room:</strong> ${esc(meta.name)} (${esc(id)}) | ${tempLabel}${meta.passwordProtected ? ' [Password Protected]' : ''}</div>`,
-                        'ok');
-                    updateRoomHeaderBadge(meta);
-                    updateRoomStatusDisplay();
-                    showToast('Joined room: ' + meta.name, 'success');
-                } catch (e) {
-                    add('Error joining room: ' + esc(e.message), 'err');
-                    showToast('Error joining room: ' + e.message, 'error');
-                }
-            }
-
-            async function joinRoomInternal(roomId, meta) {
-                try {
-                    if (currentRoomRef) {
-                        try { currentRoomRef.off(); } catch (e) { /* ignore */ }
-                        currentRoomRef = null;
-                    }
-
-                    currentRoomId = roomId;
-                    roomMeta = meta;
-                    currentRoomRef = gun.get('nexus_rooms').get(roomId);
-                    knownUsers.clear();
-                    processedLogIds.clear();
-                    processedChatIds.clear();
-                    roomUsers = {};
-                    isRoomInitialized = true;
-
-                    roomMetaRef = currentRoomRef.get('meta');
-                    roomLogRef = currentRoomRef.get('log');
-                    roomChatRef = currentRoomRef.get('chat');
-                    roomPresenceRef = currentRoomRef.get('presence');
-                    roomMembersRef = currentRoomRef.get('members');
-
-                    roomMembersRef.map().on((data, key) => {
-                        if (!key) return;
-                        if (data && data.alias) {
-                            const wasNew = !roomUsers[key];
-                            roomUsers[key] = data;
-                            if (wasNew && key !== myUserId && !knownUsers.has(key)) {
-                                knownUsers.add(key);
-                                addSystemMsg('User ' + esc(data.alias) + ' joined the room.');
-                            }
-                            updateRoomUsersUI();
-                            updateMemberCount();
-                        }
-                    });
-
-                    roomLogRef.map().on((data, key) => {
-                        if (!data || processedLogIds.has(data.msgId)) return;
-                        if (data.senderId === myUserId) return;
-                        processedLogIds.add(data.msgId);
-                        const line = document.createElement('div');
-                        line.className = 'line';
-                        line.innerHTML =
-                            `<span class="remote-cmd">[${esc(data.senderAlias || data.senderId)}] ${esc(data.cmd)}</span>`;
-                        output.appendChild(line);
-                        const outLine = document.createElement('div');
-                        outLine.className = 'line';
-                        outLine.innerHTML = data.outputHTML || '';
-                        output.appendChild(outLine);
-                        outputLines.push(line, outLine);
-                        limitOutputLines();
-                        output.scrollTop = output.scrollHeight;
-                    });
-
-                    roomChatRef.map().on((data, key) => {
-                        if (!data || processedChatIds.has(data.msgId)) return;
-                        processedChatIds.add(data.msgId);
-                        if (data.senderId === myUserId) return;
-                        const line = document.createElement('div');
-                        line.className = 'line chat-msg';
-                        const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
-                        line.innerHTML =
-                            `<strong>${esc(data.senderAlias || data.senderId)}</strong> ${time ? '('+time+')' : ''}: ${esc(data.text)}`;
-                        output.appendChild(line);
-                        outputLines.push(line);
-                        limitOutputLines();
-                        output.scrollTop = output.scrollHeight;
-                    });
-
-                    roomPresenceRef.map().on((data, key) => {
-                        if (!key) return;
-                        if (key === myUserId) return;
-
-                        if (data === null) {
-                            if (knownUsers.has(key)) {
-                                const alias = roomUsers[key]?.alias || key;
-                                knownUsers.delete(key);
-                                delete roomUsers[key];
-                                addSystemMsg('User ' + esc(alias) + ' left the room.');
-                                updateRoomUsersUI();
-                                updateMemberCount();
-                            }
-                            return;
-                        }
-
-                        if (data && data.alias) {
-                            const now = Date.now();
-                            if (now - (data.lastSeen || 0) > 15000) {
-                                if (knownUsers.has(key)) {
-                                    const alias = roomUsers[key]?.alias || key;
-                                    knownUsers.delete(key);
-                                    delete roomUsers[key];
-                                    addSystemMsg('User ' + esc(alias) + ' timed out.');
-                                    updateRoomUsersUI();
-                                    updateMemberCount();
-                                }
-                                return;
-                            }
-                            if (!knownUsers.has(key)) {
-                                knownUsers.add(key);
-                                roomUsers[key] = { alias: data.alias, lastSeen: data.lastSeen || now,
-                                role: 'member' };
-                                addSystemMsg('User ' + esc(data.alias) + ' joined the room.');
-                                updateRoomUsersUI();
-                                updateMemberCount();
-                            } else {
-                                roomUsers[key].lastSeen = data.lastSeen || now;
-                            }
-                        }
-                    });
-
-                    roomPresenceRef.get(myUserId).put({
-                        alias: myAlias,
-                        lastSeen: Date.now()
-                    });
-
-                    if (cleanupInterval) clearInterval(cleanupInterval);
-                    cleanupInterval = setInterval(() => {
-                        if (!currentRoomId) return;
-                        const now = Date.now();
-                        let changed = false;
-                        Object.keys(roomUsers).forEach(id => {
-                            if (id === myUserId) return;
-                            if (now - (roomUsers[id]?.lastSeen || 0) > 15000) {
-                                const alias = roomUsers[id]?.alias || id;
-                                delete roomUsers[id];
-                                if (knownUsers.has(id)) {
-                                    knownUsers.delete(id);
-                                    addSystemMsg('User ' + esc(alias) + ' timed out.');
-                                    changed = true;
-                                }
-                            }
-                        });
-                        if (changed) {
-                            updateRoomUsersUI();
-                            updateMemberCount();
-                        }
-                    }, 15000);
-
-                    roomMetaRef.get('lastActivity').put(Date.now());
-                    updateMemberCount();
-
-                    return true;
-                } catch (e) {
-                    add('Error in joinRoomInternal: ' + esc(e.message), 'err');
-                    return false;
-                }
-            }
-
-            function updateMemberCount() {
-                if (!roomMetaRef) return;
-                const count = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
-                roomMemberCount = count;
-                try {
-                    roomMetaRef.get('memberCount').put(count);
-                } catch (e) { /* ignore */ }
-            }
-
-            function leaveRoom() {
-                if (!currentRoomId || !gun) {
-                    add('Not in a room.', 'err');
-                    showToast('Not in a room.', 'error');
-                    return;
-                }
-                try {
-                    if (roomMembersRef) {
-                        try { roomMembersRef.get(myUserId).put(null); } catch (e) { /* ignore */ }
-                    }
-                    if (roomPresenceRef) {
-                        try { roomPresenceRef.get(myUserId).put(null); } catch (e) { /* ignore */ }
-                    }
-                    if (currentRoomRef) {
-                        try { currentRoomRef.off(); } catch (e) { /* ignore */ }
-                    }
-                } catch (e) { /* ignore */ }
-
-                if (cleanupInterval) {
-                    clearInterval(cleanupInterval);
-                    cleanupInterval = null;
-                }
-
-                cleanupRoomListeners();
-                updateRoomHeaderBadge(null);
-                updateRoomUsersUI();
-                updateRoomStatusDisplay();
-                add('Left the room.', 'ok');
-                showToast('Left the room.', 'info');
-            }
-
-            async function deleteRoom() {
-                if (!currentRoomId || !gun) {
-                    add('Not in a room.', 'err');
-                    showToast('Not in a room.', 'error');
-                    return;
-                }
-                if (!roomMeta || roomMeta.creator !== myUserId) {
-                    add('Only the room creator can delete this room.', 'err');
-                    showToast('Only the room creator can delete this room.', 'error');
-                    return;
-                }
-                if (isDeletingRoom) {
-                    add('Room deletion already in progress.', 'warning');
-                    return;
-                }
-
-                isDeletingRoom = true;
-                awaitingConfirm = {
-                    callback: (confirmed) => {
-                        if (confirmed) {
-                            performDelete();
-                        } else {
-                            add('Room deletion cancelled.', 'info');
-                            showToast('Room deletion cancelled.', 'info');
-                        }
-                        isDeletingRoom = false;
-                        awaitingConfirm = null;
-                    }
-                };
-                add('<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
-            }
-
-            async function performDelete() {
-                try {
-                    if (currentRoomRef) {
-                        try {
-                            currentRoomRef.off();
-                            currentRoomRef.put(null);
-                        } catch (e) { /* ignore */ }
-                    }
-                    createdRooms = createdRooms.filter(id => id !== currentRoomId);
-                    localStorage.setItem('nexus_created_rooms', JSON.stringify(createdRooms));
-                    add('Room deleted.', 'ok');
-                    showToast('Room deleted.', 'success');
-
-                    if (cleanupInterval) {
-                        clearInterval(cleanupInterval);
-                        cleanupInterval = null;
-                    }
-                    cleanupRoomListeners();
-                    updateRoomHeaderBadge(null);
-                    updateRoomUsersUI();
-                    updateRoomStatusDisplay();
-                } catch (e) {
-                    add('Error deleting room: ' + esc(e.message), 'err');
-                    showToast('Error deleting room: ' + e.message, 'error');
-                } finally {
-                    isDeletingRoom = false;
-                    awaitingConfirm = null;
-                }
-            }
-
-            function sendChatMessage(text) {
-                if (!currentRoomId || !gun) {
-                    add('Not in a room.', 'err');
-                    return;
-                }
-                if (!text.trim()) return;
-                const msgId = crypto.randomUUID ? crypto.randomUUID() : 'chat_' + Date.now() + Math.random();
-                const msg = {
-                    msgId,
-                    senderId: myUserId,
-                    senderAlias: myAlias,
-                    text: text.trim(),
-                    timestamp: Date.now()
-                };
-                try {
-                    roomChatRef.set(msg);
-                } catch (e) {
-                    add('Failed to send chat message: ' + esc(e.message), 'err');
-                    return;
-                }
-                const line = document.createElement('div');
-                line.className = 'line chat-msg';
-                line.innerHTML =
-                    `<strong>${esc(myAlias)}</strong> (you): ${esc(text.trim())}`;
-                output.appendChild(line);
-                outputLines.push(line);
-                limitOutputLines();
-                output.scrollTop = output.scrollHeight;
-            }
-
-            function sendMessageToRoom(cmd, outputHTML) {
-                if (!currentRoomId || !gun) return;
-                const msgId = crypto.randomUUID ? crypto.randomUUID() : 'log_' + Date.now() + Math.random();
-                const msg = {
-                    msgId,
-                    senderId: myUserId,
-                    senderAlias: myAlias,
-                    cmd,
-                    outputHTML,
-                    timestamp: Date.now()
-                };
-                try {
-                    roomLogRef.set(msg);
-                    processedLogIds.add(msgId);
-                } catch (e) { /* ignore */ }
-            }
-
-            function addSystemMsg(text) {
-                const line = document.createElement('div');
-                line.className = 'line system-msg';
-                line.textContent = text;
-                output.appendChild(line);
-                outputLines.push(line);
-                limitOutputLines();
-                output.scrollTop = output.scrollHeight;
-            }
-
-            function updateRoomHeaderBadge(meta) {
-                if (!currentRoomId || !meta) {
-                    roomHeaderBadge.innerHTML = '';
-                    return;
-                }
-                const displayName = meta.name || currentRoomId;
-                const isLocked = meta.passwordProtected;
-                const userCount = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
-                const statusClass = isLocked ? 'locked' : '';
-                roomHeaderBadge.innerHTML =
-                    `<div class="room-header-badge" title="Click to copy Room ID">
-                                <span class="room-dot ${statusClass}"></span>
-                                <span class="room-label">${isLocked ? 'LOCKED' : 'OPEN'}</span>
-                                <span class="room-name-display">${esc(displayName)}</span>
-                                <span style="opacity:0.6;font-size:0.55rem;">${userCount} users</span>
-                            </div>`;
-            }
-
-            function updateRoomStatusDisplay() {
-                if (!currentRoomId) {
-                    roomStatusDisplay.textContent = 'Not in a room.';
-                    return;
-                }
-                const displayName = roomMeta?.name || currentRoomId;
-                const members = Object.keys(roomUsers).filter(id => id !== myUserId).length + 1;
-                const tempLabel = roomMeta?.temporary ? 'Temporary' : 'Permanent';
-                roomStatusDisplay.innerHTML =
-                    `<strong>${esc(displayName)}</strong> (${esc(currentRoomId)}) | Users: ${members} | ${tempLabel}${roomMeta?.passwordProtected ? ' [Password Protected]' : ''}`;
-            }
-
-            function updateRoomUsersUI() {
-                const users = Object.values(roomUsers)
-                    .filter(u => u && u.alias)
-                    .map(u => ({ alias: u.alias, role: u.role || 'member', id: Object.keys(roomUsers).find(k => roomUsers[
-                            k] === u) }));
-
-                if (users.length === 0) {
-                    roomUsersList.innerHTML = 'No other users online.';
-                    return;
-                }
-
-                users.sort((a, b) => {
-                    if (a.role === 'admin' && b.role !== 'admin') return -1;
-                    if (b.role === 'admin' && a.role !== 'admin') return 1;
-                    return a.alias.localeCompare(b.alias);
-                });
-
-                roomUsersList.innerHTML = '<strong>Online users:</strong><br>' +
-                    users.map(u =>
-                        `<span class="room-user">${esc(u.alias)}${u.role === 'admin' ? ' (admin)' : ''}</span>`
-                    ).join('');
-            }
-
-            // ============================================================
-            //  ROOM SEARCH
-            // ============================================================
-
-            async function listAllRooms() {
-                if (!gun) {
-                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
-                    return;
-                }
-
-                const lid = loader('Fetching rooms...');
-                try {
-                    const roomsRef = gun.get('nexus_rooms');
-                    const result = {};
-                    roomsRef.map().once((data, key) => {
-                        if (data && data.meta) {
-                            result[key] = data.meta;
-                        }
-                    });
-
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    unloader(lid);
-
-                    const entries = Object.entries(result);
-                    if (entries.length === 0) {
-                        add(
-                            'No rooms found. Create one with <span class="clickable-cmd" data-cmd="room create">room create</span>.',
-                            'info');
-                        return;
-                    }
-
-                    const now = Date.now();
-                    let active = 0;
-                    add('<strong>Available Rooms:</strong>', 'highlight');
-                    entries.forEach(([id, meta]) => {
-                        if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return;
-                        active++;
-                        const name = meta.name || id;
-                        const members = meta.memberCount || 0;
-                        const locked = meta.passwordProtected ? '[LOCKED]' : '[OPEN]';
-                        const creator = meta.creatorAlias || 'unknown';
-                        const tempLabel = meta.temporary ? '[TEMP]' : '[PERM]';
-                        add(
-                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | Users: ${members} | Creator: ${esc(creator)}${meta.description ? ' | Description: '+esc(meta.description) : ''}</span></div>`,
-                            'ok');
-                    });
-                    if (active === 0) {
-                        add('No active rooms found. Create one with <span class="clickable-cmd" data-cmd="room create">room create</span>.',
-                            'info');
-                    }
-                } catch (e) {
-                    unloader(lid);
-                    add('Error listing rooms: ' + esc(e.message), 'err');
-                }
-            }
-
-            async function searchRooms(query) {
-                if (!gun) {
-                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
-                    return;
-                }
-                if (!query) {
-                    add('Usage: room search <query>', 'err');
-                    return;
-                }
-
-                const lid = loader('Searching rooms for "' + query + '"...');
-                try {
-                    const roomsRef = gun.get('nexus_rooms');
-                    const result = {};
-                    roomsRef.map().once((data, key) => {
-                        if (data && data.meta) {
-                            result[key] = data.meta;
-                        }
-                    });
-
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    unloader(lid);
-
-                    const now = Date.now();
-                    const queryLower = query.toLowerCase();
-                    const matches = [];
-
-                    Object.entries(result).forEach(([id, meta]) => {
-                        if (meta.temporary && meta.expiresAt && now > meta.expiresAt) return;
-
-                        const name = (meta.name || '').toLowerCase();
-                        const desc = (meta.description || '').toLowerCase();
-                        const idLower = id.toLowerCase();
-
-                        let score = 0;
-                        let matchType = '';
-
-                        if (idLower === queryLower) { score = 100;
-                            matchType = 'exact ID'; } else if (name === queryLower) { score = 90;
-                            matchType = 'exact name'; } else if (idLower.includes(queryLower)) { score = 70;
-                            matchType = 'ID contains'; } else if (name.includes(queryLower)) { score = 60;
-                            matchType = 'name contains'; } else if (desc.includes(queryLower)) { score = 40;
-                            matchType = 'description contains'; }
-
-                        if (score > 0) {
-                            matches.push({ id, meta, score, matchType });
-                        }
-                    });
-
-                    matches.sort((a, b) => b.score - a.score);
-
-                    if (matches.length === 0) {
-                        add(`No rooms found matching "${esc(query)}".`, 'info');
-                        return;
-                    }
-
-                    add(`<strong>Found ${matches.length} room(s) matching "${esc(query)}":</strong>`,
-                        'highlight');
-
-                    matches.forEach(({ id, meta, matchType }) => {
-                        const name = meta.name || id;
-                        const members = meta.memberCount || 0;
-                        const locked = meta.passwordProtected ? '[LOCKED]' : '[OPEN]';
-                        const tempLabel = meta.temporary ? '[TEMP]' : '[PERM]';
-                        const creator = meta.creatorAlias || 'unknown';
-
-                        const highlightedName = name.replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,
-                            '\\$&') + ')', 'gi'),
-                            '<span class="room-search-highlight">$1</span>');
-
-                        add(
-                            `<div class="room-list-item"><span class="room-name">${esc(name)}</span> ${tempLabel} ${locked}<span class="room-id">ID: ${esc(id)} | Users: ${members} | Creator: ${esc(creator)} | Match: ${matchType}${meta.description ? ' | Description: '+esc(meta.description) : ''}</span></div>`,
-                            'ok');
-                    });
-                } catch (e) {
-                    unloader(lid);
-                    add('Search error: ' + esc(e.message), 'err');
-                }
-            }
-
-            async function getRoomInfo(roomId) {
-                if (!gun) {
-                    add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
-                    return;
-                }
-                if (!roomId) {
-                    add('Usage: room info <id>', 'err');
-                    return;
-                }
-
-                roomId = roomId.trim();
-                try {
-                    const metaRef = gun.get('nexus_rooms').get(roomId).get('meta');
-                    const meta = await new Promise((resolve) => {
-                        let resolved = false;
-                        metaRef.once((data) => {
-                            if (!resolved) {
-                                resolved = true;
-                                resolve(data);
-                            }
-                        });
-                        setTimeout(() => {
-                            if (!resolved) {
-                                resolved = true;
-                                resolve(null);
-                            }
-                        }, 5000);
-                    });
-
-                    if (!meta || !meta.created) {
-                        add('Room not found.', 'err');
-                        return;
-                    }
-
-                    if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
-                        add('This room has expired.', 'err');
-                        return;
-                    }
-
-                    const name = meta.name || roomId;
-                    const created = new Date(meta.created).toLocaleString();
-                    const members = meta.memberCount || 0;
-                    const locked = meta.passwordProtected ? 'Yes [Password Protected]' : 'No [Open]';
-                    const creator = meta.creatorAlias || meta.creator || 'unknown';
-                    const desc = meta.description || 'No description';
-                    const tempLabel = meta.temporary ? 'Temporary (expires ' + new Date(meta.expiresAt)
-                        .toLocaleString() + ')' : 'Permanent';
-
-                    add(
-                        `<div class="block"><strong>Room: ${esc(name)}</strong><br>ID: ${esc(roomId)}<br>Type: ${tempLabel}<br>Description: ${esc(desc)}<br>Created: ${created} by ${esc(creator)}<br>Members: ${members}<br>Password Protected: ${locked}</div>`,
-                        'ok');
-                } catch (e) {
-                    add('Error getting room info: ' + esc(e.message), 'err');
-                }
-            }
-
-            function getRoomInvite() {
-                if (!currentRoomId) {
-                    add('Not in a room.', 'err');
-                    return;
-                }
-                const inviteText =
-                    `Join my Nexus Terminal room: ${currentRoomId}\nName: ${roomMeta?.name || 'Unnamed'}\n${roomMeta?.temporary ? 'Temporary' : 'Permanent'}${roomMeta?.passwordProtected ? '\nPassword Protected' : ''}`;
-
-                if (navigator.share) {
-                    navigator.share({ text: inviteText }).then(() => {
-                        add('Room invite shared.', 'ok');
-                    }).catch(() => {
-                        add('Sharing cancelled.', 'info');
-                    });
-                } else {
-                    copyToClipboard(inviteText).then(() => {
-                        add('Invite text copied to clipboard!', 'ok');
-                    }).catch(() => {
-                        add('Failed to copy. Please copy manually.', 'err');
-                    });
-                }
-            }
-
-            // ============================================================
-            //  UTILITY
-            // ============================================================
+            // ─── UTILITY ──────────────────────────────────────────────────
             function esc(s) {
                 return String(s).replace(/[&<>"]/g, function(m) {
                     return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[m];
@@ -2505,9 +2078,7 @@
                 localStorage.setItem('nexus_cmdfreq', JSON.stringify(cmdFrequency));
             }
 
-            // ============================================================
-            //  THEME
-            // ============================================================
+            // ─── THEME ────────────────────────────────────────────────────
             const themes = {
                 default: { accent: '#00f0d0', accentSecondary: '#5b8cff', accentGlow: 'rgba(0,240,208,0.25)',
                     bgDeep: '#070d19', bgSurface: '#0c1526', bgElevated: '#111d33' },
@@ -2534,9 +2105,7 @@
                 themeSelect.value = name;
             }
 
-            // ============================================================
-            //  SAFE CALC
-            // ============================================================
+            // ─── SAFE CALC ──────────────────────────────────────────────
             function safeCalc(expr) {
                 expr = expr.replace(/\s/g, '');
                 if (!/^[0-9+\-*/().%]+$/.test(expr)) throw new Error('Invalid characters');
@@ -2605,9 +2174,7 @@
                 return result.value;
             }
 
-            // ============================================================
-            //  VAULT
-            // ============================================================
+            // ─── VAULT ────────────────────────────────────────────────────
             function getVaultData() { return JSON.parse(localStorage.getItem('nexus_vault2') || '[]'); }
 
             function setVaultData(data) { localStorage.setItem('nexus_vault2', JSON.stringify(data)); }
@@ -2660,9 +2227,7 @@
                 add('Vault locked.', 'ok'); }
             (function() { const saved = localStorage.getItem('nexus_vault_pass'); if (saved) vaultPassword = saved; })();
 
-            // ============================================================
-            //  FS
-            // ============================================================
+            // ─── FS ───────────────────────────────────────────────────────
             function fsList() { const files = JSON.parse(localStorage.getItem('nexus_fs') || '{}'); const names = Object.keys(
                     files); if (!names.length) { add('FS empty.', 'info'); } else { names.forEach(function(n) { add(esc(
                         n) + ' (' + files[n].length + ' bytes)', 'ok'); }); } }
@@ -2692,9 +2257,7 @@
                         'No matches.', 'info'); } else { add('<strong>Search results:</strong>', 'highlight');
                     results.forEach(function(n) { add(esc(n), 'ok'); }); } }
 
-            // ============================================================
-            //  ALIAS
-            // ============================================================
+            // ─── ALIAS ──────────────────────────────────────────────────
             function addAlias(alias, command) { if (!alias || !command) { add('Usage: alias <name> <command>', 'err'); return; }
                 alias = alias.trim();
                 command = command.trim(); if (alias.includes(' ') || alias.includes('=')) { add(
@@ -2716,9 +2279,7 @@
             function resolveAlias(cmd) { const parts = cmd.trim().split(/\s+/); const first = parts[0]; if (aliases[first]) { const rest =
                     parts.slice(1).join(' '); return aliases[first] + (rest ? ' ' + rest : ''); } return cmd; }
 
-            // ============================================================
-            //  API CACHE
-            // ============================================================
+            // ─── API CACHE ──────────────────────────────────────────────
             const apiCache = new Map();
 
             function cacheGet(key) { const entry = apiCache.get(key); if (!entry) return null; if (Date.now() > entry.expiry) {
@@ -2728,10 +2289,7 @@
 
             function cacheClear() { apiCache.clear(); }
 
-            // ============================================================
-            //  API FUNCTIONS (professional, no emojis)
-            // ============================================================
-
+            // ─── API FUNCTIONS ────────────────────────────────────────────
             function formatLink(text, url) {
                 return `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(text)}</a>`;
             }
@@ -3180,18 +2738,14 @@
 
             function echoText(text) { add(esc(text), 'ok'); }
 
-            // ============================================================
-            //  SETTINGS PANEL
-            // ============================================================
+            // ─── SETTINGS PANEL ──────────────────────────────────────────
             function openSettings() { settingsPanel.classList.add('active');
                 settingsOverlay.classList.add('active'); }
 
             function closeSettings() { settingsPanel.classList.remove('active');
                 settingsOverlay.classList.remove('active'); }
 
-            // ============================================================
-            //  AUTOCOMPLETE
-            // ============================================================
+            // ─── AUTOCOMPLETE ─────────────────────────────────────────────
             function getSuggestions(partial) {
                 if (!partial.trim()) return [];
                 const lower = partial.toLowerCase();
@@ -3326,13 +2880,10 @@
                 }
             });
 
-            // ============================================================
-            //  EXECUTE
-            // ============================================================
+            // ─── EXECUTE ──────────────────────────────────────────────────
             async function execute(raw) {
                 if (!raw || !raw.trim()) return;
 
-                // ─── CONFIRMATION HANDLING ──────────────────────────────
                 if (awaitingConfirm) {
                     const lower = raw.trim().toLowerCase();
                     if (lower === 'yes') {
@@ -3344,7 +2895,6 @@
                     }
                     return;
                 }
-                // ─── END CONFIRMATION HANDLING ──────────────────────────
 
                 const resolved = resolveAlias(raw.trim());
                 if (resolved !== raw.trim()) { add('(alias) ' + esc(resolved), 'info'); }
@@ -3548,14 +3098,7 @@
                             break;
                         case 'nick':
                             if (args.length === 0) { add('Usage: nick <name>', 'err'); break; }
-                            myAlias = args.join(' ').trim();
-                            if (currentRoomRef) {
-                                try {
-                                    currentRoomRef.get('presence').get(myUserId).put({ alias: myAlias, lastSeen: Date
-                                            .now() });
-                                } catch (e) { /* ignore */ }
-                            }
-                            add(`Nickname set to ${esc(myAlias)}.`, 'ok');
+                            setNick(args.join(' '));
                             break;
                         case 'room':
                             if (args[0] === 'create') {
@@ -3564,20 +3107,20 @@
                                 const password = args[3] || null;
                                 const temporary = args[4] === 'temp' || args[4] === 'temporary' || args[4] === 't';
                                 const ttl = temporary ? '604800000' : null;
-                                await createRoom(name, description, password, temporary, ttl);
+                                createRoom(name, description, password, temporary, ttl);
                             } else if (args[0] === 'join') {
                                 const id = args[1];
                                 const password = args[2] || null;
                                 if (!id) { add('Usage: room join <id> [password]', 'err'); break; }
-                                await joinRoom(id, password);
+                                joinRoom(id, password);
                             } else if (args[0] === 'leave') {
                                 leaveRoom();
                             } else if (args[0] === 'list') {
-                                await listAllRooms();
+                                listAllRooms();
                             } else if (args[0] === 'search') {
-                                await searchRooms(args.slice(1).join(' '));
+                                searchRooms(args.slice(1).join(' '));
                             } else if (args[0] === 'info') {
-                                await getRoomInfo(args[1] || currentRoomId);
+                                getRoomInfo(args[1] || currentRoomId);
                             } else if (args[0] === 'users') {
                                 if (!currentRoomId) { add('Not in a room.', 'err'); break; }
                                 const users = Object.values(roomUsers).filter(u => u && u.alias);
@@ -3589,7 +3132,7 @@
                             } else if (args[0] === 'invite') {
                                 getRoomInvite();
                             } else if (args[0] === 'delete') {
-                                await deleteRoom();
+                                deleteRoom();
                             } else {
                                 add(
                                     'Usage: room <create|join|leave|list|search|info|users|invite|delete> [args]',
@@ -3624,9 +3167,7 @@
                 updateRoomStatusDisplay();
             }
 
-            // ============================================================
-            //  EVENTS
-            // ============================================================
+            // ─── EVENTS ──────────────────────────────────────────────────
             output.addEventListener('click', function(e) {
                 const cmdEl = e.target.closest('.clickable-cmd');
                 if (!cmdEl) return;
@@ -3714,9 +3255,7 @@
                 });
             });
 
-            // ============================================================
-            //  DRAG & DROP
-            // ============================================================
+            // ─── DRAG & DROP ──────────────────────────────────────────────
             let dragCounter = 0;
             const terminalEl = document.getElementById('app');
             terminalEl.addEventListener('dragenter', function(e) { e.preventDefault();
@@ -3747,9 +3286,7 @@
                 }
             });
 
-            // ============================================================
-            //  INIT
-            // ============================================================
+            // ─── INIT ──────────────────────────────────────────────────────
             const savedTheme = localStorage.getItem('nexus_theme') || 'default';
             themeSelect.value = savedTheme;
             applyTheme(savedTheme);
@@ -3758,12 +3295,7 @@
             document.documentElement.style.fontSize = savedFont + 'px';
             document.getElementById('fontSizeValue').textContent = savedFont + 'px';
 
-            const gunReady = initGun();
-            if (gunReady) {
-                add(
-                    'Collaboration engine ready. Type <span class="clickable-cmd" data-cmd="help">help</span> to see room and chat commands.',
-                    'info');
-            }
+            connectWebSocket();
 
             add(
                 '<div class="block"><strong>Nexus Terminal Pro v7.0</strong><br>Type any command to see detailed output with clickable links and options. Start typing to see command suggestions.</div>',
@@ -3771,7 +3303,25 @@
             add('Ready. Type <span class="clickable-cmd" data-cmd="help">help</span> for all commands.', 'info');
             input.focus();
             updateRoomStatusDisplay();
+
+            // Auto-refresh room list every 10 seconds
+            setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'list_rooms', data: {} }));
+                }
+            }, 10000);
+
+            // Cleanup
+            window.addEventListener('beforeunload', function() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    if (currentRoomId) {
+                        ws.send(JSON.stringify({ type: 'leave_room', data: {} }));
+                    }
+                    ws.close();
+                }
+            });
         })();
     </script>
 </body>
-    </html>
+</html>>
+</html>
