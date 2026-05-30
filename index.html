@@ -1581,6 +1581,7 @@
             let presenceInterval = null;
             let cleanupInterval = null;
             let isDeletingRoom = false;
+            let awaitingConfirm = null; // { callback: (confirmed) => {} }
 
             async function sha256(text) {
                 if (crypto && crypto.subtle) {
@@ -1678,6 +1679,7 @@
                     cleanupInterval = null;
                 }
                 isDeletingRoom = false;
+                awaitingConfirm = null;
             }
 
             async function isRoomExpired(meta) {
@@ -1715,8 +1717,9 @@
                     searchableId: roomId.toLowerCase()
                 };
 
-                if (temporary && ttl) {
-                    meta.expiresAt = Date.now() + parseInt(ttl);
+                if (temporary) {
+                    const ttlMs = parseInt(ttl) || 604800000; // 7 days fallback
+                    meta.expiresAt = Date.now() + ttlMs;
                 }
 
                 if (password && password.length >= 4) {
@@ -1761,7 +1764,7 @@
                 }
             }
 
-            // ─── JOIN ROOM WITH RETRY LOGIC ──────────────────────────────
+            // ─── JOIN ROOM WITH RELIABLE POLLING ──────────────────────────
             async function joinRoom(id, password) {
                 if (!gun) {
                     add('Gun not initialized. Please reload the page to enable collaboration.', 'err');
@@ -1782,11 +1785,12 @@
 
                 id = id.trim();
                 let meta = null;
-                const maxRetries = 12;
+                const maxAttempts = 20;
                 let attempts = 0;
 
-                // ─── RETRY LOOP ──────────────────────────────────────────
-                while (attempts < maxRetries) {
+                // ─── POLLING LOOP ──────────────────────────────────────────
+                while (attempts < maxAttempts) {
+                    await new Promise(r => setTimeout(r, 400));
                     try {
                         const metaRef = gun.get('nexus_rooms').get(id).get('meta');
                         meta = await new Promise((resolve) => {
@@ -1797,35 +1801,19 @@
                                     resolve(data);
                                 }
                             });
-                            setTimeout(() => {
-                                if (!resolved) {
-                                    resolved = true;
-                                    resolve(null);
-                                }
-                            }, 3000);
                         });
-
-                        if (meta && meta.created) {
-                            break;
-                        } else {
-                            attempts++;
-                            if (attempts >= maxRetries) {
-                                throw new Error('Room not found or meta missing (timed out after ' + maxRetries +
-                                    ' attempts).');
-                            }
-                            await new Promise(r => setTimeout(r, 600));
-                        }
-                    } catch (err) {
-                        attempts++;
-                        if (attempts >= maxRetries) {
-                            add('Error joining room: ' + esc(err.message), 'err');
-                            showToast('Error joining room: ' + err.message, 'error');
-                            return;
-                        }
-                        await new Promise(r => setTimeout(r, 600));
-                    }
+                        if (meta && meta.created) break;
+                    } catch (e) { /* ignore, retry */ }
+                    attempts++;
                 }
-                // ─── END RETRY LOOP ──────────────────────────────────────
+
+                if (!meta || !meta.created) {
+                    add('Error joining room: Room not found or meta missing (timed out after ' + maxAttempts +
+                        ' attempts).', 'err');
+                    showToast('Failed to join room: ID not found.', 'error');
+                    return;
+                }
+                // ─── END POLLING LOOP ──────────────────────────────────────
 
                 try {
                     if (meta.temporary && meta.expiresAt && Date.now() > meta.expiresAt) {
@@ -2084,42 +2072,19 @@
                 }
 
                 isDeletingRoom = true;
-                const confirmMsg = add(
-                    '<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
-
-                const confirmHandler = function(e) {
-                    if (e.key !== 'Enter') return;
-                    const cmd = input.value.trim().toLowerCase();
-                    if (cmd === 'yes') {
-                        input.value = '';
-                        confirmHandler.cleanup();
-                        performDelete();
-                    } else if (cmd) {
-                        input.value = '';
-                        add('Room deletion cancelled.', 'info');
-                        showToast('Room deletion cancelled.', 'info');
-                        confirmHandler.cleanup();
+                awaitingConfirm = {
+                    callback: (confirmed) => {
+                        if (confirmed) {
+                            performDelete();
+                        } else {
+                            add('Room deletion cancelled.', 'info');
+                            showToast('Room deletion cancelled.', 'info');
+                        }
+                        isDeletingRoom = false;
+                        awaitingConfirm = null;
                     }
                 };
-
-                confirmHandler.cleanup = function() {
-                    if (confirmMsg && confirmMsg.parentNode) {
-                        try { confirmMsg.parentNode.removeChild(confirmMsg); } catch (e) { /* ignore */ }
-                    }
-                    input.removeEventListener('keypress', confirmHandler);
-                    isDeletingRoom = false;
-                };
-
-                input.addEventListener('keypress', confirmHandler);
-
-                // Auto-cleanup after 30 seconds if no response
-                setTimeout(() => {
-                    if (isDeletingRoom) {
-                        confirmHandler.cleanup();
-                        add('Room deletion timed out.', 'info');
-                        showToast('Room deletion timed out.', 'info');
-                    }
-                }, 30000);
+                add('<strong>Are you sure you want to delete this room? Type "yes" to confirm.</strong>', 'warning');
             }
 
             async function performDelete() {
@@ -2148,6 +2113,7 @@
                     showToast('Error deleting room: ' + e.message, 'error');
                 } finally {
                     isDeletingRoom = false;
+                    awaitingConfirm = null;
                 }
             }
 
@@ -3365,6 +3331,21 @@
             // ============================================================
             async function execute(raw) {
                 if (!raw || !raw.trim()) return;
+
+                // ─── CONFIRMATION HANDLING ──────────────────────────────
+                if (awaitingConfirm) {
+                    const lower = raw.trim().toLowerCase();
+                    if (lower === 'yes') {
+                        awaitingConfirm.callback(true);
+                    } else if (lower === 'no') {
+                        awaitingConfirm.callback(false);
+                    } else {
+                        add('Please type "yes" or "no" to confirm.', 'warning');
+                    }
+                    return;
+                }
+                // ─── END CONFIRMATION HANDLING ──────────────────────────
+
                 const resolved = resolveAlias(raw.trim());
                 if (resolved !== raw.trim()) { add('(alias) ' + esc(resolved), 'info'); }
                 const parts = resolved.trim().split(/\s+/);
